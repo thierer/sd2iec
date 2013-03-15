@@ -166,7 +166,7 @@ static uint8_t mount_line(void) {
   return 1;
 }
 
-void set_changelist(path_t *path, uint8_t *filename) {
+static void set_changelist_internal(path_t *path, uint8_t *filename, uint8_t at_end) {
   FRESULT res;
 
   /* Assume this isn't the auto-swap list */
@@ -192,11 +192,18 @@ void set_changelist(path_t *path, uint8_t *filename) {
   /* Remember its directory so relative paths work */
   swappath = *path;
 
-  linenum = 0;
+  if (at_end)
+    linenum = 255;
+  else
+    linenum = 0;
+
   if (mount_line())
     confirm_blink(BLINK_HOME);
 }
 
+void set_changelist(path_t *path, uint8_t *filename) {
+  set_changelist_internal(path, filename, 0);
+}
 
 void change_disk(void) {
   path_t path;
@@ -204,11 +211,15 @@ void change_disk(void) {
   if (swaplist.fs == NULL) {
     /* No swaplist active, try using AUTOSWAP.LST */
     /* change_disk is called from the IEC idle loop, so entrybuf is free */
-    reset_key(0xff); // <- lazy
     ustrcpy_P(entrybuf, autoswap_name);
     path.dir  = partition[current_part].current_dir;
     path.part = current_part;
-    set_changelist(&path, entrybuf);
+    if (key_pressed(KEY_PREV))
+      set_changelist_internal(&path, entrybuf, 1);
+    else
+      set_changelist_internal(&path, entrybuf, 0);
+    reset_key(0xff); // <- lazy
+
     if (swaplist.fs == NULL) {
       /* No swap list found, clear error and exit */
       set_error(ERROR_OK);

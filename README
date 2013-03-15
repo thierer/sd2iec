@@ -704,9 +704,10 @@ with filename being the name of the image list you created, parsed
 in the same way as any other file name.
 
 After sending XS the first image in the list is automatically
-mounted. To switch to the next image in the list, push the button. If
-the new image was mounted successfully both LEDs will blink twice.
-When you've reached the last image in the list pushing the button will
+mounted. To switch to the next image in the list, push the button
+which will be called NEXT from here on.
+If the new image was mounted successfully both LEDs will blink twice.
+When you've reached the last image in the list pushing NEXT will
 mount the first image again. All of this is completely compatible with
 normal image mounting/unmounting, so you can unmount the disk image
 any time you want and resume the mount cycle later by pushing the
@@ -725,15 +726,17 @@ ignored until you send XS, killing the nice "it just works" feeling).
 
 FIXME: Integrate the following into the preceding
 
-The second disk change button is on
+The second disk change button (called PREV) is on
 - PA5 for LarsP
 - PC3 for Shadowolf's MMC2IEC 1.x
 - PC2 for Shadowolf's sd2iec 1.x ("Reserve" on the header)
 - PG4 for uIEC
 
-Either of those buttons will trigger the use of AUTOSWAP.LST.
-If a swap list is already active, the first button will switch
-to the next image in the list, the second button will switch
+Either of those buttons will trigger the use of AUTOSWAP.LST,
+mounting either the first (NEXT) or last (PREV) entry listed
+in the file.
+If a swap list is already active, the NEXT button will switch
+to the next image in the list, the PREV button will switch
 to the previous image in the list and pushing both buttons
 together will switch to the first image in the list.
 

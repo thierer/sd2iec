@@ -2,6 +2,7 @@
         - Bugfix: use valid default date if RTC is not detected
         - formatting for D71/D81/DNP images
         - DolphinDOS parallel speeder support
+        - PREV button mounts last line of autoswap.lst
 
 2011-12-18 - release 0.10.2
         - Bugfix: End of generated raw directory was incorrect
