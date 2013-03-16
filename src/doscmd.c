@@ -251,7 +251,7 @@ static const PROGMEM uint8_t system_partition_info[] = {
   0x00,0x00,0x00,0x00,0x00,0x00,0x0d
 };
 
-#ifndef __AVR__
+#ifndef globalflags
 /* AVR uses GPIOR for this */
 uint8_t globalflags;
 #endif
