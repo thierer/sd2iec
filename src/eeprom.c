@@ -84,7 +84,6 @@ void read_configuration(void) {
 
   /* Set default values */
   globalflags         |= POSTMATCH;            /* Post-* matching enabled */
-  globalflags         |= FAT32_FREEBLOCKS;     /* Calculate the number of free blocks on FAT32 */
   file_extension_mode  = 1;                    /* Store x00 extensions except for PRG */
   set_drive_config(get_default_driveconfig()); /* Set the default drive configuration */
   memset(rom_filename, 0, sizeof(rom_filename));
@@ -117,7 +116,7 @@ void read_configuration(void) {
   /* Read data from EEPROM */
   tmp = eeprom_read_byte(&storedconfig.global_flags);
   globalflags &= (uint8_t)~(POSTMATCH |
-                            EXTENSION_HIDING | FAT32_FREEBLOCKS);
+                            EXTENSION_HIDING);
   globalflags |= tmp;
 
   if (eeprom_read_byte(&storedconfig.hardaddress) == device_hw_address())
@@ -163,7 +162,7 @@ void write_configuration(void) {
   eeprom_write_word(&storedconfig.structsize, sizeof(storedconfig));
   eeprom_write_byte(&storedconfig.global_flags,
                     globalflags & (POSTMATCH |
-                                   EXTENSION_HIDING | FAT32_FREEBLOCKS));
+                                   EXTENSION_HIDING));
   eeprom_write_byte(&storedconfig.address, device_address);
   eeprom_write_byte(&storedconfig.hardaddress, device_hw_address());
   eeprom_write_byte(&storedconfig.fileexts, file_extension_mode);

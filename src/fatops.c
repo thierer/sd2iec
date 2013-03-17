@@ -1201,10 +1201,6 @@ uint16_t fat_freeblocks(uint8_t part) {
   FATFS *fs = &partition[part].fatfs;
   DWORD clusters;
 
-  if (!(globalflags & FAT32_FREEBLOCKS) &&
-      fs->fs_type == FS_FAT32)
-    return 1;
-
   if (l_getfree(fs, NULLSTRING, &clusters, 65535) == FR_OK) {
     if (clusters > 65535)
       return 65535;

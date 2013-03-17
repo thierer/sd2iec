@@ -202,8 +202,6 @@ void set_error_ts(uint8_t errornum, uint8_t track, uint8_t sector) {
 
       msg = appendbool(msg, '*', globalflags & POSTMATCH);
 
-      msg = appendbool(msg, 'B', globalflags & FAT32_FREEBLOCKS);
-
       *msg++ = 'I';
       msg = appendnumber(msg, image_as_dir);
 
