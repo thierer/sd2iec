@@ -37,16 +37,18 @@ my @BOOTINFO_OFFSETS    = (0x100, 0x4100);
 my $MAIN_PROGRAM_OFFSET = 0x4000;
 
 sub crc_ccitt_update {
-    my $prevcrc = shift;
-    my $data    = ord(shift);
+    my $crc  = shift;
+    my $data = ord(shift);
 
-    $data ^= $prevcrc & 0xff;
-    $data ^= $data << 4;
+    for (my $i = 0x80; $i > 0; $i >>= 1) {
+        my $bit = $crc & (1 << 15);
 
-    return 
-        ($data << 8 | (($prevcrc >> 8) & 0xff)) ^ 
-        (($data >> 4) & 0xff) ^
-        (($data << 3) & 0xffff);
+        $bit = !$bit if ($data & $i);
+        $crc <<= 1;
+        $crc ^= 0x1021 if $bit;
+    }
+
+    return ($crc & 0xffff);
 }
 
 # insert new data in a bootinfo block
