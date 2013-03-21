@@ -36,10 +36,12 @@
 #include "parser.h"
 #include "progmem.h"
 #include "timer.h"
+#include "utils.h"
 #include "ustring.h"
 #include "diskchange.h"
 
-static const char PROGMEM autoswap_name[] = "AUTOSWAP.LST";
+static const char PROGMEM autoswap_name[]   = "AUTOSWAP.LST";
+static const char PROGMEM petscii_marker[8] = "#PETSCII";
 
 static FIL     swaplist;
 static path_t  swappath;
@@ -87,6 +89,7 @@ static uint8_t mount_line(void) {
 
   curpos = 0;
   strend = NULL;
+  globalflags |= SWAPLIST_ASCII;
 
   for (i=0;i<=linenum;i++) {
     str = command_buffer;
@@ -128,6 +131,15 @@ static uint8_t mount_line(void) {
     /* Skip line terminator */
     while (*str == '\r' || *str == '\n') str++;
 
+    /* check for PETSCII marker */
+    if (curpos == 0) {
+      if (!memcmp_P(command_buffer, petscii_marker, sizeof(petscii_marker))) {
+        /* swaplist is in PETSCII, ignore this line */
+        globalflags &= ~SWAPLIST_ASCII;
+        i--;
+      }
+    }
+
     curpos += str - command_buffer;
   }
 
@@ -137,13 +149,17 @@ static uint8_t mount_line(void) {
   if (partition[swappath.part].fop != &fatops)
     image_unmount(swappath.part);
 
-  /* Parse the path */
-  path_t path;
-
   /* Start in the partition+directory of the swap list */
   current_part = swappath.part;
   display_current_part(current_part);
   partition[current_part].current_dir = swappath.dir;
+
+  /* recode entry if neccessary */
+  if (globalflags & SWAPLIST_ASCII)
+    asc2pet(command_buffer);
+
+  /* Parse the path */
+  path_t path;
 
   if (parse_path(command_buffer, &path, &str, 0)) {
     current_error = olderror;

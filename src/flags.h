@@ -34,10 +34,14 @@
 extern uint8_t globalflags;
 #endif
 
-/* Values for those flags */
+/** flag values **/
+/* transient flags */
 #define VC20MODE         (1<<0)
-/* 1<<1 was JIFFY_ENABLED */
 #define AUTOSWAP_ACTIVE  (1<<2)
+#define SWAPLIST_ASCII   (1<<5)
+
+/* permanent (EEPROM-saved) flags */
+/* 1<<1 was JIFFY_ENABLED */
 #define EXTENSION_HIDING (1<<3)
 #define POSTMATCH        (1<<4)
 

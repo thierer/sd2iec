@@ -44,6 +44,7 @@
 #include "parser.h"
 #include "progmem.h"
 #include "uart.h"
+#include "utils.h"
 #include "ustring.h"
 #include "wrapops.h"
 #include "fatops.h"
@@ -202,30 +203,6 @@ imgtype_t check_imageext(uint8_t *name) {
       return IMG_IS_DISK;
 
  return IMG_UNKNOWN;
-}
-
-/**
- * asc2pet - convert string from ASCII to PETSCII
- * @buf: pointer to the string to be converted
- *
- * This function converts the string in the given buffer from ASCII to
- * PETSCII in-place.
- */
-static void asc2pet(uint8_t *buf) {
-  uint8_t ch;
-  while (*buf) {
-    ch = *buf;
-    if (ch > 64 && ch < 91)
-      ch += 128;
-    else if (ch > 96 && ch < 123)
-      ch -= 32;
-    else if (ch > 192 && ch < 219)
-      ch -= 128;
-    else if (ch == '~')
-      ch = 255;
-    *buf = ch;
-    buf++;
-  }
 }
 
 /**

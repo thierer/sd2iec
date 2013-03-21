@@ -76,3 +76,27 @@ uint8_t *ustr1tok(uint8_t *str, const uint8_t delim, uint8_t **saveptr) {
   } else
     return NULL;
 }
+
+/**
+ * asc2pet - convert string from ASCII to PETSCII
+ * @buf: pointer to the string to be converted
+ *
+ * This function converts the string in the given buffer from ASCII to
+ * PETSCII in-place.
+ */
+void asc2pet(uint8_t *buf) {
+  uint8_t ch;
+  while (*buf) {
+    ch = *buf;
+    if (ch > 64 && ch < 91)
+      ch += 128;
+    else if (ch > 96 && ch < 123)
+      ch -= 32;
+    else if (ch > 192 && ch < 219)
+      ch -= 128;
+    else if (ch == '~')
+      ch = 255;
+    *buf = ch;
+    buf++;
+  }
+}

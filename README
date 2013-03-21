@@ -675,7 +675,12 @@ add it yourself:
 To use this functionality, create a text file that lists the file
 names of all disk images you want to swap between, one per line.
 The file names are parsed in the same way as the CD command, so you
-can include a path to the image if desired.
+can include a path to the image if desired. The swap list can
+use either ASCII or PETSCII character encoding. If it uses PETSCII
+encoding, the very first line must exactly be "#PETSCII"
+(in hex: 23 50 45 54 53 43 49 49). Blank lines are ignored,
+any combination of carriage return (0d) and line feed (0a)
+are acceptable as line ending.
 
 Examples:
 === example 1 ===
