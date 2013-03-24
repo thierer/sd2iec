@@ -26,6 +26,7 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include "config.h"
 #include "buffers.h"
@@ -229,20 +230,88 @@ static void pet2asc(uint8_t *buf) {
   }
 }
 
-static uint8_t* build_name(uint8_t *name, uint8_t type) {
-  uint8_t *x00ext = NULL;
+/**
+ * is_valid_fat_char - checks if a character is valid on FAT
+ * @c: character to check
+ *
+ * This function checks if @c is a valid character for a FAT
+ * file name. Returns true if it is, false if not.
+ */
+static bool is_valid_fat_char(const uint8_t c) {
+  if (isalnum(c) || c == '!' ||
+      (c >= '#' && c <= ')') ||
+      c == '-')
+    return true;
+  else
+    return false;
+}
 
+/**
+ * is_valid_fat_name - checks if a file name is valid on FAT
+ * @name: name to check
+ *
+ * This function checks if @name is a valid name for a FAT
+ * file. Returns true if it is, false if not.
+ */
+static bool is_valid_fat_name(const uint8_t *name) {
+  const uint8_t *ptr = name;
+
+  /* check for leading space */
+  if (*name == ' ')
+    return false;
+
+  /* check all characters for validity */
+  while (*ptr) {
+    if (!is_valid_fat_char(*ptr++))
+      return false;
+  }
+
+  /* check the last character */
+  ptr--;
+
+  if (*ptr == ' ')
+    return false;
+
+  if (*ptr == '.')
+    return false;
+
+  return true;
+}
+
+/**
+ * build_name - convert PETSCII file name to valid FAT name
+ * @name: pointer to a PETSCII file name to be converted
+ * @type: file type
+ *
+ * This function converts a PETSCII file name to a suitable
+ * FAT file name in-place. Returns a pointer to the last
+ * character of the PC64 file extension if it was
+ * created or NULL if not.
+ */
+static uint8_t* build_name(uint8_t *name, uint8_t type) {
+  /* convert to PETSCII */
   pet2asc(name);
-  if (type != TYPE_RAW && file_extension_mode != 0 &&
-      !(type == TYPE_PRG && check_imageext(name) != IMG_UNKNOWN)) {
-    if ((file_extension_mode == 1 && type != TYPE_PRG) ||
-        (file_extension_mode == 2)
-        ) {
+
+#ifdef CONFIG_M2I
+  /* do not add a header for raw files, even if the name may be invalid */
+  if (type == TYPE_RAW)
+    return NULL;
+#endif
+
+  /* known disk-image extensions are always without header or suffix */
+  if (type == TYPE_PRG && check_imageext(name) != IMG_UNKNOWN)
+    return NULL;
+
+  /* PC64 mode or invalid FAT name? */
+  if ((file_extension_mode == 1 && type != TYPE_PRG) ||
+      file_extension_mode == 2 ||
+      !is_valid_fat_name(name)) {
+
+      uint8_t *x00ext = NULL;
+
       /* Append .[PSUR]00 suffix to the file name */
       while (*name) {
-        if (isalnum(*name) || *name == '!' ||
-            (*name >= '#' && *name <= ')') ||
-            *name == '-') {
+        if (is_valid_fat_char(*name)) {
           name++;
         } else {
           *name++ = '_';
@@ -254,16 +323,24 @@ static uint8_t* build_name(uint8_t *name, uint8_t type) {
       x00ext = name;
       *name++ = '0';
       *name   = 0;
-    } else if ((file_extension_mode == 3 && type != TYPE_PRG) ||
-               (file_extension_mode == 4)) {
-      /* Append type suffix to the file name */
-      while (*name) name++;
-      *name++ = '.';
-      memcpy_P(name, filetypes + TYPE_LENGTH * (type & EXT_TYPE_MASK), TYPE_LENGTH);
-      *(name+3) = 0;
-    }
+
+      return x00ext;
   }
-  return x00ext;
+
+  /* type-suffix mode? */
+  if ((file_extension_mode == 3 && type != TYPE_PRG) ||
+      (file_extension_mode == 4)) {
+    /* Append type suffix to the file name */
+    while (*name) name++;
+    *name++ = '.';
+    memcpy_P(name, filetypes + TYPE_LENGTH * (type & EXT_TYPE_MASK), TYPE_LENGTH);
+    *(name+3) = 0;
+
+    return NULL;
+  }
+
+  /* extension mode 0 and no special case */
+  return NULL;
 }
 
 /* ------------------------------------------------------------------------- */

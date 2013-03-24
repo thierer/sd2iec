@@ -46,7 +46,7 @@
 /* Internal file types used for the partition directory */
 #define TYPE_NAT 8
 
-/* Internal file type used to force files without header on FAT */
+/* Internal file type used to force files without header on FAT (for M2I) */
 #define TYPE_RAW 15
 
 /// Hidden is an unused bit on CBM
