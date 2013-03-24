@@ -576,10 +576,13 @@ FRESULT create_file(path_t *path, cbmdirent_t *dent, uint8_t type, buffer_t *buf
 
   x00ext = NULL;
 
-  /* FIXME: Add a comment why the "true" part of this if is required */
+  /* check if the FAT name is already defined (used only for M2I) */
+#ifdef CONFIG_M2I
   if (dent->pvt.fat.realname[0])
     name = dent->pvt.fat.realname;
-  else {
+  else
+#endif
+  {
     ustrcpy(entrybuf, dent->name);
     x00ext = build_name(entrybuf,type);
     name = entrybuf;

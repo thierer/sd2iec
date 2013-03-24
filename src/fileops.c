@@ -953,10 +953,12 @@ void file_open(uint8_t secondary) {
         if (file_delete(&path, &dentcopy) == 255)
           return;
 
+#ifdef CONFIG_M2I
         /* Force fatops to create a new name based on the (long) CBM- */
         /* name instead of creating one with the old SFN and no LFN.  */
         if (dent.opstype == OPSTYPE_FAT || dent.opstype == OPSTYPE_FAT_X00)
           dent.pvt.fat.realname[0] = 0;
+#endif
       } else {
         /* Write existing file without replacement: Raise error */
         set_error(ERROR_FILE_EXISTS);
