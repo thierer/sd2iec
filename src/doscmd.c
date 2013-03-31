@@ -1907,8 +1907,13 @@ static void parse_xcommand(void) {
 #endif
 
   default:
-    /* Unknown command, just show the status */
-    set_error_ts(ERROR_STATUS,device_address,0);
+    if (command_length != 1)
+      /* unknown command */
+      set_error(ERROR_SYNTAX_UNKNOWN);
+    else
+      /* plain X by itself, show the extended status */
+      set_error_ts(ERROR_STATUS, device_address, 0);
+
     break;
   }
 }
