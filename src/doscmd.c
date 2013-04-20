@@ -1161,8 +1161,10 @@ static void handle_memwrite(void) {
     return;
   }
 
-  if (address == 0x1c06 || address == 0x1c07) {
-    /* Ignore attempts to increase the VIA timer frequency */
+  if (address == 0x1c06 || address == 0x1c07 || address == 0x1802) {
+    /* Ignored addresses:                                          */
+    /* - VIA 2 timer (1c06, 1c07), determines IRQ frequency        */
+    /* - VIA 1 DDRB, written by N0SD0S to fix Action Replay issues */
     return;
   }
 
