@@ -123,6 +123,8 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
   { 0x5a01, FL_EPYXCART,         RXTX_NONE          },
 #endif
 #ifdef CONFIG_LOADER_GEOS
+  { 0xb979, FL_GEOS_S1_64,       RXTX_GEOS_1MHZ     }, // GEOS 64 stage 1
+  { 0x2469, FL_GEOS_S1_128,      RXTX_GEOS_1MHZ     }, // GEOS 128 stage 1
   { 0x4d79, FL_GEOS_S23_1541,    RXTX_GEOS_1MHZ     }, // GEOS 64 1541 stage 2
   { 0xb2bc, FL_GEOS_S23_1541,    RXTX_GEOS_1MHZ     }, // GEOS 128 1541 stage 2
   { 0xb272, FL_GEOS_S23_1541,    RXTX_GEOS_1MHZ     }, // GEOS 64/128 1541 stage 3 (Configure)
@@ -200,8 +202,8 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
   { 0x01a9, FL_EPYXCART,         load_epyxcart,  0 },
 #endif
 #ifdef CONFIG_LOADER_GEOS
-  { 0x0457, FL_GEOS_S1,          load_geos_s1,   0 },
-  { 0x0470, FL_GEOS_S1,          load_geos_s1,   1 },
+  { 0x0457, FL_GEOS_S1_64,       load_geos_s1,   0 },
+  { 0x0470, FL_GEOS_S1_128,      load_geos_s1,   1 },
   { 0x03e2, FL_GEOS_S23_1541,    load_geos,      0 },
   { 0x03dc, FL_GEOS_S23_1541,    load_geos,      0 },
   { 0x03ff, FL_GEOS_S23_1571,    load_geos,      0 },
@@ -224,6 +226,22 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
 #endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker
+};
+
+struct fastloader_capture_s {
+  uint8_t  loadertype;
+  uint16_t startaddr;
+  uint8_t  length;     // length - 1
+  uint8_t  buffer_id;
+};
+
+static const PROGMEM struct fastloader_capture_s fl_capture_table[] = {
+#ifdef CONFIG_LOADER_GEOS
+  { FL_GEOS_S1_64,  0x42a, 255, BUFFER_SYS_CAPTURE1 },
+  { FL_GEOS_S1_128, 0x44f, 255, BUFFER_SYS_CAPTURE1 },
+#endif
+
+  { FL_NONE, 0, 0, 0 }  // end marker
 };
 
 /* ---- Minimal drive rom emulation ---- */
@@ -264,6 +282,11 @@ date_t date_match_end;
 
 uint16_t datacrc = 0xffff;
 static uint8_t previous_loader;
+
+/* partial fastloader data capture */
+static uint16_t  capture_address, capture_remain;
+static uint8_t   capture_offset;
+static buffer_t *capture_buffer;
 
 #ifdef CONFIG_STACK_TRACKING
 //FIXME: AVR-only code
@@ -1144,15 +1167,34 @@ static void handle_memread(void) {
 }
 
 /* --- M-W --- */
+/* helper function for copying to capture buffer, needed twice */
+static void capture_fl_data(uint16_t address, uint8_t length) {
+  uint8_t dataofs = capture_address - address;
+  uint8_t bytes   = min(capture_remain, length - dataofs);
+
+  memcpy(capture_buffer->data + capture_offset,
+         command_buffer + 6 + dataofs,
+         bytes);
+
+  capture_offset  += bytes;
+  capture_address += bytes;
+  capture_remain  -= bytes;
+
+  /* everything done, clear pointer to disable */
+  if (capture_remain == 0)
+    capture_buffer = NULL;
+}
+
+
 static void handle_memwrite(void) {
   uint16_t address;
-  uint8_t  i;
+  uint8_t  i, length;
 
   if (command_length < 6)
     return;
 
   address = command_buffer[3] + (command_buffer[4]<<8);
-  //length  = command_buffer[5];
+  length  = command_buffer[5];
 
   if (address == 119) {
     /* Change device address, 1541 style */
@@ -1206,50 +1248,38 @@ static void handle_memwrite(void) {
 #endif
   }
 
+  /* partially capture uploaded data */
+  if (capture_buffer != NULL)
+    capture_fl_data(address, length);
 
-#ifdef CONFIG_LOADER_GEOS
-  /* Capture decryption key */
+  /* check for partial capture start in this block */
+  if (loader != FL_NONE && capture_buffer == NULL) {
+    const struct fastloader_capture_s *capptr = fl_capture_table;
+    uint8_t ltype;
 
-  if (detected_loader == FL_GEOS_S1_KEY) {
-    /* Copy encryption key */
-    buffer_t *buf = find_buffer(BUFFER_SYS_GEOSKEY);
+    do {
+      ltype = pgm_read_byte(&capptr->loadertype);
+      if (ltype == loader) {
+        capture_address = pgm_read_word(&capptr->startaddr);
+        capture_remain  = pgm_read_byte(&capptr->length) + 1;
+        capture_offset  = 0;
 
-    if (buf->position < 256-32) {
-      /* Middle blocks - copy completely */
-      memcpy(buf->data + buf->position, command_buffer + 6, 32);
-      buf->position += 32;
-    } else {
-      /* Last interesting block, also the last block of the loader */
-      memcpy(buf->data + buf->position, command_buffer + 6, 254-buf->position);
+        capture_buffer  = alloc_system_buffer();
+        if (!capture_buffer)
+          break;
 
-      /* Same ID for both, the address can be used to distinguish them */
-      detected_loader = FL_GEOS_S1;
-      geos_send_byte = geos_send_byte_1mhz;
-    }
+        stick_buffer(capture_buffer);
+        capture_buffer->secondary = pgm_read_byte(&capptr->buffer_id);
+
+        break;
+      }
+      capptr++;
+    } while (ltype != FL_NONE);
+
+    /* capture data from this block */
+    if (ltype != FL_NONE)
+      capture_fl_data(address, length);
   }
-
-  if (datacrc == 0xb979 || datacrc == 0x2469) {
-    /* GEOS stage 1 encryption key starts in this block */
-    buffer_t *buf = alloc_system_buffer();
-
-    if (buf == NULL)
-      return;
-
-    stick_buffer(buf);
-    buf->secondary = BUFFER_SYS_GEOSKEY;
-    if (datacrc == 0xb979) {
-      /* GEOS 64 1.3/2.0 */
-      buf->position = 32-10;
-      memcpy(buf->data, command_buffer + 6 + 10, 32-10);
-    } else { // datacrc == 0x2469
-      /* GEOS 128 2.0 */
-      buf->position = 32-15;
-      memcpy(buf->data, command_buffer + 6 + 15, 32-15);
-    }
-
-    detected_loader = FL_GEOS_S1_KEY;
-  }
-#endif
 
 #ifdef CONFIG_CAPTURE_LOADERS
   dump_command();

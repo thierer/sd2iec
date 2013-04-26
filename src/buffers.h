@@ -31,11 +31,16 @@
 #define BUFFER_SEC_SYSTEM 100
 
 /* Special-purpose buffer numbers */
-#define BUFFER_SYS_BAM     (BUFFER_SEC_SYSTEM+1)
-#define BUFFER_SYS_GEOSKEY (BUFFER_SEC_SYSTEM+2)
+#define BUFFER_SYS_BAM      (BUFFER_SEC_SYSTEM+1)
+
+// fastloader data capture
+#define BUFFER_SYS_CAPTURE1 (BUFFER_SEC_SYSTEM+2)
+#define BUFFER_SYS_CAPTURE2 (BUFFER_SEC_SYSTEM+3)
+#define BUFFER_SYS_CAPTURE3 (BUFFER_SEC_SYSTEM+4)
+
 /* chained buffers use (BUFFER_SEC_CHAIN-14)..BUFFER_SEC_CHAIN */
 /* to distinguish secondary addresses */
-#define BUFFER_SEC_CHAIN   (BUFFER_SEC_SYSTEM-1)
+#define BUFFER_SEC_CHAIN    (BUFFER_SEC_SYSTEM-1)
 
 /* Flags for free_multiple_buffers */
 #define FMB_CLEAN          (1<<0)

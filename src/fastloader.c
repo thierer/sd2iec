@@ -1242,7 +1242,7 @@ static const PROGMEM uint8_t geos128_chains[] = {
 
 /* GEOS 64 stage 1 loader */
 void load_geos_s1(uint8_t version) {
-  buffer_t *encrbuf = find_buffer(BUFFER_SYS_GEOSKEY);
+  buffer_t *encrbuf = find_buffer(BUFFER_SYS_CAPTURE1);
   buffer_t *databuf = alloc_buffer();
   uint8_t *encdata = NULL;
   uint8_t track, sector;
