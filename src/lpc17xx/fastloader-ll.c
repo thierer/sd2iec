@@ -363,7 +363,7 @@ static __attribute__((unused)) uint8_t generic_save_2bit(const generic_2bit_t *d
 /* ---------------- */
 
 static const generic_2bit_t jiffy_receive_def = {
-  .pairtimes = {170, 300, 410, 540},
+  .pairtimes = {185, 315, 425, 555},
   .clockbits = {4, 6, 3, 2},
   .databits  = {5, 7, 1, 0},
   .eorvalue  = 0xff
