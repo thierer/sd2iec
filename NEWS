@@ -5,6 +5,7 @@
         - PREV button mounts last line of autoswap.lst
         - removed XB command
         - explicit PETSCII marker in swaplists
+        - load previous file when "*" is used
 
 2011-12-18 - release 0.10.2
         - Bugfix: End of generated raw directory was incorrect

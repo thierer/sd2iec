@@ -39,6 +39,7 @@
 #include "fastloader-ll.h"
 #include "fatops.h"
 #include "ff.h"
+#include "fileops.h"
 #include "flags.h"
 #include "iec.h"
 #include "led.h"
@@ -477,6 +478,9 @@ static void parse_chdir(void) {
 
   if (parse_path(command_buffer+2, &path, &name, 1))
     return;
+
+  /* clear '*' file */
+  previous_file_dirent.name[0] = 0;
 
   if (ustrlen(name) != 0) {
     /* Path component after the : */

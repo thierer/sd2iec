@@ -44,7 +44,14 @@
 #include "wrapops.h"
 #include "fileops.h"
 
-uint8_t image_as_dir;
+/* ------------------------------------------------------------------------- */
+/*  global variables                                                         */
+/* ------------------------------------------------------------------------- */
+
+uint8_t       image_as_dir;
+cbmdirent_t   previous_file_dirent;
+static path_t previous_file_path;
+
 
 /* ------------------------------------------------------------------------- */
 /*  Some constants used for directory generation                             */
@@ -761,6 +768,26 @@ static void open_buffer(uint8_t secondary) {
 }
 
 /**
+ * file_open_previous - reopens the last opened file
+ *
+ * This function reopens the last opened file in read mode.
+ * The secondary address for this is always 0.
+ */
+void file_open_previous(void) {
+  cbmdirent_t dent = previous_file_dirent;
+  path_t      path = previous_file_path;
+  buffer_t *buf = alloc_buffer();
+
+  if (!buf)
+    return;
+
+  buf->secondary = 0;
+
+  display_filename_read(path.part, CBM_NAME_LENGTH, dent.name);
+  open_read(&path, &dent, buf);
+}
+
+/**
  * file_open - open a file on given secondary
  * @secondary: secondary address used in OPEN call
  *
@@ -806,6 +833,20 @@ void file_open(uint8_t secondary) {
   uint8_t *ptr = command_buffer;
   enum open_modes mode = OPEN_READ;
   uint8_t filetype = TYPE_DEL;
+
+  /* check for a single * to load the previous file */
+  if (secondary         == 0 &&
+      command_length    == 1 &&
+      command_buffer[0] == '*') {
+    if (previous_file_dirent.name[0]) {
+      /* previous file is valid */
+      file_open_previous();
+      return;
+    }
+
+    /* force file type to PRG - d7cd/d81c */
+    filetype = TYPE_PRG;
+  }
 
   while(i++ < 2 && *ptr && (ptr = ustrchr(ptr, ','))) {
     *ptr = 0;
@@ -989,6 +1030,9 @@ void file_open(uint8_t secondary) {
     open_rel(&path, &dent, buf, recordlen, (mode == OPEN_MODIFY));
     return;
   }
+
+  previous_file_path   = path;
+  previous_file_dirent = dent;
 
   switch (mode) {
   case OPEN_MODIFY:
