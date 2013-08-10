@@ -191,7 +191,6 @@ REMOVE = rm -f
 COPY = cp
 WINSHELL = cmd
 AWK = awk
-CRCGEN = crcgen-new
 
 # Include architecture-specific variables
 include scripts/$(CONFIG_ARCH)/variables.mk

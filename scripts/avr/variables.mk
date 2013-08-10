@@ -23,7 +23,9 @@ AVRDUDE = avrdude
 #---------------- Bootloader, fuses etc. ----------------
 # Set MCU name and length of binary for bootloader
 # WARNING: Fuse settings not tested!
-MCU := $(CONFIG_MCU)
+MCU    := $(CONFIG_MCU)
+CRCGEN := scripts/avr/crcgen-avr.pl
+
 ifeq ($(MCU),atmega128)
   BINARY_LENGTH = 0x1f000
 #  EFUSE = 0xff
