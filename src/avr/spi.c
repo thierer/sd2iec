@@ -94,7 +94,6 @@ uint8_t spi_rx_byte(void) {
 
 void spi_exchange_block(void *vdata, unsigned int length, uint8_t write) {
   uint8_t *data = (uint8_t*)vdata;
-  uint8_t dummy;
 
   while (length--) {
     if (!write)
@@ -107,7 +106,7 @@ void spi_exchange_block(void *vdata, unsigned int length, uint8_t write) {
     if (write)
       *data = SPDR;
     else
-      dummy = SPDR;
+      (void) SPDR;
     data++;
   }
 }
