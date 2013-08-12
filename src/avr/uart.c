@@ -126,7 +126,7 @@ void uart_flush(void) {
   while (read_idx != write_idx) ;
 }
 
-void uart_puts_P(prog_char *text) {
+void uart_puts_P(const char *text) {
   uint8_t ch;
 
   while ((ch = pgm_read_byte(text++))) {

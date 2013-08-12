@@ -51,7 +51,7 @@ const char PROGMEM longverstr[] = LONGVERSION;
 #define EC(x) x+0x80
 
 /// Abbreviations used in the main error strings
-static const prog_uint8_t abbrevs[] = {
+static const PROGMEM uint8_t abbrevs[] = {
   EC(0), 'F','I','L','E',
   EC(1), 'R','E','A','D',
   EC(2), 'W','R','I','T','E',
@@ -69,7 +69,7 @@ static const prog_uint8_t abbrevs[] = {
 };
 
 /// Error string table
-static const prog_uint8_t messages[] = {
+static const PROGMEM uint8_t messages[] = {
   EC(00),
     ' ','O','K',
   EC(01),
@@ -125,7 +125,7 @@ static const prog_uint8_t messages[] = {
   EC(127)
 };
 
-static uint8_t *appendmsg(uint8_t *msg, const prog_uint8_t *table, const uint8_t entry) {
+static uint8_t *appendmsg(uint8_t *msg, const uint8_t *table, const uint8_t entry) {
   uint8_t i,tmp;
 
   i = 0;

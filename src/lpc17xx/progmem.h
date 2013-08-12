@@ -32,9 +32,6 @@
 #define pgm_read_word(x) (*(x))
 #define pgm_read_byte(x) (*(x))
 
-typedef const char prog_char;
-typedef const uint8_t prog_uint8_t;
-
 #define memcpy_P(dest,src,n) memcpy(dest,src,n)
 #define memcmp_P(s1,s2,n)    memcmp(s1,s2,n)
 #define strcpy_P(dest,src)   strcpy(dest,src)

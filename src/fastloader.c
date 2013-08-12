@@ -1246,7 +1246,7 @@ void load_geos_s1(uint8_t version) {
   buffer_t *databuf = alloc_buffer();
   uint8_t *encdata = NULL;
   uint8_t track, sector;
-  const prog_uint8_t *chainptr;
+  const uint8_t *chainptr;
 
   if (!encrbuf || !databuf)
     return;
