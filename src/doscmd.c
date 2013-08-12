@@ -1239,12 +1239,13 @@ static void handle_memwrite(void) {
 
   /* Set RX/TX function pointers */
   if (loader != FL_NONE) {
-    uint8_t index;
-
     detected_loader = loader;
-    index = pgm_read_word(&crcptr->rxtx);
 
 #ifdef CONFIG_LOADER_GEOS
+    uint8_t index;
+
+    index = pgm_read_word(&crcptr->rxtx);
+
     if (index != 0) {
       geos_get_byte  = (fastloader_rx_t)pgm_read_word(&(fl_rxtx_table[index].rxfunc));
       geos_send_byte = (fastloader_tx_t)pgm_read_word(&(fl_rxtx_table[index].txfunc));
