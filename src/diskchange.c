@@ -158,21 +158,8 @@ static uint8_t mount_line(void) {
   if (globalflags & SWAPLIST_ASCII)
     asc2pet(command_buffer);
 
-  /* Parse the path */
-  path_t path;
-
-  if (parse_path(command_buffer, &path, &str, 0)) {
-    current_error = olderror;
-    return 0;
-  }
-
-  /* Mount the disk image */
-  cbmdirent_t dent;
-
-  if (!first_match(&path, str, FLAG_HIDDEN, &dent)) {
-    chdir(&path, &dent);
-    update_current_dir(&path);
-  }
+  /* parse and change */
+  do_chdir(command_buffer);
 
   if (current_error != 0 && current_error != ERROR_DOSVERSION) {
     current_error = olderror;

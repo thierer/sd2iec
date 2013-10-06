@@ -34,5 +34,6 @@ extern date_t date_match_end;
 extern uint16_t datacrc;
 
 void parse_doscommand(void);
+void do_chdir(uint8_t *parsestr);
 
 #endif

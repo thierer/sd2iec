@@ -471,12 +471,14 @@ static void parse_mkdir(void) {
 }
 
 /* --- CD --- */
-static void parse_chdir(void) {
-  path_t  path;
-  uint8_t *name;
+
+/* internal version of CD that is used by CD and diskchange.c */
+void do_chdir(uint8_t *parsestr) {
+  path_t      path;
+  uint8_t    *name;
   cbmdirent_t dent;
 
-  if (parse_path(command_buffer+2, &path, &name, 1))
+  if (parse_path(parsestr, &path, &name, 1))
     return;
 
   /* clear '*' file */
@@ -498,13 +500,18 @@ static void parse_chdir(void) {
         return;
     }
   } else {
-    if (!ustrchr(command_buffer, '/')) {
+    /* reject if there is no / in the string */
+    if (!ustrchr(parsestr, '/')) {
       set_error(ERROR_FILE_NOT_FOUND_39);
       return;
     }
   }
 
   update_current_dir(&path);
+}
+
+static void parse_chdir(void) {
+  do_chdir(command_buffer + 2);
 
   if (globalflags & AUTOSWAP_ACTIVE)
     set_changelist(NULL, NULLSTRING);
