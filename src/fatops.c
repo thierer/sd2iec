@@ -54,6 +54,8 @@
 #define P00_CBMNAME_OFFSET    8
 #define P00_RECORDLEN_OFFSET  25
 
+#define BOOTSECTOR_FILE       "bootsect.128"
+
 static const PROGMEM char p00marker[] = "C64File";
 
 typedef enum { EXT_UNKNOWN, EXT_IS_X00, EXT_IS_TYPE } exttype_t;
@@ -1267,12 +1269,88 @@ uint16_t fat_freeblocks(uint8_t part) {
     return 0;
 }
 
-/* Dummy function for direct sector access */
-/* FIXME: Read/Write a file "BOOT.BIN" in the currect directory */
-/*        (e.g. for the C128 boot sector)                       */
-void fat_sectordummy(buffer_t *buf, uint8_t part, uint8_t track, uint8_t sector) {
-  set_error_ts(ERROR_READ_NOHEADER,track,sector);
+
+/**
+ * fat_readwrite_sector - simulate direct sector access
+ * @buf   : target buffer
+ * @part  : partition number
+ * @track : track to read
+ * @sector: sector to read
+ * @rwflag: read/write flag
+ *
+ * This function allows access to a file called bootsect.128
+ * as track 1 sector 0 to enable the auto-boot function of
+ * the C128 on FAT directories. If rwflag is false (0),
+ * the sector will be written; otherwise it will be read.
+ */
+static void fat_readwrite_sector(buffer_t *buf, uint8_t part,
+                                 uint8_t track, uint8_t sector, uint8_t rwflag) {
+  FRESULT res;
+  UINT bytes;
+  uint8_t mode;
+
+  if (track != 1 || sector != 0) {
+    set_error_ts(ERROR_READ_NOHEADER, track, sector);
+    return;
+  }
+
+  if (rwflag)
+    mode = FA_OPEN_EXISTING | FA_READ;
+  else
+    mode = FA_OPEN_ALWAYS   | FA_WRITE;
+
+  /* since this is fatops, the imagehandle is currently unused       */
+  /* (saves a noticable chunk of stack compared to a local variable) */
+  res = f_open(&partition[part].fatfs,
+               &partition[part].imagehandle,
+               (const UCHAR *)BOOTSECTOR_FILE,
+               mode);
+  if (res != FR_OK) {
+    parse_error(res, rwflag);
+    return;
+  }
+
+  if (rwflag)
+    res = f_read(&partition[part].imagehandle, buf->data, 256, &bytes);
+  else
+    res = f_write(&partition[part].imagehandle, buf->data, 256, &bytes);
+
+  if (res != FR_OK || bytes != 256)
+    parse_error(res, rwflag);
+
+  res = f_close(&partition[part].imagehandle);
+  if (res != FR_OK)
+    parse_error(res, rwflag);
+
+  return;
 }
+
+/**
+ * fat_read_sector - simulate direct sector reads
+ * @buf   : target buffer
+ * @part  : partition number
+ * @track : track to read
+ * @sector: sector to read
+ *
+ * Wrapper for fat_readwrite_sector in read mode
+ */
+void fat_read_sector(buffer_t *buf, uint8_t part, uint8_t track, uint8_t sector) {
+  fat_readwrite_sector(buf, part, track, sector, 1);
+}
+
+/**
+ * fat_write_sector - simulate direct sector writes
+ * @buf   : source buffer
+ * @part  : partition number
+ * @track : track to write
+ * @sector: sector to write
+ *
+ * Wrapper for fat_readwrite_sector in write mode
+ */
+void fat_write_sector(buffer_t *buf, uint8_t part, uint8_t track, uint8_t sector) {
+  fat_readwrite_sector(buf, part, track, sector, 0);
+}
+
 
 /**
  * fat_rename - rename a file
@@ -1560,8 +1638,8 @@ const PROGMEM fileops_t fatops = {  // These should be at bottom, to be consiste
   &fat_getdirlabel,
   &fat_getid,
   &fat_freeblocks,
-  &fat_sectordummy,
-  &fat_sectordummy,
+  &fat_read_sector,
+  &fat_write_sector,
   &format_dummy,
   &fat_opendir,
   &fat_readdir,

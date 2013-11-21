@@ -44,7 +44,8 @@ uint8_t  fat_getid(path_t *path, uint8_t *id);
 uint16_t fat_freeblocks(uint8_t part);
 uint8_t  fat_opendir(dh_t *dh, path_t *dir);
 int8_t   fat_readdir(dh_t *dh, cbmdirent_t *dent);
-void     fat_sectordummy(buffer_t *buf, uint8_t part, uint8_t track, uint8_t sector);
+void     fat_read_sector(buffer_t *buf, uint8_t part, uint8_t track, uint8_t sector);
+void     fat_write_sector(buffer_t *buf, uint8_t part, uint8_t track, uint8_t sector);
 void     format_dummy(uint8_t drive, uint8_t *name, uint8_t *id);
 
 extern const fileops_t fatops;
