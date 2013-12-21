@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include "dirent.h"
 
+#define ERRORBUFFER_IDX   CONFIG_BUFFER_COUNT
 #define BUFFER_SEC_SYSTEM 100
 
 /* Special-purpose buffer numbers */

@@ -972,8 +972,8 @@ static void parse_getpartition(void) {
   else
     part = command_buffer[3];
 
-  buffers[CONFIG_BUFFER_COUNT].position = 0;
-  buffers[CONFIG_BUFFER_COUNT].lastused = 30;
+  buffers[ERRORBUFFER_IDX].position = 0;
+  buffers[ERRORBUFFER_IDX].lastused = 30;
 
   memset(error_buffer,0,30);
   error_buffer[30] = 13;
@@ -1172,9 +1172,9 @@ static void handle_memread(void) {
 
   /* possibly the host wants to read more bytes than error_buffer size */
   /* we ignore this knowing that we return nonsense in this case       */
-  buffers[CONFIG_BUFFER_COUNT].data     = error_buffer;
-  buffers[CONFIG_BUFFER_COUNT].position = 0;
-  buffers[CONFIG_BUFFER_COUNT].lastused = command_buffer[5]-1;
+  buffers[ERRORBUFFER_IDX].data     = error_buffer;
+  buffers[ERRORBUFFER_IDX].position = 0;
+  buffers[ERRORBUFFER_IDX].lastused = command_buffer[5]-1;
 }
 
 /* --- M-W --- */
@@ -1545,7 +1545,7 @@ static void parse_timeread(void) {
 
   switch (command_buffer[3]) {
   case 'A': /* ASCII format */
-    buffers[CONFIG_BUFFER_COUNT].lastused = 25;
+    buffers[ERRORBUFFER_IDX].lastused = 25;
     memcpy_P(error_buffer+4, asciitime_skel, sizeof(asciitime_skel));
     memcpy_P(error_buffer, downames + 4*time.tm_wday, 4);
     appendnumber(error_buffer+5, time.tm_mon+1);
@@ -1561,7 +1561,7 @@ static void parse_timeread(void) {
     break;
 
   case 'B': /* BCD format */
-    buffers[CONFIG_BUFFER_COUNT].lastused = 8;
+    buffers[ERRORBUFFER_IDX].lastused = 8;
     *ptr++ = time.tm_wday;
     *ptr++ = int2bcd(time.tm_year % 100);
     *ptr++ = int2bcd(time.tm_mon+1);
@@ -1574,7 +1574,7 @@ static void parse_timeread(void) {
     break;
 
   case 'D': /* Decimal format */
-    buffers[CONFIG_BUFFER_COUNT].lastused = 8;
+    buffers[ERRORBUFFER_IDX].lastused = 8;
     *ptr++ = time.tm_wday;
     *ptr++ = time.tm_year;
     *ptr++ = time.tm_mon+1;

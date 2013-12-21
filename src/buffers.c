@@ -67,14 +67,14 @@ void buffers_init(void) {
   for (i=0;i<CONFIG_BUFFER_COUNT;i++)
     buffers[i].data = bufferdata + 256*i;
 
-  buffers[CONFIG_BUFFER_COUNT].data      = error_buffer;
-  buffers[CONFIG_BUFFER_COUNT].secondary = 15;
-  buffers[CONFIG_BUFFER_COUNT].allocated = 1;
-  buffers[CONFIG_BUFFER_COUNT].read      = 1;
-  buffers[CONFIG_BUFFER_COUNT].write     = 1;
-  buffers[CONFIG_BUFFER_COUNT].sendeoi   = 1;
-  buffers[CONFIG_BUFFER_COUNT].refill    = set_ok_message;
-  buffers[CONFIG_BUFFER_COUNT].cleanup   = callback_dummy;
+  buffers[ERRORBUFFER_IDX].data      = error_buffer;
+  buffers[ERRORBUFFER_IDX].secondary = 15;
+  buffers[ERRORBUFFER_IDX].allocated = 1;
+  buffers[ERRORBUFFER_IDX].read      = 1;
+  buffers[ERRORBUFFER_IDX].write     = 1;
+  buffers[ERRORBUFFER_IDX].sendeoi   = 1;
+  buffers[ERRORBUFFER_IDX].refill    = set_ok_message;
+  buffers[ERRORBUFFER_IDX].cleanup   = callback_dummy;
 }
 
 /**

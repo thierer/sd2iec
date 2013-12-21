@@ -184,9 +184,9 @@ void set_error_ts(uint8_t errornum, uint8_t track, uint8_t sector) {
   uint8_t i = 0;
 
   current_error = errornum;
-  buffers[CONFIG_BUFFER_COUNT].data     = error_buffer;
-  buffers[CONFIG_BUFFER_COUNT].lastused = 0;
-  buffers[CONFIG_BUFFER_COUNT].position = 0;
+  buffers[ERRORBUFFER_IDX].data     = error_buffer;
+  buffers[ERRORBUFFER_IDX].lastused = 0;
+  buffers[ERRORBUFFER_IDX].position = 0;
   memset(error_buffer,0,sizeof(error_buffer));
 
   msg = appendnumber(msg,errornum);
@@ -256,7 +256,8 @@ void set_error_ts(uint8_t errornum, uint8_t track, uint8_t sector) {
     led_state &= (uint8_t)~LED_ERROR;
     set_error_led(0);
   }
-  buffers[CONFIG_BUFFER_COUNT].lastused = msg - error_buffer;
+  buffers[ERRORBUFFER_IDX].lastused = msg - error_buffer;
+
   /* Send message without the final 0x0d */
   display_errorchannel(msg - error_buffer, error_buffer);
 }
