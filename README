@@ -232,14 +232,17 @@ Supported commands:
   return 31,SYNTAX ERROR,00,00.
 
   Both commands expect a fourth character that specifies the time format
-  to be used, T-W expects that the new time follows that character in EXACTLY
-  the format returned by T-R with the same format char. Do NOT add a space
-  between the "T-W" and the time string.
+  to be used. T-W expects that the new time follows that character
+  with no space or other characters inbetween. For the A, B and D
+  formats, the expected input format is exactly the same as returned
+  by T-R with the same format character; for the I format the day of
+  week is ignored and calculated based on the date instead.
 
   The possible formats are:
    - "A"SCII: "SUN. 01/20/08 01:23:45 PM"+CHR$(13)
       The day-of-week string can be any of "SUN.", "MON.", "TUES", "WED.",
       "THUR", "FRI.", "SAT.". The year field is modulo 100.
+
    - "B"CD or "D"ecimal:
      Both these formats use 9 bytes to specify the time. For BCD everything
      is BCD-encoded, for Decimal the numbers are sent/parsed as-is.
@@ -254,6 +257,17 @@ Supported commands:
            8: CHR$(13)
 
       When the time is set a year less than 80 is interpreted as 20xx.
+
+   - "I"SO 8601 subset: "2008-01-20T13:23:45 SUN"+CHR$(13)
+     This format complies with ISO 8601 and adds a day of week
+     abbreviation using the same table as the A format, but omitting
+     the fourth character. When it is used with T-W, anything beyond
+     the seconds field is ignored and the day of week is calculated
+     based on the specified date. The year must always be specified
+     including the century if this format is used to set the time.
+     To save space, sd2iec only accepts this particular date/time
+     representation when setting the time with T-WI and no other ISo
+     8601-compliant representation.
 
 - U0
   Device address changing with "U0>"+chr$(new address) is supported,

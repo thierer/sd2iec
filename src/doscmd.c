@@ -1586,6 +1586,25 @@ static void parse_timeread(void) {
     *ptr   = 13;
     break;
 
+  case 'I': /* ISO 8601 format plus DOW */
+    buffers[ERRORBUFFER_IDX].lastused = 23;
+    ptr = appendnumber(ptr, 19 + (time.tm_year / 100));
+    ptr = appendnumber(ptr, time.tm_year % 100);
+    *ptr++ = '-';
+    ptr = appendnumber(ptr, time.tm_mon + 1);
+    *ptr++ = '-';
+    ptr = appendnumber(ptr, time.tm_mday);
+    *ptr++ = 'T';
+    ptr = appendnumber(ptr, time.tm_hour);
+    *ptr++ = ':';
+    ptr = appendnumber(ptr, time.tm_min);
+    *ptr++ = ':';
+    ptr = appendnumber(ptr, time.tm_sec);
+    *ptr   = ' ';
+    memcpy_P(error_buffer + 20, downames + 4*time.tm_wday, 3);
+    error_buffer[23] = 13;
+    break;
+
   default: /* Unknown format */
     set_error(ERROR_SYNTAX_UNKNOWN);
     break;
@@ -1594,6 +1613,14 @@ static void parse_timeread(void) {
 
 /* --- T-W --- */
 static void parse_timewrite(void) {
+
+  /* day of week calculation by M. Keith and T. Craver via */
+  /* https://en.wikipedia.org/wiki/Determination_of_the_day_of_the_week */
+  uint8_t day_of_week(uint16_t y, uint8_t m, uint8_t d) {
+    y += 1900;
+    return (d+=m<3?y--:y-2,23*m/9+d+4+y/4-y/100+y/400)%7;
+  }
+
   struct tm time;
   uint8_t i, *ptr;
 
@@ -1613,7 +1640,7 @@ static void parse_timewrite(void) {
     }
     time.tm_wday = i;
     ptr = command_buffer + 9;
-    time.tm_mon  = parse_number(&ptr)-1;
+    time.tm_mon  = parse_number(&ptr);
     ptr++;
     time.tm_mday = parse_number(&ptr);
     ptr++;
@@ -1640,7 +1667,7 @@ static void parse_timewrite(void) {
     }
     time.tm_wday = command_buffer[4];
     time.tm_year = bcd2int(command_buffer[5]);
-    time.tm_mon  = bcd2int(command_buffer[6])-1;
+    time.tm_mon  = bcd2int(command_buffer[6]);
     time.tm_mday = bcd2int(command_buffer[7]);
     time.tm_hour = bcd2int(command_buffer[8]);
     /* Hour range is 1-12, change 12:xx to 0:xx for easier conversion */
@@ -1659,7 +1686,7 @@ static void parse_timewrite(void) {
     }
     time.tm_wday = command_buffer[4];
     time.tm_year = command_buffer[5];
-    time.tm_mon  = command_buffer[6]-1;
+    time.tm_mon  = command_buffer[6];
     time.tm_mday = command_buffer[7];
     time.tm_hour = command_buffer[8];
     /* Hour range is 1-12, change 12:xx to 0:xx for easier conversion */
@@ -1671,10 +1698,34 @@ static void parse_timewrite(void) {
       time.tm_hour += 12;
     break;
 
+  case 'I': /* ISO 8601 format, calculated day of week */
+    if (command_length < 23) {
+      set_error(ERROR_SYNTAX_UNABLE);
+      return;
+    }
+
+    ptr = command_buffer + 4;
+    time.tm_year = parse_number(&ptr) - 1900;
+    ptr++;
+    time.tm_mon  = parse_number(&ptr);
+    ptr++;
+    time.tm_mday = parse_number(&ptr);
+    ptr++;
+    time.tm_hour = parse_number(&ptr);
+    ptr++;
+    time.tm_min  = parse_number(&ptr);
+    ptr++;
+    time.tm_sec  = parse_number(&ptr);
+    time.tm_wday = day_of_week(time.tm_year, time.tm_mon, time.tm_mday);
+    break;
+
   default: /* Unknown format */
     set_error(ERROR_SYNTAX_UNKNOWN);
     return;
   }
+
+  /* final adjustment of month to 0-11 range */
+  time.tm_mon--;
 
   /* Y2K fix for legacy apps */
   if (time.tm_year < 80)

@@ -371,8 +371,8 @@ uint8_t parse_path(uint8_t *in, path_t *path, uint8_t **name, uint8_t parse_alwa
 
 
 /* Parse a decimal number at str and return a pointer to the following char */
-uint8_t parse_number(uint8_t **str) {
-  uint8_t res = 0;
+uint16_t parse_number(uint8_t **str) {
+  uint16_t res = 0;
 
   /* Skip leading spaces */
   while (**str == ' ') (*str)++;

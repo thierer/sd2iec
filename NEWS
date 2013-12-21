@@ -7,6 +7,7 @@
         - explicit PETSCII marker in swaplists
         - load previous file when "*" is used
         - redirect C128 boot sector to bootsect.128 on FAT
+        - ISO8601-like format for T-R and T-W
 
 2011-12-18 - release 0.10.2
         - Bugfix: End of generated raw directory was incorrect

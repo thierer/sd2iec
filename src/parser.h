@@ -60,7 +60,7 @@ uint8_t parse_path(uint8_t *in, path_t *path, uint8_t **name, uint8_t parse_alwa
 uint8_t check_invalid_name(uint8_t *name);
 
 /* Parse a decimal number at str and return a pointer to the following char */
-uint8_t parse_number(uint8_t **str);
+uint16_t parse_number(uint8_t **str);
 
 /* parse CMD-style dates */
 uint8_t parse_date(date_t *date, uint8_t **str);
