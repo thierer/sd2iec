@@ -69,6 +69,9 @@ enum {
   RXTX_WHEELS_2MHZ,
   RXTX_WHEELS44_1541,
   RXTX_WHEELS44_1581,
+
+  RXTX_FC3OF_PAL,
+  RXTX_FC3OF_NTSC,
 };
 
 typedef uint8_t (*fastloader_rx_t)(void);
@@ -92,6 +95,10 @@ static const PROGMEM struct fastloader_rxtx_s fl_rxtx_table[] = {
   [RXTX_WHEELS44_1581] = { wheels44_get_byte_2mhz, wheels44_send_byte_2mhz },
 # endif
 #endif
+#ifdef CONFIG_LOADER_FC3
+  [RXTX_FC3OF_PAL]     = { NULL, fc3_oldfreeze_pal_send  },
+  [RXTX_FC3OF_NTSC]    = { NULL, fc3_oldfreeze_ntsc_send },
+#endif
 };
 
 struct fastloader_crc_s {
@@ -111,6 +118,8 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
   { 0x1b30, FL_FC3_SAVE,         RXTX_NONE          }, // note: really early CRC; lots of C64 code at the end
   { 0x8b0e, FL_FC3_SAVE,         RXTX_NONE          }, // variation
   { 0x9930, FL_FC3_FREEZED,      RXTX_NONE          },
+  { 0x0281, FL_FC3_OLDFREEZED,   RXTX_FC3OF_PAL     }, // older freezed-file loader, PAL
+  { 0xc196, FL_FC3_OLDFREEZED,   RXTX_FC3OF_NTSC    }, // older freezed-file loader, NTSC
 #endif
 #ifdef CONFIG_LOADER_DREAMLOAD
   { 0x2e69, FL_DREAMLOAD,        RXTX_NONE          },
@@ -187,6 +196,8 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
   { 0x059c, FL_FC3_SAVE,         save_fc3,       0 },
   { 0x059a, FL_FC3_SAVE,         save_fc3,       0 }, // variation
   { 0x0403, FL_FC3_FREEZED,      load_fc3,       1 },
+  { 0x057f, FL_FC3_OLDFREEZED,   load_fc3oldfreeze, 0},
+
 #endif
 #ifdef CONFIG_LOADER_DREAMLOAD
   { 0x0700, FL_DREAMLOAD,        load_dreamload, 0 },

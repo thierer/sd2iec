@@ -137,6 +137,60 @@ which means that the fixed delays between tuples can be dropped.
 The freeze-loader closes and reopens the data file using the standard
 protocol after the fast protocol has finished transmitting the file.
 
+
+Old Fastloader in freezed files
+===============================
+Some older versions of the Final Cartridge 3 appear to use a different
+fast loader in freezed files. This has been confirmed for a cartridge
+ROM that reports itself as "SEP 1987", Disk Operations V1.0. This
+particular loader is a simple 2-bit fastloader using the following
+timing tables:
+
+PAL:
+   Time  Clock Data
+   ----------------
+    0us  0->1  (1)  (timing reference)
+   14us   !b0  !b1
+   22us   !b2  !b3
+   30us   !b4  !b5
+   38us   !b6  !b7
+   46us    1    0   (busy marker)
+
+NTSC:
+   Time  Clock Data
+   ----------------
+    0us  0->1  (1)  (timing reference)
+   14us   !b0  !b1
+   24us   !b2  !b3
+   34us   !b4  !b5
+   44us   !b6  !b7
+   52us    1    0   (busy marker)
+
+The timing reference check on the clock line should be implemented as
+an actual check for a transition as the C64 sets the clock line low 53
+cycles (PAL) after the timing reference - if the sending device is fast
+enough, a simple check for clock high will misread the busy marker at
+the end as a start signal for the next byte.
+
+Sectors are read in sequence, only the data is transferred. Upon
+start and between the transmission of two bytes, the loader sets clock
+high, data low as "busy" marker. It appears that this loader does not
+transmit any end-of-file indication. No specific file is opened,
+instead the transfer starts with the last track/sector that was
+accessed which should correspond to the file open on secondary address
+0. The specific specs for a file transfer are as follows:
+
+- set clock high, data low
+- read current sector
+- transmit all bytes in file:
+  - set clock and data high
+  - (maybe delay clock check until 17us after clock/data high)
+  - wait until clock is high
+  - follow timing table above
+- exit (implicitly resets clock/data to high)
+
+
+
 EXOS V3
 =======
 The protocol used by the EXOS V3 kernal by J. Schemmel is exactly the same

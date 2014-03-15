@@ -50,6 +50,7 @@
 #define FL_AR6_1581_LOAD    21
 #define FL_AR6_1581_SAVE    22
 #define FL_ELOAD1           23
+#define FL_FC3_OLDFREEZED   24
 
 #ifndef __ASSEMBLER__
 
@@ -61,6 +62,7 @@ extern uint8_t (*fast_get_byte)(void);
 
 void load_turbodisk(uint8_t);
 void load_fc3(uint8_t freezed);
+void load_fc3oldfreeze(uint8_t);
 void save_fc3(uint8_t);
 void load_dreamload(uint8_t);
 void load_uload3(uint8_t);

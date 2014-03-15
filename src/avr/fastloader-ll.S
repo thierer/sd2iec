@@ -744,7 +744,104 @@ fc3_get_byte:
         com     r24     ; negate all bits
         clr     r25     ; clear hi-byte of return val
         ret
+
+
+        ;;
+        ;; Send one byte using the old FC3 freezer protocol, PAL version
+        ;;
+        .global fc3_oldfreeze_pal_send
+fc3_oldfreeze_pal_send:
+        cli
+        mov     r0, r24         ; bitpair subroutine expects data in r0
+
+        ;; clear busy signal
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA
+
+        ;; wait for start signal (clock low->high)
+1:      sbic    _SFR_IO_ADDR(IEC_INPUT), IEC_PIN_CLOCK
+        rjmp    1b
+
+2:      sbis    _SFR_IO_ADDR(IEC_INPUT), IEC_PIN_CLOCK
+        rjmp    2b
+
+        ;; send bits 0+1
+        delay_cycles 14 * 8 - 10
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; send bits 2+3
+        delay_cycles (22 - 14) * 8 - 16
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; send bits 4+5
+        delay_cycles (30 - 22) * 8 - 16
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; send bits 6+7
+        delay_cycles (38 - 30) * 8 - 16
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; hold time before re-enabling busy
+        delay_cycles (46 - 38) * 8 - 6 - 1
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_CLOCK ; 1
+        sbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA  ; 1
+        rcall   delay1us
+
+        ;; return inverted ATN state in r24
+        in      r24, _SFR_IO_ADDR(IEC_INPUT)
+        com     r24
+        andi    r24, IEC_BIT_ATN
+        sei
+        ret
+
+
+        ;;
+        ;; Send one byte using the old FC3 freezer protocol, NTSC version
+        ;;
+        .global fc3_oldfreeze_ntsc_send
+fc3_oldfreeze_ntsc_send:
+        cli
+        mov     r0, r24         ; bitpair subroutine expects data in r0
+
+        ;; clear busy signal
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA
+
+        ;; wait for start signal (clock low->high)
+1:      sbic    _SFR_IO_ADDR(IEC_INPUT), IEC_PIN_CLOCK
+        rjmp    1b
+
+2:      sbis    _SFR_IO_ADDR(IEC_INPUT), IEC_PIN_CLOCK
+        rjmp    2b
+
+        ;; send bits 0+1
+        delay_cycles 14 * 8 - 10
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; send bits 2+3
+        delay_cycles (24 - 14) * 8 - 16
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; send bits 4+5
+        delay_cycles (34 - 24) * 8 - 16
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; send bits 6+7
+        delay_cycles (44 - 34) * 8 - 16
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; hold time before re-enabling busy
+        delay_cycles (52 - 44) * 8 - 6 - 1
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_CLOCK ; 1
+        sbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA  ; 1
+        rcall   delay1us
+
+        ;; return inverted ATN state in r24
+        in      r24, _SFR_IO_ADDR(IEC_INPUT)
+        com     r24
+        andi    r24, IEC_BIT_ATN
+        sei
+        ret
 #endif
+
 
 #ifdef CONFIG_LOADER_DREAMLOAD
         ;;

@@ -311,6 +311,53 @@ void save_fc3(UNUSED_PARAMETER) {
 
   cleanup_and_free_buffer(buf);
 }
+
+void load_fc3oldfreeze(UNUSED_PARAMETER) {
+  buffer_t *buf;
+  uint16_t i;
+
+  /* mark as busy */
+  set_srq(0);
+  set_clock(1);
+  set_data(0);
+
+  /* wait until C64 has finished UNLISTEN */
+  delay_us(1);
+  start_timeout(100);
+  while (!IEC_CLOCK && !has_timed_out()) ;
+
+  buf = find_buffer(0);
+
+  if (!buf) {
+    /* error */
+    return;
+  }
+
+  /* sector loop */
+  while (1) {
+    /* send sector data */
+    for (i = 2; i <= buf->lastused; i++) {
+      if (fast_send_byte(buf->data[i])) {
+        /* ATN active, abort */
+        goto done;
+      }
+    }
+
+    /* check for end of file */
+    if (buf->sendeoi)
+      break;
+
+    /* read next sector */
+    if (buf->refill(buf)) {
+      /* error */
+      break;
+    }
+  }
+
+ done:
+  cleanup_and_free_buffer(buf);
+}
+
 #endif
 
 

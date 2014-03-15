@@ -599,6 +599,60 @@ uint8_t fc3_get_byte(void) {
   return result;
 }
 
+static const generic_2bit_t fc3_oldfreeze_pal_def = {
+  .pairtimes = {140, 220, 300, 380},
+  .clockbits = {0, 2, 4, 6},
+  .databits  = {1, 3, 5, 7},
+  .eorvalue  = 0xff
+};
+
+static const generic_2bit_t fc3_oldfreeze_ntsc_def = {
+  .pairtimes = {140, 240, 340, 440},
+  .clockbits = {0, 2, 4, 6},
+  .databits  = {1, 3, 5, 7},
+  .eorvalue  = 0xff
+};
+
+static uint8_t fc3_oldfreeze_send(const uint8_t byte,
+                                  const generic_2bit_t *timingdef,
+                                  unsigned int busytime) {
+  fastloader_setup();
+  disable_interrupts();
+
+  /* clear busy */
+  set_clock(1);
+  set_data(1);
+  delay_us(15);
+  if (!IEC_ATN)
+    goto exit;
+
+  /* wait for start signal */
+  wait_clock(1, ATNABORT);
+  if (!IEC_ATN)
+    goto exit;
+
+  /* transmit data */
+  generic_load_2bit(timingdef, byte);
+
+  /* re-enable busy signal */
+  set_clock_at(busytime, 1, NO_WAIT);
+  set_data_at (busytime, 0, WAIT);
+  delay_us(1); // a little settle time for clock
+
+ exit:
+  enable_interrupts();
+  fastloader_teardown();
+  return !IEC_ATN;
+}
+
+uint8_t fc3_oldfreeze_pal_send(const uint8_t byte) {
+  return fc3_oldfreeze_send(byte, &fc3_oldfreeze_pal_def, 460);
+}
+
+uint8_t fc3_oldfreeze_ntsc_send(const uint8_t byte) {
+  return fc3_oldfreeze_send(byte, &fc3_oldfreeze_ntsc_def, 520);
+}
+
 
 /* ---------------------------- */
 /* --- Action Replay 6 1581 --- */

@@ -36,6 +36,8 @@ uint8_t jiffy_send(uint8_t value, uint8_t eoi, uint8_t loadflags);
 void clk_data_handshake(void);
 void fastloader_fc3_send_block(uint8_t *data);
 uint8_t fc3_get_byte(void);
+uint8_t fc3_oldfreeze_pal_send(uint8_t byte);
+uint8_t fc3_oldfreeze_ntsc_send(uint8_t byte);
 
 uint8_t dreamload_get_byte(void);
 void dreamload_send_byte(uint8_t byte);
