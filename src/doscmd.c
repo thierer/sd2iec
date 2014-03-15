@@ -61,6 +61,7 @@ static FIL romfile;
 
 enum {
   RXTX_NONE,
+
   RXTX_GEOS_1MHZ,
   RXTX_GEOS_2MHZ,
   RXTX_GEOS_1581_21,
@@ -71,7 +72,7 @@ enum {
 };
 
 typedef uint8_t (*fastloader_rx_t)(void);
-typedef void    (*fastloader_tx_t)(uint8_t byte);
+typedef uint8_t (*fastloader_tx_t)(uint8_t byte);
 typedef void    (*fastloader_handler_t)(uint8_t param);
 
 struct fastloader_rxtx_s {
@@ -1248,16 +1249,14 @@ static void handle_memwrite(void) {
   if (loader != FL_NONE) {
     detected_loader = loader;
 
-#ifdef CONFIG_LOADER_GEOS
     uint8_t index;
 
     index = pgm_read_word(&crcptr->rxtx);
 
-    if (index != 0) {
-      geos_get_byte  = (fastloader_rx_t)pgm_read_word(&(fl_rxtx_table[index].rxfunc));
-      geos_send_byte = (fastloader_tx_t)pgm_read_word(&(fl_rxtx_table[index].txfunc));
+    if (index != RXTX_NONE) {
+      fast_get_byte  = (fastloader_rx_t)pgm_read_word(&(fl_rxtx_table[index].rxfunc));
+      fast_send_byte = (fastloader_tx_t)pgm_read_word(&(fl_rxtx_table[index].txfunc));
     }
-#endif
   }
 
   /* partially capture uploaded data */

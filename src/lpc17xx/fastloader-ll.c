@@ -970,16 +970,19 @@ static void geos_send_generic(uint8_t byte, const generic_2bit_t *timingdef, uns
   fastloader_teardown();
 }
 
-void geos_send_byte_1mhz(uint8_t byte) {
+uint8_t geos_send_byte_1mhz(uint8_t byte) {
   geos_send_generic(byte, &geos_1mhz_send_def, 19);
+  return 0;
 }
 
-void geos_send_byte_2mhz(uint8_t byte) {
+uint8_t geos_send_byte_2mhz(uint8_t byte) {
   geos_send_generic(byte, &geos_2mhz_send_def, 22);
+  return 0;
 }
 
-void geos_send_byte_1581_21(uint8_t byte) {
+uint8_t geos_send_byte_1581_21(uint8_t byte) {
   geos_send_generic(byte, &geos_1581_21_send_def, 12);
+  return 0;
 }
 
 
@@ -1036,12 +1039,14 @@ static const generic_2bit_t wheels44_2mhz_send_def = {
   .eorvalue  = 0
 };
 
-void wheels_send_byte_1mhz(uint8_t byte) {
+uint8_t wheels_send_byte_1mhz(uint8_t byte) {
   geos_send_generic(byte, &wheels_1mhz_send_def, 22);
+  return 0;
 }
 
-void wheels44_send_byte_2mhz(uint8_t byte) {
+uint8_t wheels44_send_byte_2mhz(uint8_t byte) {
   geos_send_generic(byte, &wheels44_2mhz_send_def, 15);
+  return 0;
 }
 
 

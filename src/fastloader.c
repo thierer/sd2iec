@@ -54,6 +54,11 @@
 
 uint8_t detected_loader;
 
+/* Function pointer to the current byte transmit/receive functions */
+/* (to simplify loaders with multiple variations of these)         */
+uint8_t (*fast_send_byte)(uint8_t byte);
+uint8_t (*fast_get_byte)(void);
+
 /* track to load, used as a kind of jobcode */
 volatile uint8_t fl_track;
 
@@ -907,10 +912,6 @@ void load_epyxcart(UNUSED_PARAMETER) {
  */
 #ifdef CONFIG_LOADER_GEOS
 
-/* Function pointer to the current byte transmit function */
-void (*geos_send_byte)(uint8_t byte);
-uint8_t (*geos_get_byte)(void);
-
 /* Receive a fixed-length data block */
 static void geos_receive_datablock(void *data_, uint16_t length) {
   uint8_t *data = (uint8_t*)data_;
@@ -921,7 +922,7 @@ static void geos_receive_datablock(void *data_, uint16_t length) {
     while (!IEC_CLOCK);
     set_data(1);
     while (length--)
-      *data-- = geos_get_byte();
+      *data-- = fast_get_byte();
     set_data(0);
   }
 }
@@ -948,7 +949,7 @@ static void geos_receive_lenblock(uint8_t *data) {
 
   ATOMIC_BLOCK(ATOMIC_FORCEON) {
     set_data(1);
-    length = geos_get_byte();
+    length = fast_get_byte();
     set_data(0);
   }
 
@@ -966,7 +967,7 @@ static void geos_transmit_byte_wait(uint8_t byte) {
     set_data(1);
 
     /* Send byte */
-    geos_send_byte(byte);
+    fast_send_byte(byte);
     set_clock(1);
     set_data(0);
   }
@@ -986,7 +987,7 @@ static void geos_transmit_buffer_s3(uint8_t *data, uint16_t len) {
     data += len - 1;
 
     while (i--) {
-      geos_send_byte(*data--);
+      fast_send_byte(*data--);
     }
 
     set_clock(1);
@@ -1305,7 +1306,7 @@ static void wheels44_transmit_buffer(uint8_t *data, uint16_t len) {
     data += len - 1;
 
     while (i--) {
-      geos_send_byte(*data--);
+      fast_send_byte(*data--);
     }
 
     set_clock(1);
@@ -1328,7 +1329,7 @@ static void wheels_transmit_byte_wait(uint8_t byte) {
       set_data(1);
 
       /* Send byte */
-      geos_send_byte(byte);
+      fast_send_byte(byte);
       set_clock(1);
       set_data(1);
 
@@ -1368,7 +1369,7 @@ static void wheels_receive_datablock(void *data_, uint16_t length) {
     while (!IEC_CLOCK) ;
     set_data(1);
     while (length--)
-      *data-- = geos_get_byte();
+      *data-- = fast_get_byte();
 
     if (detected_loader == FL_WHEELS44_S2 ||
         detected_loader == FL_WHEELS44_S2_1581)

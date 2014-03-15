@@ -1129,7 +1129,7 @@ geos_send_byte_common:
 
         ;;
         ;; send a byte using the GEOS 1MHz protocol
-        ;; called with byte in r24, no return value
+        ;; called with byte in r24, return value undefined
         ;;
         .global geos_send_byte_1mhz
 geos_send_byte_1mhz:
@@ -1148,7 +1148,7 @@ geos_send_byte_1mhz:
 
         ;;
         ;; send a byte using the GEOS 2MHz protocol
-        ;; called with byte in r24, no return value
+        ;; called with byte in r24, return value undefined
         ;;
         .global geos_send_byte_2mhz
 geos_send_byte_2mhz:
@@ -1215,7 +1215,7 @@ geos_send_byte_tail:
 
         ;;
         ;; send a byte using the 2MHz 1581 Configure 2.1 GEOS protocol
-        ;; called with byte in r24, no return value
+        ;; called with byte in r24, return value undefined
         ;;
         .global geos_send_byte_1581_21
 geos_send_byte_1581_21:
@@ -1257,7 +1257,7 @@ geos_send_byte_1581_21:
 #ifdef CONFIG_LOADER_WHEELS
         ;;
         ;; send a byte using the Wheels protocol
-        ;; called with byte in r24, no return value
+        ;; called with byte in r24, return value undefined
         ;;
         .global wheels_send_byte_1mhz
 wheels_send_byte_1mhz:
@@ -1462,7 +1462,7 @@ wheels44_get_byte_2mhz:
 
         ;;
         ;; send a byte using the Wheels 4.4 2MHz protocol
-        ;; called with byte in r24, no return value
+        ;; called with byte in r24, return value undefined
         ;;
         .global wheels44_send_byte_2mhz
 wheels44_send_byte_2mhz:
