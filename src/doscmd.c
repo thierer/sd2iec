@@ -1260,6 +1260,7 @@ static void handle_memwrite(void) {
   if (loader != FL_NONE) {
     detected_loader = loader;
 
+#ifdef CONFIG_HAVE_IEC
     uint8_t index;
 
     index = pgm_read_word(&crcptr->rxtx);
@@ -1268,6 +1269,7 @@ static void handle_memwrite(void) {
       fast_get_byte  = (fastloader_rx_t)pgm_read_word(&(fl_rxtx_table[index].rxfunc));
       fast_send_byte = (fastloader_tx_t)pgm_read_word(&(fl_rxtx_table[index].txfunc));
     }
+#endif
   }
 
   /* partially capture uploaded data */
