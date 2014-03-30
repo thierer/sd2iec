@@ -23,6 +23,7 @@
 
 */
 
+#include <stdbool.h>
 #include <string.h>
 #include "config.h"
 #include "buffers.h"
@@ -78,9 +79,9 @@ static void confirm_blink(uint8_t type) {
 static uint8_t mount_line(void) {
   FRESULT res;
   UINT bytesread;
-  uint8_t i,*str,*strend;
+  uint8_t i,*str,*strend, *buffer_start;
   uint16_t curpos;
-
+  bool got_colon = false;
   uint8_t olderror = current_error;
   current_error = ERROR_OK;
 
@@ -89,10 +90,11 @@ static uint8_t mount_line(void) {
 
   curpos = 0;
   strend = NULL;
+  buffer_start = command_buffer + 1;
   globalflags |= SWAPLIST_ASCII;
 
   for (i=0;i<=linenum;i++) {
-    str = command_buffer;
+    str = buffer_start;
 
     res = f_lseek(&swaplist,curpos);
     if (res != FR_OK) {
@@ -100,14 +102,14 @@ static uint8_t mount_line(void) {
       return 0;
     }
 
-    res = f_read(&swaplist, str, CONFIG_COMMAND_BUFFER_SIZE, &bytesread);
+    res = f_read(&swaplist, str, CONFIG_COMMAND_BUFFER_SIZE - 1, &bytesread);
     if (res != FR_OK) {
       parse_error(res,1);
       return 0;
     }
 
     /* Terminate string in buffer */
-    if (bytesread < CONFIG_COMMAND_BUFFER_SIZE)
+    if (bytesread < CONFIG_COMMAND_BUFFER_SIZE - 1)
       str[bytesread] = 0;
 
     if (bytesread == 0) {
@@ -124,7 +126,13 @@ static uint8_t mount_line(void) {
     }
 
     /* Skip name */
-    while (*str != '\r' && *str != '\n') str++;
+    got_colon = false;
+
+    while (*str != '\r' && *str != '\n') {
+      if (*str == ':')
+        got_colon = true;
+      str++;
+    }
 
     strend = str;
 
@@ -133,14 +141,14 @@ static uint8_t mount_line(void) {
 
     /* check for PETSCII marker */
     if (curpos == 0) {
-      if (!memcmp_P(command_buffer, petscii_marker, sizeof(petscii_marker))) {
+      if (!memcmp_P(buffer_start, petscii_marker, sizeof(petscii_marker))) {
         /* swaplist is in PETSCII, ignore this line */
         globalflags &= ~SWAPLIST_ASCII;
         i--;
       }
     }
 
-    curpos += str - command_buffer;
+    curpos += str - buffer_start;
   }
 
   /* Terminate file name */
@@ -154,12 +162,18 @@ static uint8_t mount_line(void) {
   display_current_part(current_part);
   partition[current_part].current_dir = swappath.dir;
 
+  /* add a colon if neccessary */
+  if (!got_colon && buffer_start[0] != '/') {
+    command_buffer[0] = ':';
+    buffer_start = command_buffer;
+  }
+
   /* recode entry if neccessary */
   if (globalflags & SWAPLIST_ASCII)
-    asc2pet(command_buffer);
+    asc2pet(buffer_start);
 
   /* parse and change */
-  do_chdir(command_buffer);
+  do_chdir(buffer_start);
 
   if (current_error != 0 && current_error != ERROR_DOSVERSION) {
     current_error = olderror;
