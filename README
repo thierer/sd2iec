@@ -670,33 +670,54 @@ file is assumed to be the record length.
 Changing Disk Images
 ====================
 Because some programs require more than one disk side there is support
-for changing the currently mounted disk image with a button connected
-to the disk change pin.
+for changing the currently mounted disk image with two buttons called
+NEXT and PREV connected to the AVR.
 
-If your circuit doesn't have a disk change pin/button you might be able to
-add it yourself:
-- For the original MMC2IEC:
-  Connect a button from PA4 to ground. PA4 is pin 36 on the DIL version
-  of the controller or pin 33 on the surface-mount version.
-- For Shadowolf's MMC2IEC 1.x PCBs:
-  Connect a button from PC4 to ground. PC4 is pin 23 on the DIL version
-  of the controller or pin 23 on the surface-mount version.
+If your circuit doesn't have disk change pins/buttons you might be able to
+add it yourself. In all cases the buttons need to connect the given
+pins of the chip to ground.
+
+- For the original MMC2IEC ("larsp"):
+  The NEXT button is in input PA4, the PREV button is on PA5.
+  PA4 is pin 36 on the DIL version of the controller or pin 33 on the
+  surface-mount version. PA5 is pin 35 on DIL, pin 32 on SMD.
+
+- For Shadowolf's MMC2IEC 1.x PCBs ("sw1"):
+  The NExT button is on input PC4, the PREV button is on PC3.
+  PC4 is pin 26 on the DIL version of the controller or pin 23 on the
+  surface-mount version. PC3 is pin 25 on DIL, pin 22 on SMD.
+
+- For Shadowolf's sd2iec 1.x PCBs ("sw2"):
+  The two required pins are available on the pin header which runs
+  parallel to the long side of the board. In the documentation of the
+  board, the NEXT button is named "DISKSWITCH", the PREV button is
+  named "RESERVE".
+
 - Any other circuit without disk change pin on a convenient connector
   somewhere and no button dedicated to that function: Please check
   with the supplier of the board and read config.h in the sources
   to find out how to connect it.
 
-To use this functionality, create a text file that lists the file
-names of all disk images you want to swap between, one per line.
-The file names are parsed in the same way as the CD command, so you
-can include a path to the image if desired. The swap list can
-use either ASCII or PETSCII character encoding. If it uses PETSCII
-encoding, the very first line must exactly be "#PETSCII"
-(in hex: 23 50 45 54 53 43 49 49). Blank lines are ignored,
-any combination of carriage return (0d) and line feed (0a)
-are acceptable as line ending.
+To use this functionality, you can either create a swap list file
+yourself or let sd2iec create one for you.
 
-Examples:
+Creating a swap list
+--------------------
+A swap list is a text file with one line per disk image or directory
+you want to be able to change into. You are not limited to using disk
+images, a swap list file may also refer to standard directories on the
+SD card or anything else the CD command of sd2iec will accept.
+
+The swap list file is relatively tolerant against multiple styles of
+line-endings, sd2iec should be able to parse the file no matter if you
+create it on a Windows system, Unix or even the C64 itself - as a side
+effect, empty lines are also ignored. By default sd2iec assumes that
+the file is encoded in ASCII (for files created on a PC or similar),
+but if the first line of the file exactly reads "#PETSCII" (in hex: 23
+50 45 54 53 43 49 49), file names are assumed to be encoded in PETSCII
+instead and this marker line is skipped.
+
+An example swap list file could look like this:
 === example 1 ===
 FOO.D64
 BAR.D64
@@ -710,50 +731,62 @@ BAZ.D64
 //NEATGAME/:DISK2B.D64
 === end of example 2 ===
 
-The swap list is enabled by sending "XS:filename" over the command channel
-with filename being the name of the image list you created, parsed
-in the same way as any other file name.
+The swap list is enabled by sending "XS:filename" over the command
+channel with filename being the name of the swap list. A list
+activated in this way stays active until you explicitly disable it
+again by sending "XS" on the command channel or you manually activate
+another swap list with "XS:otherfilename".
 
-After sending XS the first image in the list is automatically
-mounted. To switch to the next image in the list, push the button
-which will be called NEXT from here on.
-If the new image was mounted successfully both LEDs will blink twice.
-When you've reached the last image in the list pushing NEXT will
-mount the first image again. All of this is completely compatible with
-normal image mounting/unmounting, so you can unmount the disk image
-any time you want and resume the mount cycle later by pushing the
-button.
+Since the manual activation of swap lists is still a bit of a hassle,
+sd2iec will automatically try to activate a swap list named
+"AUTOSWAP.LST" in the current directory if you use the disk change
+buttons while no swap list is active. A swap list enabled in this way
+behaves almost exactly as a swap list enabled with XS, but it
+auto-deactivates when a CD (change directory) command is received by
+sd2iec. This way a different AUTOSWAP.LST file is always correctly
+recognized after you have changed into a different directory.
 
-Due to the way this feature is implemented you are not limited to a
-swap list containing just D64 images, M2I and even FAT directories
-will work too.  FIXME: Does that still work?
+sd2iec can even auto-generate a swap list for you that contains all
+disk images (e.g. D64/D71/D81/DNP) in the current directory if no
+AUTOSWAP.LST is present in this directory. To do so, change into the
+directory that you want scanned and use the HOME function (see below).
+sd2iec will then create a file called AUTOSWAP.GEN and activate it as
+if it was the standard AUTOSWAP.LST, including its auto-deactivation
+features. The AUTOSWAP.GEN file will never be recognized the same way
+as AUTOSWAP.LST, so you will need to either rename the file
+(R:AUTOSWAP.LST=AUTOSWAP.GEN) or ask sd2iec to generate it again by
+using the HOME function in the same directory if you want to use it
+again. This mode of operation was chosen to avoid the accidental
+destruction of pre-existing AUTOSWAP.LST files and to allow sd2iec to
+recognize newly-added disk images in the directory without manually
+removing the generated swap list.
 
-If you press the button when no list has been set before or when the
-previous list was cleared by sending XS the software will look for a
-file called AUTOSWAP.LST in the current (FAT-)directory and use this
-as the current swap list until you deactivate it or manually change
-the directory (otherwise an AUTOSWAP.LST in the new directory would be
-ignored until you send XS, killing the nice "it just works" feeling).
+Please note that using the swap-list auto generation feature will
+currently leave an empty AUTOSWAP.GEN file on the card if no disk
+images were found. This may be fixed in the future.
 
-FIXME: Integrate the following into the preceding
+Using a swap list
+-----------------
+Navigation in a swap list is really simple: Press the NEXT button to
+activate the next line of the file or the PREV button to activate the
+previous line of the file. Both of these buttons wrap to the other end
+of the file if they hit the beginning/end of the list. You can also
+hit both buttons together to trigger the HOME function which jumps to
+the first entry of the swap list.
 
-The second disk change button (called PREV) is on
-- PA5 for LarsP
-- PC3 for Shadowolf's MMC2IEC 1.x
-- PC2 for Shadowolf's sd2iec 1.x ("Reserve" on the header)
-- PG4 for uIEC
+sd2iec will confirm each of these three actions with a specific
+flashing pattern on the device's LEDs. The pattern first flashed both
+the red and green LEDs on for a short moment, then it flashes either
+one or both of them. For the NEXT function, the green LED flashes; for
+the PREV function the red LED flashes and for HOME both LEDs flash.
 
-Either of those buttons will trigger the use of AUTOSWAP.LST,
-mounting either the first (NEXT) or last (PREV) entry listed
-in the file.
-If a swap list is already active, the NEXT button will switch
-to the next image in the list, the PREV button will switch
-to the previous image in the list and pushing both buttons
-together will switch to the first image in the list.
+If any of these three functions is activated without an active swap
+list and sd2iec finds an AUTOSWAP.LST file, they will all be treated
+as the HOME function: The first line of the file is active and the
+red and green LEDs both flash twice. The same happens when an
+AUTOSWAP.GEN file is created, although the flashing pattern may not be
+very discernible because of the preceding card activity.
 
-The confirmation blink is red+green followed by
-green for "next", by red for "previous" and by
-red+green for "first".
 
 Sleep Mode:
 ===========

@@ -41,8 +41,9 @@
 #include "ustring.h"
 #include "diskchange.h"
 
-static const char PROGMEM autoswap_name[]   = "AUTOSWAP.LST";
-static const char PROGMEM petscii_marker[8] = "#PETSCII";
+static const char PROGMEM autoswap_lst_name[] = "AUTOSWAP.LST";
+static const char PROGMEM autoswap_gen_name[] = "AUTOSWAP.GEN"; // FIXME: must be 15 chars or less
+static const char PROGMEM petscii_marker[8]   = "#PETSCII";
 
 static FIL     swaplist;
 static path_t  swappath;
@@ -183,6 +184,77 @@ static uint8_t mount_line(void) {
   return 1;
 }
 
+/**
+ * create_changelist - create a swap list in a directory
+ * @path    : path where the swap list should be created
+ * @filename: name of the swap list file
+ *
+ * This function creates a swap list in @path by scanning that
+ * directory and writing the names of all disk images it finds
+ * into @filename. Returns nonzero if at least one image was found.
+ */
+static uint8_t create_changelist(path_t *path, uint8_t *filename) {
+  FRESULT res;
+  FILINFO finfo;
+  DIR dh;
+  FIL fh;
+  UINT byteswritten;
+  uint8_t *name;
+  uint8_t found = 0;
+
+  /* open directory */
+  res = l_opendir(&partition[path->part].fatfs, path->dir.fat, &dh);
+  if (res != FR_OK)
+    return 0;
+
+  /* open file */
+  res = f_open(&partition[path->part].fatfs, &fh, filename, FA_WRITE | FA_CREATE_ALWAYS);
+  if (res != FR_OK)
+    return 0;
+
+  /* scan directory */
+  set_busy_led(1);
+  finfo.lfn = entrybuf;
+
+  while (1) {
+    res = f_readdir(&dh, &finfo);
+    if (res != FR_OK)
+      break;
+
+    if (finfo.fname[0] == 0)
+      break;
+
+    if (!(finfo.fattrib & AM_DIR)) {
+      if (check_imageext(finfo.fname) == IMG_IS_DISK) {
+        /* write the name of disk image to file */
+        found = 1;
+
+        if (entrybuf[0] != 0)
+          name = entrybuf;
+        else
+          name = finfo.fname;
+
+        res = f_write(&fh, name, ustrlen(name), &byteswritten);
+        if (res != FR_OK || byteswritten == 0)
+          break;
+
+        /* add line terminator */
+        finfo.fname[0] = 0x0d;
+        finfo.fname[1] = 0x0a;
+        res = f_write(&fh, finfo.fname, 2, &byteswritten);
+        if (res != FR_OK || byteswritten == 0)
+          break;
+      }
+    }
+  }
+
+  f_close(&fh);
+
+  set_busy_led(0);
+
+  return found;
+}
+
 static void set_changelist_internal(path_t *path, uint8_t *filename, uint8_t at_end) {
   FRESULT res;
 
@@ -228,23 +300,36 @@ void change_disk(void) {
   if (swaplist.fs == NULL) {
     /* No swaplist active, try using AUTOSWAP.LST */
     /* change_disk is called from the IEC idle loop, so entrybuf is free */
-    ustrcpy_P(entrybuf, autoswap_name);
+    ustrcpy_P(entrybuf, autoswap_lst_name);
     path.dir  = partition[current_part].current_dir;
     path.part = current_part;
     if (key_pressed(KEY_PREV))
       set_changelist_internal(&path, entrybuf, 1);
     else
       set_changelist_internal(&path, entrybuf, 0);
-    reset_key(0xff); // <- lazy
 
     if (swaplist.fs == NULL) {
-      /* No swap list found, clear error and exit */
+      /* No swap list found, create one if key was "home" */
+      if (key_pressed(KEY_HOME)) {
+        uint8_t swapname[16]; // FIXME: magic constant
+
+        ustrcpy_P(swapname, autoswap_gen_name);
+
+        if (create_changelist(&path, swapname)) {
+          set_changelist_internal(&path, swapname, 0);
+          globalflags |= AUTOSWAP_ACTIVE;
+        }
+      }
+
+      /* reset error and exit */
       set_error(ERROR_OK);
+      reset_key(0xff); // <- lazy
       return;
     } else {
       /* Autoswaplist found, mark it as active                */
       /* and exit because the first image is already mounted. */
       globalflags |= AUTOSWAP_ACTIVE;
+      reset_key(0xff); // <- lazy
       return;
     }
   }
