@@ -30,7 +30,7 @@
 #include "buffers.h"
 #include "diskio.h"
 #include "display.h"
-#include "eeprom.h"
+#include "eeprom-conf.h"
 #include "fatops.h"
 #include "flags.h"
 #include "led.h"

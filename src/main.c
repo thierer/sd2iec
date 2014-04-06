@@ -31,7 +31,7 @@
 #include "diskchange.h"
 #include "diskio.h"
 #include "display.h"
-#include "eeprom.h"
+#include "eeprom-conf.h"
 #include "errormsg.h"
 #include "fatops.h"
 #include "ff.h"

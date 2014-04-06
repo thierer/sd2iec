@@ -19,7 +19,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-   eeprom.c: Persistent configuration storage
+   eeprom-conf.c: Persistent configuration storage
 
 */
 
@@ -32,7 +32,7 @@
 #include "iec.h"
 #include "timer.h"
 #include "ustring.h"
-#include "eeprom.h"
+#include "eeprom-conf.h"
 
 uint8_t rom_filename[ROM_NAME_LENGTH+1];
 

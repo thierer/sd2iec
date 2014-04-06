@@ -19,12 +19,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-   eeprom.h: Persistent configuration storage
+   eeprom-conf.h: Persistent configuration storage
 
 */
 
-#ifndef EEPROM_H
-#define EEPROM_H
+#ifndef EEPROM_CONF_H
+#define EEPROM_CONF_H
 
 #define ROM_NAME_LENGTH 16
 

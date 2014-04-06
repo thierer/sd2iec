@@ -26,7 +26,7 @@
 #include <string.h>
 #include "config.h"
 #include "buffers.h"
-#include "eeprom.h"
+#include "eeprom-conf.h"
 #include "fatops.h"
 #include "i2c.h"
 #include "iec.h"
