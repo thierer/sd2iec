@@ -80,8 +80,8 @@ Supported commands:
     CD/foo/bar   dito
 
   You can use wildcards anywhere in the path. To change into an M2I or D64
-  image the image file must be named after the :, it will not be recognized
-  otherwise.
+  image the image file must be the last component in the path, either
+  after a slash or a colon character.
 
   MD uses a syntax similiar to CD and will create the directory listed
   after the colon (:) relative to any directory listed before it.

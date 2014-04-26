@@ -263,23 +263,25 @@ int8_t first_match(path_t *path, uint8_t *matchstr, uint8_t type, cbmdirent_t *d
 
 /**
  * parse_path - parse CMD style directory specification
- * @in          : input buffer
- * @path        : pointer to path object
- * @name        : pointer to pointer to filename (may be NULL)
- * @parse_always: force parsing even if no : is present in the input string
+ * @in    : input buffer
+ * @path  : pointer to path object
+ * @name  : pointer to pointer to filename (may be NULL)
+ * @for_cd: parse path from CD command
  *
  * This function parses a CMD style directory specification in the input
  * buffer. If successful, the path object will be set up for accessing
  * the path named in the input buffer. Returns 0 if successful or 1 if an
  * error occured.
+ * If @for_cd is true, no colon is required in the input string and parsing
+ * is ended successfully if the last component in the path is an image file.
  */
-uint8_t parse_path(uint8_t *in, path_t *path, uint8_t **name, uint8_t parse_always) {
+uint8_t parse_path(uint8_t *in, path_t *path, uint8_t **name, uint8_t for_cd) {
   cbmdirent_t dent;
   uint8_t *end;
   uint8_t saved;
   uint8_t part;
 
-  if (parse_always || ustrchr(in, ':')) {
+  if (for_cd || ustrchr(in, ':')) {
     /* Skip partition number */
     part=parse_partition(&in);
     if(part>=max_part) {
@@ -335,8 +337,14 @@ uint8_t parse_path(uint8_t *in, path_t *path, uint8_t **name, uint8_t parse_alwa
           if ((dent.typeflags & TYPE_MASK) != TYPE_DIR) {
             /* Not a directory */
             /* FIXME: Try to mount as image here so they can be accessed like a directory */
-            set_error(ERROR_FILE_NOT_FOUND_39);
-            return 1;
+            if (for_cd && saved == 0 && check_imageext(in) != IMG_UNKNOWN) {
+              /* no further path components, last one is an image file */
+              *name = in;
+              return 0;
+            } else {
+              set_error(ERROR_FILE_NOT_FOUND_39);
+              return 1;
+            }
           }
 
           /* Match found, move path */
