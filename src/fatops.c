@@ -662,9 +662,9 @@ FRESULT create_file(path_t *path, cbmdirent_t *dent, uint8_t type, buffer_t *buf
   else
 #endif
   {
-    ustrcpy(entrybuf, dent->name);
-    x00ext = build_name(entrybuf,type);
-    name = entrybuf;
+    ustrcpy(ops_scratch, dent->name);
+    x00ext = build_name(ops_scratch, type);
+    name = ops_scratch;
   }
 
   partition[path->part].fatfs.curr_dir = path->dir.fat;
@@ -691,17 +691,17 @@ FRESULT create_file(path_t *path, cbmdirent_t *dent, uint8_t type, buffer_t *buf
     if(x00ext != NULL) {
       /* Write a [PSUR]00 header */
 
-      memset(entrybuf, 0, P00_HEADER_SIZE);
-      ustrcpy_P(entrybuf, p00marker);
-      memcpy(entrybuf+P00_CBMNAME_OFFSET, dent->name, CBM_NAME_LENGTH);
+      memset(ops_scratch, 0, P00_HEADER_SIZE);
+      ustrcpy_P(ops_scratch, p00marker);
+      memcpy(ops_scratch+P00_CBMNAME_OFFSET, dent->name, CBM_NAME_LENGTH);
       if(recordlen)
-        entrybuf[P00_RECORDLEN_OFFSET] = recordlen;
+        ops_scratch[P00_RECORDLEN_OFFSET] = recordlen;
       buf->pvt.fat.headersize = P00_HEADER_SIZE;
     } else if(recordlen) {
-      entrybuf[0] = recordlen;
+      ops_scratch[0] = recordlen;
       buf->pvt.fat.headersize = 1;
     }
-    res = f_write(&buf->pvt.fat.fh, entrybuf, buf->pvt.fat.headersize, &byteswritten);
+    res = f_write(&buf->pvt.fat.fh, ops_scratch, buf->pvt.fat.headersize, &byteswritten);
     if (res != FR_OK || byteswritten != buf->pvt.fat.headersize) {
       return res;
     }
@@ -774,7 +774,7 @@ void fat_open_rel(path_t *path, cbmdirent_t *dent, buffer_t *buf, uint8_t length
   if(!mode) {
     res = create_file(path, dent, TYPE_REL, buf, length);
     bytesread = 1;
-    entrybuf[0] = length;
+    ops_scratch[0] = length;
   } else {
     partition[path->part].fatfs.curr_dir = path->dir.fat;
     res = f_open(&partition[path->part].fatfs, &buf->pvt.fat.fh, dent->pvt.fat.realname, FA_WRITE | FA_READ | FA_OPEN_EXISTING);
@@ -784,9 +784,9 @@ void fat_open_rel(path_t *path, cbmdirent_t *dent, buffer_t *buf, uint8_t length
       }
       if(res == FR_OK)
         /* read record length */
-        res = f_read(&buf->pvt.fat.fh, entrybuf, 1, &bytesread);
+        res = f_read(&buf->pvt.fat.fh, ops_scratch, 1, &bytesread);
       if(!length)
-        length = entrybuf[0];
+        length = ops_scratch[0];
     }
   }
 
@@ -806,7 +806,7 @@ void fat_open_rel(path_t *path, cbmdirent_t *dent, buffer_t *buf, uint8_t length
   stick_buffer(buf);
 
   /* read the first record */
-  if(!fat_file_read(buf) && length != entrybuf[0])
+  if (!fat_file_read(buf) && length != ops_scratch[0])
     set_error(ERROR_RECORD_MISSING);
 }
 
@@ -841,7 +841,7 @@ int8_t fat_readdir(dh_t *dh, cbmdirent_t *dent) {
   uint8_t *ptr,*nameptr;
   uint8_t typechar;
 
-  finfo.lfn = entrybuf;
+  finfo.lfn = ops_scratch;
 
   do {
     res = f_readdir(&dh->dir.fat, &finfo);
@@ -900,15 +900,15 @@ int8_t fat_readdir(dh_t *dh, cbmdirent_t *dent) {
         if (res != FR_OK)
           goto notp00;
 
-        res = f_read(&partition[dh->part].imagehandle, entrybuf, P00_HEADER_SIZE, &bytesread);
+        res = f_read(&partition[dh->part].imagehandle, ops_scratch, P00_HEADER_SIZE, &bytesread);
         if (res != FR_OK)
           goto notp00;
 
-        if (ustrcmp_P(entrybuf, p00marker))
+        if (ustrcmp_P(ops_scratch, p00marker))
           goto notp00;
 
         /* Copy the internal name - dent->name is still zeroed */
-        ustrcpy(dent->name, entrybuf+P00_CBMNAME_OFFSET);
+        ustrcpy(dent->name, ops_scratch + P00_CBMNAME_OFFSET);
 
         /* Some programs pad the name with 0xa0 instead of 0 */
         ptr = dent->name;
@@ -1053,11 +1053,11 @@ uint8_t fat_chdir(path_t *path, cbmdirent_t *dent) {
   if (dent->name[0] == '_' && dent->name[1] == 0) {
     FILINFO finfo;
 
-    entrybuf[0] = '.';
-    entrybuf[1] = '.';
-    entrybuf[2] = 0;
+    ops_scratch[0] = '.';
+    ops_scratch[1] = '.';
+    ops_scratch[2] = 0;
 
-    res = f_stat(&partition[path->part].fatfs, entrybuf, &finfo);
+    res = f_stat(&partition[path->part].fatfs, ops_scratch, &finfo);
     if (res != FR_OK) {
       parse_error(res,1);
       return 1;
@@ -1179,9 +1179,9 @@ uint8_t fat_getdirlabel(path_t *path, uint8_t *label) {
   DIR dh;
   FILINFO finfo;
   FRESULT res;
-  uint8_t *name = entrybuf;
+  uint8_t *name = ops_scratch;
 
-  finfo.lfn = entrybuf;
+  finfo.lfn = ops_scratch;
   memset(label, ' ', CBM_NAME_LENGTH);
 
   res = l_opendir(&partition[path->part].fatfs, path->dir.fat, &dh);
@@ -1404,9 +1404,9 @@ void fat_rename(path_t *path, cbmdirent_t *dent, uint8_t *newname) {
     switch (check_extension(dent->pvt.fat.realname, &ext)) {
     case EXT_IS_TYPE:
       /* Keep type extension */
-      ustrcpy(entrybuf, newname);
-      build_name(entrybuf, dent->typeflags & TYPE_MASK);
-      res = f_rename(&partition[path->part].fatfs, dent->pvt.fat.realname, entrybuf);
+      ustrcpy(ops_scratch, newname);
+      build_name(ops_scratch, dent->typeflags & TYPE_MASK);
+      res = f_rename(&partition[path->part].fatfs, dent->pvt.fat.realname, ops_scratch);
       if (res != FR_OK)
         parse_error(res, 0);
       break;
@@ -1507,8 +1507,8 @@ uint8_t image_unmount(uint8_t part) {
 
     path.part    = part;
     path.dir.fat = partition[part].current_dir.fat;
-    fat_getdirlabel(&path, entrybuf);
-    display_current_directory(part,entrybuf);
+    fat_getdirlabel(&path, ops_scratch);
+    display_current_directory(part, ops_scratch);
   }
 
   partition[part].fop = &fatops;

@@ -214,7 +214,7 @@ static uint8_t create_changelist(path_t *path, uint8_t *filename) {
 
   /* scan directory */
   set_busy_led(1);
-  finfo.lfn = entrybuf;
+  finfo.lfn = ops_scratch;
 
   while (1) {
     res = f_readdir(&dh, &finfo);
@@ -229,8 +229,8 @@ static uint8_t create_changelist(path_t *path, uint8_t *filename) {
         /* write the name of disk image to file */
         found = 1;
 
-        if (entrybuf[0] != 0)
-          name = entrybuf;
+        if (ops_scratch[0] != 0)
+          name = ops_scratch;
         else
           name = finfo.fname;
 
@@ -299,14 +299,14 @@ void change_disk(void) {
 
   if (swaplist.fs == NULL) {
     /* No swaplist active, try using AUTOSWAP.LST */
-    /* change_disk is called from the IEC idle loop, so entrybuf is free */
-    ustrcpy_P(entrybuf, autoswap_lst_name);
+    /* change_disk is called from the IEC idle loop, so ops_scratch is free */
+    ustrcpy_P(ops_scratch, autoswap_lst_name);
     path.dir  = partition[current_part].current_dir;
     path.part = current_part;
     if (key_pressed(KEY_PREV))
-      set_changelist_internal(&path, entrybuf, 1);
+      set_changelist_internal(&path, ops_scratch, 1);
     else
-      set_changelist_internal(&path, entrybuf, 0);
+      set_changelist_internal(&path, ops_scratch, 0);
 
     if (swaplist.fs == NULL) {
       /* No swap list found, create one if key was "home" */

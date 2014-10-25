@@ -378,7 +378,7 @@ static void save_capbuffer(void) {
   FIL datafile;
 
   /* Use CRC and counter as file name */
-  ptr = byte_to_hex(datacrc >> 8, entrybuf);
+  ptr = byte_to_hex(datacrc >> 8, ops_scratch);
   ptr = byte_to_hex(datacrc & 0xff, ptr);
   *ptr++ = '-';
   ptr = byte_to_hex(capture_count++, ptr);
@@ -388,7 +388,7 @@ static void save_capbuffer(void) {
   *ptr++ = 'p';
   *ptr   = 0;
 
-  FRESULT res = f_open(&partition[0].fatfs, &datafile, entrybuf, FA_WRITE | FA_CREATE_ALWAYS);
+  FRESULT res = f_open(&partition[0].fatfs, &datafile, ops_scratch, FA_WRITE | FA_CREATE_ALWAYS);
   if (res == FR_OK) {
     UINT byteswritten;
 
@@ -1019,11 +1019,11 @@ static void parse_getpartition(void) {
 
   /* Read partition label */
   memset(ptr, 0xa0, 16);
-  if (disk_label(part, entrybuf)) {
+  if (disk_label(part, ops_scratch)) {
     return;
   }
 
-  uint8_t *inptr  = entrybuf;
+  uint8_t *inptr  = ops_scratch;
   uint8_t *outptr = ptr;
   while (*inptr)
     *outptr++ = *inptr++;

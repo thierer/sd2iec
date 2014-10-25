@@ -50,11 +50,11 @@
 /* ------------------------------------------------------------------------- */
 
 /**
- * name_repad - changes CBM name padding in entrybuf
+ * name_repad - changes CBM name padding in ops_scratch
  * @oldchar: char to be substituted
  * @newchar: char to be substituded with
  *
- * This function changes the padding of the CBM name in entrybuf from oldchar
+ * This function changes the padding of the CBM name in ops_scratch from oldchar
  * to newchar. Please note that strnsubst is not a straigt replacement for
  * this function.
  */
@@ -62,34 +62,34 @@ static void name_repad(uint8_t oldchar, uint8_t newchar) {
   uint8_t i = CBM_NAME_LENGTH-1;
   uint8_t *str;
 
-  str = entrybuf+M2I_CBMNAME_OFFSET;
+  str = ops_scratch + M2I_CBMNAME_OFFSET;
   while (i > 0 && str[i] == oldchar)
     str[i--] = newchar;
 }
 
 /**
- * parsetype - change type letter to CBM filetype in entrybuf
+ * parsetype - change type letter to CBM filetype in ops_scratch
  *
- * This function replaces the type letter in the M2I line in entrybuf
+ * This function replaces the type letter in the M2I line in ops_scratch
  * with a CBM file type. Returns 1 for deleted or unknown type letters,
  * 0 otherwise.
  */
 static uint8_t parsetype(void) {
-  switch (entrybuf[0] | 0x20) { /* Lowercase the letter */
+  switch (ops_scratch[0] | 0x20) { /* Lowercase the letter */
   case 'd':
-    entrybuf[0] = TYPE_DEL;
+    ops_scratch[0] = TYPE_DEL;
     return 0;
 
   case 's':
-    entrybuf[0] = TYPE_SEQ;
+    ops_scratch[0] = TYPE_SEQ;
     return 0;
 
   case 'p':
-    entrybuf[0] = TYPE_PRG;
+    ops_scratch[0] = TYPE_PRG;
     return 0;
 
   case 'u':
-    entrybuf[0] = TYPE_USR;
+    ops_scratch[0] = TYPE_USR;
     return 0;
 
   default:
@@ -98,18 +98,18 @@ static uint8_t parsetype(void) {
 }
 
 /**
- * load_entry - load M2I entry at offset into entrybuf
+ * load_entry - load M2I entry at offset into ops_scratch
  * @part  : partition number
  * @offset: offset in M2I file to be loaded
  *
- * This function loads the M2I line at offset into entrybuf and zero-
+ * This function loads the M2I line at offset into ops_scratch and zero-
  * terminates the FAT name within.  Returns 0 if successful, 1 at
  * end of file or 255 on error.
  */
 static uint8_t load_entry(uint8_t part, uint16_t offset) {
   uint8_t i;
 
-  i = image_read(part, offset, entrybuf, M2I_ENTRY_LEN);
+  i = image_read(part, offset, ops_scratch, M2I_ENTRY_LEN);
 
   if (i > 1)
     return 255;
@@ -120,8 +120,8 @@ static uint8_t load_entry(uint8_t part, uint16_t offset) {
 
   /* Be nice and zero-terminate the FAT filename */
   i = 0;
-  while (entrybuf[M2I_FATNAME_OFFSET+i] != ' ' && i < M2I_FATNAME_LEN) i++;
-  entrybuf[M2I_FATNAME_OFFSET+i] = 0;
+  while (ops_scratch[M2I_FATNAME_OFFSET + i] != ' ' && i < M2I_FATNAME_LEN) i++;
+  ops_scratch[M2I_FATNAME_OFFSET + i] = 0;
 
   return 0;
 }
@@ -149,7 +149,7 @@ static uint16_t find_empty_entry(uint8_t part) {
         return pos;
     }
 
-    if (entrybuf[0] == '-')
+    if (ops_scratch[0] == '-')
       return pos;
 
     pos += M2I_ENTRY_LEN;
@@ -179,7 +179,7 @@ static void open_existing(path_t *path, cbmdirent_t *dent, uint8_t type, buffer_
     return;
   }
 
-  ustrcpy(dent->pvt.fat.realname, entrybuf+M2I_FATNAME_OFFSET);
+  ustrcpy(dent->pvt.fat.realname, ops_scratch + M2I_FATNAME_OFFSET);
 
   if (appendflag)
     fat_open_write(path, dent, type, buf, 1);
@@ -219,18 +219,18 @@ static int8_t m2i_readdir(dh_t *dh, cbmdirent_t *dent) {
       continue;
 
     dent->opstype   = OPSTYPE_M2I;
-    dent->typeflags = entrybuf[0];
+    dent->typeflags = ops_scratch[0];
 
     /* Copy CBM file name */
     name_repad(' ', 0);
-    memcpy(dent->name, entrybuf+M2I_CBMNAME_OFFSET, CBM_NAME_LENGTH);
+    memcpy(dent->name, ops_scratch + M2I_CBMNAME_OFFSET, CBM_NAME_LENGTH);
 
     /* Get file size */
     if (dent->typeflags != TYPE_DEL) {
       /* Let's annoy some users */
       FILINFO finfo;
 
-      FRESULT res = f_stat(&partition[dh->part].fatfs, entrybuf+M2I_FATNAME_OFFSET, &finfo);
+      FRESULT res = f_stat(&partition[dh->part].fatfs, ops_scratch + M2I_FATNAME_OFFSET, &finfo);
       if (res != FR_OK) {
         if (res == FR_NO_FILE)
           continue;
@@ -298,8 +298,8 @@ static void m2i_open_write(path_t *path, cbmdirent_t *dent, uint8_t type, buffer
     if (offset < M2I_ENTRY_OFFSET)
       return;
 
-    memset(entrybuf, ' ', sizeof(entrybuf));
-    str = entrybuf;
+    memset(ops_scratch, ' ', sizeof(ops_scratch));
+    str = ops_scratch;
 
     switch (type & TYPE_MASK) {
     case TYPE_DEL:
@@ -336,9 +336,9 @@ static void m2i_open_write(path_t *path, cbmdirent_t *dent, uint8_t type, buffer
 
       finfo.lfn = NULL;
       /* See if it's already there */
-      res = f_stat(&partition[path->part].fatfs, entrybuf+M2I_FATNAME_OFFSET, &finfo);
+      res = f_stat(&partition[path->part].fatfs, ops_scratch + M2I_FATNAME_OFFSET, &finfo);
       if (res == FR_OK) {
-        str = entrybuf+M2I_FATNAME_OFFSET+7;
+        str = ops_scratch + M2I_FATNAME_OFFSET+7;
         /* Increment name */
         while (1) {
           if (++(*str) > '9') {
@@ -355,21 +355,21 @@ static void m2i_open_write(path_t *path, cbmdirent_t *dent, uint8_t type, buffer
 
     /* Copy the CBM file name */
     nameptr = dent->name;
-    str = entrybuf+M2I_CBMNAME_OFFSET;
+    str = ops_scratch + M2I_CBMNAME_OFFSET;
     while (*nameptr)
       *str++ = *nameptr++;
 
     /* Update dent with the new FAT name */
-    ustrcpy(dent->pvt.fat.realname, entrybuf+M2I_FATNAME_OFFSET);
+    ustrcpy(dent->pvt.fat.realname, ops_scratch + M2I_FATNAME_OFFSET);
 
     /* Finish creating the M2I entry */
-    entrybuf[M2I_FATNAME_OFFSET+8]  = ' ';
-    entrybuf[M2I_FATNAME_OFFSET+12] = ':';
-    entrybuf[M2I_CBMNAME_OFFSET+CBM_NAME_LENGTH] = 13;
-    entrybuf[M2I_CBMNAME_OFFSET+CBM_NAME_LENGTH+1] = 10;
+    ops_scratch[M2I_FATNAME_OFFSET + 8]  = ' ';
+    ops_scratch[M2I_FATNAME_OFFSET + 12] = ':';
+    ops_scratch[M2I_CBMNAME_OFFSET + CBM_NAME_LENGTH] = 13;
+    ops_scratch[M2I_CBMNAME_OFFSET + CBM_NAME_LENGTH + 1] = 10;
 
     /* Write it */
-    if (image_write(path->part, offset, entrybuf, M2I_ENTRY_LEN, 1))
+    if (image_write(path->part, offset, ops_scratch, M2I_ENTRY_LEN, 1))
       return;
 
     /* Write the actual file - always without P00 header */
@@ -378,8 +378,8 @@ static void m2i_open_write(path_t *path, cbmdirent_t *dent, uint8_t type, buffer
     /* Abort on error */
     if (current_error) {
       /* No error checking here. Either it works or everything has failed. */
-      entrybuf[0] = '-';
-      image_write(path->part, offset, entrybuf, 1, 1);
+      ops_scratch[0] = '-';
+      image_write(path->part, offset, ops_scratch, 1, 1);
     }
   }
 }
@@ -396,11 +396,11 @@ static uint8_t m2i_delete(path_t *path, cbmdirent_t *dent) {
     return 255;
 
   /* Ignore the result, we'll have to delete the entry anyway */
-  ustrcpy(dent->name, entrybuf+M2I_FATNAME_OFFSET);
+  ustrcpy(dent->name, ops_scratch + M2I_FATNAME_OFFSET);
   fat_delete(path, dent);
 
-  entrybuf[0] = '-';
-  if (image_write(path->part, offset, entrybuf, 1, 1))
+  ops_scratch[0] = '-';
+  if (image_write(path->part, offset, ops_scratch, 1, 1))
     return 0;
   else
     return 1;
@@ -420,16 +420,16 @@ static void m2i_rename(path_t *path, cbmdirent_t *dent, uint8_t *newname) {
 
   /* Re-load the entry because load_entry modifies it */
   /* Assume this never fails because load_entry was successful */
-  image_read(path->part, offset, entrybuf, M2I_ENTRY_LEN);
+  image_read(path->part, offset, ops_scratch, M2I_ENTRY_LEN);
 
   /* Copy the new filename */
-  ptr = entrybuf+M2I_CBMNAME_OFFSET;
+  ptr = ops_scratch + M2I_CBMNAME_OFFSET;
   memset(ptr, ' ', CBM_NAME_LENGTH);
   while (*newname)
     *ptr++ = *newname++;
 
   /* Write new entry */
-  image_write(path->part, offset, entrybuf, M2I_ENTRY_LEN, 1);
+  image_write(path->part, offset, ops_scratch, M2I_ENTRY_LEN, 1);
 
   update_leds();
 }

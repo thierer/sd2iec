@@ -32,7 +32,7 @@
 #include "buffers.h"
 
 dh_t    matchdh;
-uint8_t entrybuf[33];
+uint8_t ops_scratch[33];
 
 /// One additional buffer structure for channel 15
 buffer_t buffers[CONFIG_BUFFER_COUNT+1];
