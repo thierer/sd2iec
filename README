@@ -478,8 +478,46 @@ get strange characters on the other system because the LFN use
 unicode characters on disk, but sd2iec parses only the low byte
 of each character in the name.
 
-Partition:
-==========
+EEPROM file system
+==================
+*WARNING*: The EEPROM file system is a newly-implemented file system
+that may still contain bugs. Do not store data on it that you cannot
+affort to lose. Always make sure that you have a backup. Also, the
+format may change in later releases, so please expect that the
+partition may need to be erased in the future.
+
+Devices running sd2iec always have an EEPROM to store the system
+configuration, but on some devices this EEPROM is much larger than
+required. To utilize the empty space on these devices (currently any
+microcontroller with at least 128K of flash), a special EEPROM file
+system has been implemented. This can for example be used to store a
+small file browser or fast loader so it can be used independent of the
+storage medium that is currently inserted.
+
+The EEPROM file system will always register itself on the last
+partition number (see "Partitions" below). You can check the list of
+partitions ("$=P") to find the current partition number of the EEPROM
+file system or use the alias function (see below) to access it.
+
+To simplify calculations, block numbers on the EEPROMFS are calculated
+using 256 bytes per block instead of the usual 254 bytes as used by
+Commodore drives. Internally, the allocation is even more fine-grained
+(using 64 byte sectors), which means that the number of free blocks
+shown on an empty file system may be less than the sum of the number
+of blocks of all files on a full file system.
+
+The EEPROM file system does not support subdirectories. It can be
+formatted using the N: command as usual, but the disk name and ID are
+ignored. The capacity of the EEPROM file system varies between
+devices: On AVR devices it is 3.25 KBytes and at most 8 files can be
+stored on it. On a2iec, the file system can hold 7 KBytes and at most
+16 files can be stored on it. The actual number of files that can be
+stored depends on the length of the files, longer files need more than
+one directory entry.
+
+
+Partitions:
+===========
 sd2iec features a multi-partition support similiar to that of the CMD
 drives. The partitions (which may be on separate drives for some hardware
 configurations) are accessed using the drive number of the commands
@@ -491,6 +529,17 @@ partition 1, this can be changed by sending "CP<num>" over the command
 channel with <num> being an ASCII number from 1 to 255. "C<Shift-P"
 (0x42 0xd0) works the same, but expects a binary partition number as the
 third character of the command.
+
+To allow a "stable" access to the EEPROM file system no matter how
+many partitions are currently available, a special character has been
+introduced that will always access the EEPROM file system (if
+available). When sd2iec sees a "!" character where it expects a
+partition number and the "!" character is directly followed by a colon
+(i.e. "!:"), it will access the EEPROMFS if available. Direct access
+using the assigned partition number is of course still
+available. Additionally "$!" will always load the directory of the
+EEPROM file system partition (if available), similar to "$1" to "$9"
+for partitions 1 to 9.
 
 Software fastloaders:
 =====================
