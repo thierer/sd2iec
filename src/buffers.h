@@ -162,8 +162,14 @@ void free_buffer(buffer_t *buffer);
 uint8_t free_multiple_buffers(uint8_t flags);
 
 /* Mark a buffer as sticky */
-/* Smaller than a #define for some reason: */
-static void inline stick_buffer(buffer_t *buf) { buf->sticky = 1; }
+static void inline stick_buffer(buffer_t *buf) {
+  buf->sticky = 1;
+}
+
+/* remove sticky mark */
+static void inline unstick_buffer(buffer_t *buf) {
+  buf->sticky = 0;
+}
 
 /* Finds the buffer corresponding to a secondary address */
 /* Returns pointer to buffer on success or NULL on failure */
@@ -178,9 +184,11 @@ extern uint8_t active_buffers;
 /* Return the number of dirty buffers */
 #define get_dirty_buffer_count() (active_buffers >> 4)
 
-/* Mark a buffer as write-buffer */
+/* Mark a buffer as write-buffer and sticky it */
+// Note: inline function is smaller than external on AVR with gcc 4.8.2
 static inline void mark_write_buffer(buffer_t *buf) {
   buf->write = 1;
+  stick_buffer(buf);
 }
 
 /* Mark a buffer as dirty */

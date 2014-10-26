@@ -1458,7 +1458,6 @@ static void d64_open_write(path_t *path, cbmdirent_t *dent, uint8_t type, buffer
     buf->cleanup    = d64_write_cleanup;
     buf->seek       = d64_seek;
     mark_write_buffer(buf);
-    stick_buffer(buf);
 
     update_timestamp(ops_scratch);
     write_entry(buf->pvt.d64.part, &buf->pvt.d64.dh, ops_scratch, 1);
@@ -1509,8 +1508,6 @@ static void d64_open_write(path_t *path, cbmdirent_t *dent, uint8_t type, buffer
   buf->pvt.d64.part   = path->part;
   buf->pvt.d64.track  = t;
   buf->pvt.d64.sector = s;
-
-  stick_buffer(buf);
 }
 
 static void d64_open_rel(path_t *path, cbmdirent_t *dent, buffer_t *buf, uint8_t length, uint8_t mode) {
@@ -1960,6 +1957,7 @@ static void d64_format(uint8_t part, uint8_t *name, uint8_t *id) {
     return;
 
   mark_write_buffer(buf);
+  unstick_buffer(buf);
   mark_buffer_dirty(buf);
   memset(buf->data, 0, 256);
 

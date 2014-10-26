@@ -751,8 +751,6 @@ void fat_open_write(path_t *path, cbmdirent_t *dent, uint8_t type, buffer_t *buf
 
   /* If no data is written the file should end up with a single 0x0d byte */
   buf->data[2] = 13;
-
-  stick_buffer(buf);
 }
 
 /**
@@ -802,8 +800,6 @@ void fat_open_rel(path_t *path, cbmdirent_t *dent, buffer_t *buf, uint8_t length
   buf->cleanup   = fat_file_close;
   buf->refill    = fat_file_sync;
   buf->seek      = fat_file_seek;
-
-  stick_buffer(buf);
 
   /* read the first record */
   if (!fat_file_read(buf) && length != ops_scratch[0])

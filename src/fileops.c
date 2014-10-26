@@ -733,7 +733,6 @@ static void open_buffer(uint8_t secondary) {
       buf->cleanup   = largebuffer_cleanup;
       buf->read      = 1;
       buf->lastused  = 255;
-      stick_buffer(buf);
       mark_write_buffer(buf);
       prev = buf;
       buf = buf->pvt.buffer.next;
@@ -762,7 +761,6 @@ static void open_buffer(uint8_t secondary) {
     buf->refill           = directbuffer_refill;
     buf->pvt.buffer.first = buf;
     mark_write_buffer(buf);
-    stick_buffer(buf);
   }
   return;
 }
