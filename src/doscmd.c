@@ -40,6 +40,7 @@
 #include "fatops.h"
 #include "ff.h"
 #include "fileops.h"
+#include "filesystem.h"
 #include "flags.h"
 #include "iec.h"
 #include "led.h"
@@ -1920,7 +1921,7 @@ static void parse_xcommand(void) {
                */
               if(drive_config == 0xffffffff)
                 set_drive_config(get_default_driveconfig());
-              fatops_init(0);
+              filesystem_init(0);
             }
             break;
           default:

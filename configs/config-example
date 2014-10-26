@@ -33,6 +33,9 @@ CONFIG_HAVE_IEC=y
 # Device has old parallel IEEE 488 bus?
 #CONFIG_HAVE_IEEE=y
 
+# device has EEPROM filesystem - EEPROM should be at least 4k
+#CONFIG_HAVE_EEPROMFS=y
+
 # target architecture
 CONFIG_ARCH=avr
 

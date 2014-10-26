@@ -27,6 +27,11 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+/* disable assertions */
+#ifndef CONFIG_ASSERTIONS
+#  define NDEBUG
+#endif
+
 #include "autoconf.h"
 #include "arch-config.h"
 

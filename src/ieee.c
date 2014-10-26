@@ -39,8 +39,9 @@
 #include "diskchange.h"
 #include "diskio.h"
 #include "doscmd.h"
-#include "fileops.h"
 #include "fatops.h"
+#include "fileops.h"
+#include "filesystem.h"
 #include "led.h"
 #include "ieee.h"
 #include "fastloader.h"
@@ -544,10 +545,10 @@ static void cmd_handler (void)
       if (disk_state == DISK_CHANGED || disk_state == DISK_REMOVED) {
         free_multiple_buffers(FMB_ALL);
         change_init();
-        fatops_init(0);
+        filesystem_init(0);
       } else {
         /* Disk state indicated an error, try to recover by initialising */
-        fatops_init(1);
+        filesystem_init(1);
       }
       update_leds();
     }

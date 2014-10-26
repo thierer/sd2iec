@@ -1893,6 +1893,8 @@ void save_ar6_1581(UNUSED_PARAMETER) {
     } while (i != 0);
 
     /* Set end */
+    // FIXME: Although this works, it is not exactly clean:
+    //        The code here should update lastused and mustflush.
     if (buf->data[0] == 0) {
       buf->position = buf->data[1];
     } else

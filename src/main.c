@@ -35,6 +35,7 @@
 #include "errormsg.h"
 #include "fatops.h"
 #include "ff.h"
+#include "filesystem.h"
 #include "i2c.h"
 #include "led.h"
 #include "time.h"
@@ -84,7 +85,7 @@ int main(void) {
   disk_init();   // accesses card
   read_configuration();
 
-  fatops_init(0);
+  filesystem_init(0);
   change_init();
 
   uart_puts_P(PSTR("\r\nsd2iec " VERSION " #"));

@@ -69,6 +69,14 @@ static inline void iec_interrupts_init(void) {
 // FIXME: Add a fully-commented example configuration that
 //        demonstrates all configuration possilibilites
 
+/* EEPROMFS: offset and size must be multiples of 4 */
+/* to actually enable it, CONFIG_HAVE_EEPROMFS must be set in config */
+#  define EEPROMFS_OFFSET     512
+#  define EEPROMFS_SIZE       7680
+#  define EEPROMFS_ENTRIES    16
+#  define EEPROMFS_SECTORSIZE 64
+
+
 #if CONFIG_HARDWARE_VARIANT == 100
 /* ---------- Hardware configuration: mbed LPC1768 ---------- */
 #  define HAVE_SD

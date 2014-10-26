@@ -39,6 +39,14 @@ typedef uint8_t rawbutton_t;
 /* Interrupt handler for system tick */
 #define SYSTEM_TICK_HANDLER ISR(TIMER1_COMPA_vect)
 
+/* EEPROMFS: offset and size must be multiples of 4 */
+/* to actually enable it, CONFIG_HAVE_EEPROMFS must be set in config */
+#  define EEPROMFS_OFFSET     512
+#  define EEPROMFS_SIZE       3584
+#  define EEPROMFS_ENTRIES    8
+#  define EEPROMFS_SECTORSIZE 64
+
+
 #if CONFIG_HARDWARE_VARIANT==1
 /* ---------- Hardware configuration: Example ---------- */
 /* This is a commented example for most of the available options    */

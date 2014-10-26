@@ -26,6 +26,7 @@
 #ifndef DIRENT_H
 #define DIRENT_H
 
+#include "eeprom-fs.h"
 #include "ff.h"
 
 #define CBM_NAME_LENGTH 16
@@ -128,7 +129,8 @@ typedef enum {
   OPSTYPE_FAT_X00,  /* X00 files can never be disk images */
                     /* and should match case-sensitive    */
   OPSTYPE_M2I,
-  OPSTYPE_DXX
+  OPSTYPE_DXX,
+  OPSTYPE_EEFS
 } opstype_t;
 
 /**
@@ -212,9 +214,10 @@ typedef struct d64fh {
 typedef struct dh_s {
   uint8_t part;
   union {
-    DIR fat;
-    uint16_t m2i;
+    DIR          fat;
+    uint16_t     m2i;
     struct d64dh d64;
+    eefs_dir_t   eefs;
   } dir;
 } dh_t;
 

@@ -86,7 +86,7 @@ typedef struct buffer_s {
   uint8_t position;
   uint8_t secondary;
   uint8_t recordlen;
-  uint32_t fptr;
+  uint32_t fptr;  // FIXME: Missing from doc comment
   int     allocated:1;
   int     mustflush:1;
   int     read:1;
@@ -114,6 +114,7 @@ typedef struct buffer_s {
       uint8_t headersize;  /* offset to start of file data */
     } fat;
     d64fh_t d64;           /* File access on D64  */
+    eefs_fh_t eefh;        /* File handle for eepromfs */
     struct {
       uint8_t part;        /* partition number for $=P */
       uint8_t *matchstr;   /* Pointer to filename pattern */

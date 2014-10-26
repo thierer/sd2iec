@@ -45,6 +45,7 @@
 #include "fatops.h"
 #include "flags.h"
 #include "fileops.h"
+#include "filesystem.h"
 #include "iec-bus.h"
 #include "led.h"
 #include "system.h"
@@ -763,10 +764,10 @@ void iec_mainloop(void) {
           if (disk_state == DISK_CHANGED || disk_state == DISK_REMOVED) {
             free_multiple_buffers(FMB_ALL);
             change_init();
-            fatops_init(0);
+            filesystem_init(0);
           } else
             /* Disk state indicated an error, try to recover by initialising */
-            fatops_init(1);
+            filesystem_init(1);
 
           update_leds();
         }
