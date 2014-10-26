@@ -23,6 +23,7 @@
 
 */
 
+#include <ctype.h>
 #include <stdint.h>
 #include <string.h>
 #include "config.h"
@@ -31,6 +32,7 @@
 #include "dirent.h"
 #include "display.h"
 #include "doscmd.h"
+#include "eefs-ops.h"
 #include "errormsg.h"
 #include "fatops.h"
 #include "flags.h"
@@ -580,8 +582,16 @@ static void load_directory(uint8_t secondary) {
       /* Command string is two characters long, parse the drive */
       if (command_buffer[1] == '0')
         path.part = current_part;
-      else
+      else if (isdigit(command_buffer[1]))
         path.part = command_buffer[1] - '0' - 1;
+#ifdef CONFIG_HAVE_EEPROMFS
+      else if (command_buffer[1] == '!' && eefs_partition != 255)
+        path.part = eefs_partition;
+#endif
+      else {
+        buf->pvt.dir.matchstr = command_buffer + 1;
+        path.part = current_part;
+      }
       if (path.part >= max_part) {
         set_error(ERROR_DRIVE_NOT_READY);
         return;
@@ -846,6 +856,7 @@ void file_open(uint8_t secondary) {
     filetype = TYPE_PRG;
   }
 
+  /* check file type and mode */
   while(i++ < 2 && *ptr && (ptr = ustrchr(ptr, ','))) {
     *ptr = 0;
     ptr++;

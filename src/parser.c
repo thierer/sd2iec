@@ -23,12 +23,15 @@
 
 */
 
+#include <stdio.h>
+
 #include <ctype.h>
 #include <stdint.h>
 #include <string.h>
 #include "config.h"
 #include "dirent.h"
 #include "display.h"
+#include "eefs-ops.h"
 #include "errormsg.h"
 #include "fatops.h"
 #include "flags.h"
@@ -96,6 +99,14 @@ static uint8_t tolower_pet(uint8_t c) {
  */
 uint8_t parse_partition(uint8_t **buf) {
   uint8_t part=0;
+
+#ifdef CONFIG_HAVE_EEPROMFS
+  /* special case: recognize "!:" as alias for the eefs partition */
+  if (eefs_partition != 255 && (*buf)[0] == '!' && (*buf)[1] == ':') {
+    (*buf) += 2;
+    return eefs_partition;
+  }
+#endif
 
   while (isdigit(**buf) || **buf == ' ' || **buf == '@') {
     if(isdigit(**buf))
