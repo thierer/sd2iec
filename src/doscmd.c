@@ -322,14 +322,15 @@ static const PROGMEM uint8_t downames[] = "SUN.MON.TUESWED.THURFRI.SAT.";
 static const PROGMEM uint8_t asciitime_skel[] = " xx/xx/xx xx:xx:xx xM\r";
 #endif
 
+
+/* ------------------------------------------------------------------------- */
+/*  Drive code exec helpers                                                  */
+/* ------------------------------------------------------------------------- */
+
 #ifdef CONFIG_CAPTURE_LOADERS
 static uint8_t loader_buffer[CONFIG_CAPTURE_BUFFER_SIZE];
 static uint8_t *loader_ptr = loader_buffer;
 static uint8_t capture_count = 0;
-
-/* ------------------------------------------------------------------------- */
-/*  Capture helpers                                                          */
-/* ------------------------------------------------------------------------- */
 
 /* Convert byte to two-character hex string */
 static uint8_t *byte_to_hex(uint8_t num, uint8_t *str) {
@@ -404,8 +405,55 @@ static void save_capbuffer(void) {
   /* Notify the user */
   set_error(ERROR_DRIVE_NOT_READY);
 }
+#endif // CONFIG_CAPTURE_LOADERS
 
+static void run_loader(uint16_t address) {
+  if (detected_loader == FL_NONE) {
+    uart_puts_P(PSTR("Code exec at "));
+    uart_puthex(address >> 8);
+    uart_puthex(address & 0xff);
+    uart_puts_P(PSTR(", CRC "));
+    uart_puthex(datacrc >> 8);
+    uart_puthex(datacrc & 0xff);
+    uart_putcrlf();
+  }
+
+  if (detected_loader == FL_NONE)
+    detected_loader = previous_loader;
+
+#ifdef CONFIG_CAPTURE_LOADERS
+  if (detected_loader == FL_NONE && datacrc != 0xffff) {
+    dump_command();
+    dump_buffer_state();
+    save_capbuffer();
+  }
 #endif
+
+  /* Try to find a handler for loader */
+  const struct fastloader_handler_s *ptr = fl_handler_table;
+  uint8_t loader,parameter;
+  fastloader_handler_t handler;
+
+  while ( (loader = pgm_read_byte(&ptr->loadertype)) != FL_NONE ) {
+    if (detected_loader == loader &&
+        address == pgm_read_word(&ptr->address)) {
+      /* Found it */
+      handler   = (fastloader_handler_t)pgm_read_word(&ptr->handler);
+      parameter = pgm_read_byte(&ptr->parameter);
+
+      /* Call */
+      handler(parameter);
+
+      break;
+    }
+    ptr++;
+  }
+
+  datacrc = 0xffff;
+  previous_loader = detected_loader;
+  detected_loader = FL_NONE;
+}
+
 
 /* ------------------------------------------------------------------------- */
 /*  Parsing helpers                                                          */
@@ -1064,51 +1112,8 @@ static void handle_memexec(void) {
   if (command_length < 5)
     return;
 
-  if (detected_loader == FL_NONE) {
-    uart_puts_P(PSTR("M-E at "));
-    uart_puthex(command_buffer[4]);
-    uart_puthex(command_buffer[3]);
-    uart_puts_P(PSTR(", CRC "));
-    uart_puthex(datacrc >> 8);
-    uart_puthex(datacrc & 0xff);
-    uart_putcrlf();
-  }
-
-  if (detected_loader == FL_NONE)
-    detected_loader = previous_loader;
-
-#ifdef CONFIG_CAPTURE_LOADERS
-  if (detected_loader == FL_NONE && datacrc != 0xffff) {
-    dump_command();
-    dump_buffer_state();
-    save_capbuffer();
-  }
-#endif
-
-  /* Try to find a handler for loader */
-  const struct fastloader_handler_s *ptr = fl_handler_table;
-  uint8_t loader,parameter;
-  fastloader_handler_t handler;
-
   address = command_buffer[3] + (command_buffer[4]<<8);
-  while ( (loader = pgm_read_byte(&ptr->loadertype)) != FL_NONE ) {
-    if (detected_loader == loader &&
-        address == pgm_read_word(&ptr->address)) {
-      /* Found it */
-      handler   = (fastloader_handler_t)pgm_read_word(&ptr->handler);
-      parameter = pgm_read_byte(&ptr->parameter);
-
-      /* Call */
-      handler(parameter);
-
-      break;
-    }
-    ptr++;
-  }
-
-  datacrc = 0xffff;
-  previous_loader = detected_loader;
-  detected_loader = FL_NONE;
+  run_loader(address);
 }
 
 /* --- M-R --- */
@@ -1795,6 +1800,12 @@ static void parse_user(void) {
     command_buffer[0] = '-';
     command_buffer[1] = 'W';
     parse_block();
+    break;
+
+  case 'C': case 'D': case 'E': case 'F': case 'G': case 'H':
+  case '3': case '4': case '5': case '6': case '7': case '8':
+    /* start program in buffer */
+    run_loader(0x500 + 3 * (command_buffer[1] - '3'));
     break;
 
   case 'I':
