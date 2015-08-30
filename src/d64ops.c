@@ -1198,7 +1198,7 @@ static uint8_t d64_write_cleanup(buffer_t *buf) {
 /*  fileops-API                                                              */
 /* ------------------------------------------------------------------------- */
 
-uint8_t d64_mount(path_t *path) {
+uint8_t d64_mount(path_t *path, uint8_t *name) {
   uint8_t imagetype;
   uint8_t part = path->part;
   uint32_t fsize = partition[part].imagehandle.fsize;
@@ -1239,6 +1239,17 @@ uint8_t d64_mount(path_t *path) {
       set_error(ERROR_IMAGE_INVALID);
       return 1;
     }
+
+    /* sanity check: ignore 40-track D64 images */
+    if (fsize == 196608) {
+      uint8_t *ptr = ustrrchr(name, '.');
+
+      if (ptr[2] == '6' && ptr[3] == '4') {
+        set_error(ERROR_IMAGE_INVALID);
+        return 1;
+      }
+    }
+
     imagetype = D64_TYPE_DNP;
     memcpy_P(&partition[part].d64data, &dnpparam, sizeof(struct param_s));
     partition[part].d64data.last_track = fsize / (256*256L);

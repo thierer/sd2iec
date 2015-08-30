@@ -1097,7 +1097,7 @@ uint8_t fat_chdir(path_t *path, cbmdirent_t *dent) {
       else
 #endif
         {
-          if (d64_mount(path))
+          if (d64_mount(path, dent->pvt.fat.realname))
             return 1;
           partition[path->part].fop = &d64ops;
         }
