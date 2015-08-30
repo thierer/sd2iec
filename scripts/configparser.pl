@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 #  sd2iec - SD/MMC to Commodore serial bus interface/controller
-#  Copyright (C) 2007-2014  Ingo Korb <ingo@akana.de>
+#  Copyright (C) 2007-2015  Ingo Korb <ingo@akana.de>
 #
 #  Inspired by MMC2IEC by Lars Pontoppidan et al.
 #
