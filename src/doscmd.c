@@ -176,6 +176,9 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
   { 0x4870, FL_AR6_1581_LOAD,    RXTX_NONE          },
   { 0x2925, FL_AR6_1581_SAVE,    RXTX_NONE          },
 #endif
+#ifdef CONFIG_LOADER_MMZAK
+  { 0x12a6, FL_MMZAK,            RXTX_NONE          }, // Maniac Mansion/Zak McKracken
+#endif
 
   { 0, FL_NONE, 0 }, // end marker
 };
@@ -237,6 +240,9 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
 #ifdef CONFIG_LOADER_AR6
   { 0x0500, FL_AR6_1581_LOAD,    load_ar6_1581,  0 },
   { 0x05f4, FL_AR6_1581_SAVE,    save_ar6_1581,  0 },
+#endif
+#ifdef CONFIG_LOADER_MMZAK
+  { 0x0500, FL_MMZAK,            load_mmzak,     0 },
 #endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker

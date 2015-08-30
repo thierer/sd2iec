@@ -658,6 +658,23 @@ Note: Using sd2iec without an external crystal or similiar precise
   This loader was made for EasyProg but may also be used in other programs.
   It detects and supports the sd2iec natively.
 
+  Maniac Mansion
+  --------------
+  Original versions of Maniac Mansion have an additional copy protection
+  check that is not supported by sd2iec. Please use a cracked version
+  instead - the ones from Gamebase 64 seem to work. Please remember to
+  add an empty D64 for the save/load disk to your swaplist if you want
+  to save your game.
+
+  The game uses a captive loader that unfortunately cannot detect if it
+  should exit automatically - to resume normal operation, you need to
+  hold down the NEXT button until the red LED turns on.
+
+  Zak McKracken
+  -------------
+  Same as Maniac Mansion, but this game only has a code list protection,
+  so images of original disks should work fine.
+
 JiffyDOS:
 =========
 The JiffyDOS protocol has very relaxed timing constraints compared to

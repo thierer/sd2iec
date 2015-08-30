@@ -58,6 +58,7 @@ typedef enum {
   FL_AR6_1581_SAVE,
   FL_ELOAD1,
   FL_FC3_OLDFREEZED,
+  FL_MMZAK,
 } fastloaderid_t;
 
 extern fastloaderid_t detected_loader;
@@ -82,6 +83,7 @@ void load_wheels_s2(uint8_t);
 void load_nippon(uint8_t);
 void load_ar6_1581(uint8_t);
 void save_ar6_1581(uint8_t);
+void load_mmzak(uint8_t);
 
 int16_t dolphin_getc(void);
 uint8_t dolphin_putc(uint8_t data, uint8_t with_eoi);
