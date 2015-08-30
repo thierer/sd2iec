@@ -26,35 +26,41 @@
 #ifndef FASTLOADER_H
 #define FASTLOADER_H
 
-#define FL_NONE              0
-#define FL_TURBODISK         1
-#define FL_FC3_LOAD          2
-#define FL_FC3_SAVE          3
-#define FL_DREAMLOAD         4
-#define FL_DREAMLOAD_OLD     5
-#define FL_FC3_FREEZED       6
-#define FL_ULOAD3            7
-#define FL_GI_JOE            8
-#define FL_EPYXCART          9
-#define FL_GEOS_S1_64       10
-#define FL_GEOS_S1_128      11
-#define FL_GEOS_S23_1541    12
-#define FL_GEOS_S23_1571    13
-#define FL_GEOS_S23_1581    14
-#define FL_WHEELS_S1_64     15
-#define FL_WHEELS_S1_128    16
-#define FL_WHEELS_S2        17
-#define FL_WHEELS44_S2      18
-#define FL_WHEELS44_S2_1581 19
-#define FL_NIPPON           20
-#define FL_AR6_1581_LOAD    21
-#define FL_AR6_1581_SAVE    22
-#define FL_ELOAD1           23
-#define FL_FC3_OLDFREEZED   24
+/* these two values are needed in the assembler implementation for AVR */
+#define FLCODE_DREAMLOAD     1
+#define FLCODE_DREAMLOAD_OLD 2
 
 #ifndef __ASSEMBLER__
 
-extern uint8_t detected_loader;
+typedef enum {
+  FL_NONE          = 0,
+  FL_DREAMLOAD     = FLCODE_DREAMLOAD,
+  FL_DREAMLOAD_OLD = FLCODE_DREAMLOAD_OLD,
+  FL_TURBODISK,
+  FL_FC3_LOAD,
+  FL_FC3_SAVE,
+  FL_FC3_FREEZED,
+  FL_ULOAD3,
+  FL_GI_JOE,
+  FL_EPYXCART,
+  FL_GEOS_S1_64,
+  FL_GEOS_S1_128,
+  FL_GEOS_S23_1541,
+  FL_GEOS_S23_1571,
+  FL_GEOS_S23_1581,
+  FL_WHEELS_S1_64,
+  FL_WHEELS_S1_128,
+  FL_WHEELS_S2,
+  FL_WHEELS44_S2,
+  FL_WHEELS44_S2_1581,
+  FL_NIPPON,
+  FL_AR6_1581_LOAD,
+  FL_AR6_1581_SAVE,
+  FL_ELOAD1,
+  FL_FC3_OLDFREEZED,
+} fastloaderid_t;
+
+extern fastloaderid_t detected_loader;
 extern volatile uint8_t fl_track;
 extern volatile uint8_t fl_sector;
 extern uint8_t (*fast_send_byte)(uint8_t byte);
@@ -90,5 +96,5 @@ static inline void parallel_clear_rxflag(void) { parallel_rxflag = 0; }
 static inline void parallel_clear_rxflag(void) {}
 # endif
 
-#endif
+#endif // not assembler
 #endif

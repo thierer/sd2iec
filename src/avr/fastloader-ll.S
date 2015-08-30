@@ -73,7 +73,7 @@ IEC_ATN_INT_VECT:
 
         ; ATN is low, continue depending from active fast loader
         lds     r18, detected_loader
-        cpi     r18, FL_DREAMLOAD_OLD
+        cpi     r18, FLCODE_DREAMLOAD_OLD
         brne    iiv_not_fl_dreamload_old
         ; dreamload (old), receive a command code
         rcall   dreamload_get_command_old
@@ -95,7 +95,7 @@ iiv_atn_irq_end:
 
         ; CLOCK is low, continue depending from active fast loader
         lds     r18, detected_loader
-        cpi     r18, FL_DREAMLOAD
+        cpi     r18, FLCODE_DREAMLOAD
         brne    iiv_not_fl_dreamload
         ; dreamload, receive a command code
         rcall   dreamload_get_command
@@ -142,7 +142,7 @@ IEC_CLK_INT_VECT:
         ; CLOCK is low, continue depending from active fast loader
 #ifdef CONFIG_LOADER_DREAMLOAD
         lds     r18, detected_loader
-        cpi     r18, FL_DREAMLOAD
+        cpi     r18, FLCODE_DREAMLOAD
         brne    clk_not_fl_dreamload
         ; dreamload, receive a command code
         rcall   dreamload_get_command

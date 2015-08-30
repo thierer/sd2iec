@@ -295,7 +295,7 @@ date_t date_match_start;
 date_t date_match_end;
 
 uint16_t datacrc = 0xffff;
-static uint8_t previous_loader;
+static fastloaderid_t previous_loader;
 
 /* partial fastloader data capture */
 static uint16_t  capture_address, capture_remain;
