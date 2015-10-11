@@ -39,7 +39,7 @@ use feature ':5.10';
 # also works for arrays
 sub basename(\[$@]) {
     my $param = shift;
-    my $_;
+    local $_;
 
     if (ref $param eq "SCALAR") {
         return (File::Spec->splitpath($$param))[2];
@@ -62,10 +62,9 @@ sub parse_string($) {
 # returns a list of the config files passed on the command line
 sub config_files() {
     my @list = ();
-    my $_;
 
-    foreach (@ARGV) {
-        push @list, split /,/;
+    foreach my $f (@ARGV) {
+        push @list, split /,/, $f;
     }
     return @list;
 }
@@ -75,7 +74,6 @@ sub parse_config() {
     my $confname = "";
     my $prefix   = "";
     my %configitems;
-    my $_;
 
     $configitems{CONFFILES} = "";
     foreach my $file (config_files()) {
@@ -90,33 +88,21 @@ sub parse_config() {
             $line =~ s/^\s+//;
             $line =~ s/\s+$//;
 
-            given ($line) {
-                when (/^#/) { # skip comments
-                    next;
-                }
-
-                when (/^$/) { # skip empty lines
-                    next;
-                }
-
-                when (/^NAME_OVERRIDE\s*=\s*(.*)$/) {
-                    $curname = parse_string($1);
-                }
-
-                when (/^NAME_PREFIX\s*=\s*(.*)$/) {
-                    $prefix = parse_string($1);
-                }
-
-                when (/^(CONFIG_[^ ]+)\s*=\s*([^#]+)/) {
-                    my $item  = $1;
-                    my $value = $2;
-                    $value =~ s/\s*$//;
-                    $configitems{$item} = $value;
-                }
-
-                default {
-                    say "Warning: Cannot parse line $. of file $file";
-                }
+            if ($line =~ /^#/) { # skip comments
+                next;
+            } elsif ($line =~ /^$/) { # skip empty lines
+                next;
+            } elsif ($line =~ /^NAME_OVERRIDE\s*=\s*(.*)$/) {
+                $curname = parse_string($1);
+            } elsif ($line =~ /^NAME_PREFIX\s*=\s*(.*)$/) {
+                $prefix = parse_string($1);
+            } elsif ($line =~ /^(CONFIG_[^ ]+)\s*=\s*([^#]+)/) {
+                my $item  = $1;
+                my $value = $2;
+                $value =~ s/\s*$//;
+                $configitems{$item} = $value;
+            } else {
+                say "Warning: Cannot parse line $. of file $file";
             }
         }
         close FD;
@@ -135,7 +121,6 @@ sub generate_files($$) {
     my $tgt_header  = shift;
     my $tgt_makeinc = shift;
     my %configitems;
-    my $_;
 
     (undef, %configitems) = parse_config();
 
@@ -155,19 +140,19 @@ sub generate_files($$) {
     say HEADER "#ifndef $configguard";
     say HEADER "#define $configguard\n";
 
-    foreach (sort keys %configitems) {
-        next if lc($configitems{$_}) eq "n";
+    foreach my $ci (sort keys %configitems) {
+        next if lc($configitems{$ci}) eq "n";
 
-        if (lc($configitems{$_}) eq "y") {
-            say HEADER "#define $_";
-            say MAKE   "$_=y";
+        if (lc($configitems{$ci}) eq "y") {
+            say HEADER "#define $ci";
+            say MAKE   "$ci=y";
         } else {
-            if ($configitems{$_} =~ / /) {
-                say HEADER "#define $_ \"$configitems{$_}\"";
+            if ($configitems{$ci} =~ / /) {
+                say HEADER "#define $ci \"$configitems{$ci}\"";
             } else {
-                say HEADER "#define $_ $configitems{$_}";
+                say HEADER "#define $ci $configitems{$ci}";
             }
-            say MAKE "$_=$configitems{$_}";
+            say MAKE "$ci=$configitems{$ci}";
         }
     }
 
@@ -203,18 +188,15 @@ GetOptions(
 
 pod2usage(1) if $run_mode eq "help";
 
-given($run_mode) {
-    when("") {
-        pod2usage(-message => "ERROR: No run mode specified",
-                  -verbose => 2, -exitval => 2, -noperldoc => 1);
-    }
-
-    when("help") {
-        pod2usage(-verbose => 2, -exitval => 0, -noperldoc => 1);
-    }
-
-    when("confdata") { generate_confdata(); }
-    when("genfiles") { generate_files($tgt_header, $tgt_makeinc); }
+if ($run_mode eq "") {
+    pod2usage(-message => "ERROR: No run mode specified",
+              -verbose => 2, -exitval => 2, -noperldoc => 1);
+} elsif ($run_mode eq "help") {
+    pod2usage(-verbose => 2, -exitval => 0, -noperldoc => 1);
+} elsif ($run_mode eq "confdata") {
+    generate_confdata();
+} elsif ($run_mode eq "genfiles") {
+    generate_files($tgt_header, $tgt_makeinc);
 }
 
 =head1 SYNOPSIS
