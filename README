@@ -466,8 +466,6 @@ The B-P command supports a third parameter that holds the high byte
 of the buffer position, For example, "B-P 9 4 1" positions to byte
 260 (1*256+4) of the buffer on secondary address 9.
 
-No command is implemented at this time which uses large buffers.
-
 Long File Names:
 ================
 Long file names (i.e names not within the 8.3 limits) are supported on
