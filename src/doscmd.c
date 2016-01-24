@@ -694,6 +694,11 @@ static void parse_block(void) {
     if (params[1] == 0)
       params[1] = current_part;
 
+    if (params[1] >= max_part) {
+      set_error(ERROR_DRIVE_NOT_READY);
+      return;
+    }
+
     if (*str == 'R') {
       read_sector(buf,params[1],params[2],params[3]);
       if (command_buffer[0] == 'B') {
