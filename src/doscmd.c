@@ -179,6 +179,9 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
 #ifdef CONFIG_LOADER_MMZAK
   { 0x12a6, FL_MMZAK,            RXTX_NONE          }, // Maniac Mansion/Zak McKracken
 #endif
+#ifdef CONFIG_LOADER_GIJOE
+  { 0x0c92, FL_GI_JOE,           RXTX_NONE          }, // hacked-up GI Joe loader seen in an Eidolon crack
+#endif
 
   { 0, FL_NONE, 0 }, // end marker
 };
