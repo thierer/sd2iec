@@ -693,17 +693,8 @@ static void parse_block(void) {
       return;
     }
 
-    /* Use current partition for 0 */
-    if (params[1] == 0)
-      params[1] = current_part;
-
-    if (params[1] >= max_part) {
-      set_error(ERROR_DRIVE_NOT_READY);
-      return;
-    }
-
     if (*str == 'R') {
-      read_sector(buf,params[1],params[2],params[3]);
+      read_sector(buf, buf->pvt.buffer.part, params[2], params[3]);
       if (command_buffer[0] == 'B') {
         buf->position = 1;
         buf->lastused = buf->data[0];
@@ -714,7 +705,7 @@ static void parse_block(void) {
     } else {
       if (command_buffer[0] == 'B')
         buf->data[0] = buf->position-1; // FIXME: Untested, verify!
-      write_sector(buf,params[1],params[2],params[3]);
+      write_sector(buf, buf->pvt.buffer.part, params[2], params[3]);
     }
     break;
 

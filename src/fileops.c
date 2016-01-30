@@ -738,11 +738,12 @@ static void open_buffer(uint8_t secondary) {
       return;
 
     do {
-      buf->secondary = BUFFER_SEC_CHAIN - secondary;
-      buf->refill    = directbuffer_refill;
-      buf->cleanup   = largebuffer_cleanup;
-      buf->read      = 1;
-      buf->lastused  = 255;
+      buf->secondary       = BUFFER_SEC_CHAIN - secondary;
+      buf->refill          = directbuffer_refill;
+      buf->cleanup         = largebuffer_cleanup;
+      buf->read            = 1;
+      buf->lastused        = 255;
+      buf->pvt.buffer.part = current_part; // for completeness, not needed for large buffers yet
       mark_write_buffer(buf);
       prev = buf;
       buf = buf->pvt.buffer.next;
@@ -761,12 +762,13 @@ static void open_buffer(uint8_t secondary) {
     if (!buf)
       return;
 
-    buf->secondary = secondary;
-    buf->read      = 1;
-    buf->position  = 1;  /* Sic! */
-    buf->lastused  = 255;
-    buf->sendeoi   = 1;
+    buf->secondary        = secondary;
+    buf->read             = 1;
+    buf->position         = 1;  /* Sic! */
+    buf->lastused         = 255;
+    buf->sendeoi          = 1;
     buf->pvt.buffer.size  = 1;
+    buf->pvt.buffer.part  = current_part;
     /* directbuffer_refill is used to check for # buffers in iec.c */
     buf->refill           = directbuffer_refill;
     buf->pvt.buffer.first = buf;

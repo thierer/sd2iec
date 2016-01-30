@@ -125,6 +125,7 @@ typedef struct buffer_s {
       uint8_t sector;      /* BAM-sector (if more than one) */
     } bam;
     struct {
+      uint8_t part;           /* current partition at buffer creation time */
       uint8_t size;           /* Number of buffers in chain  */
       struct buffer_s *first; /* Pointer to the first buffer */
       struct buffer_s *next;  /* Pointer to the next buffer  */
