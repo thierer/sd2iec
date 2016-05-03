@@ -1220,7 +1220,7 @@ void load_geos(UNUSED_PARAMETER) {
 
     case 0x058e: // 1541 stage 2/3 read
     case 0x04cc: // 1581 read
-      geos_read_sector(cmddata[2], cmddata[3], databuf);
+      geos_read_sector(cmddata[2] & 0x7f, cmddata[3], databuf);
       break;
 
     case 0x04af: // 1571 read_and_send
