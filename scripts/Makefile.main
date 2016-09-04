@@ -54,6 +54,10 @@ SRC += doscmd.c ff.c d64ops.c diskchange.c
 SRC += eeprom-conf.c parser.c utils.c led.c diskio.c
 SRC += timer.c $(CONFIG_ARCH)/arch-timer.c $(CONFIG_ARCH)/spi.c
 SRC += $(CONFIG_ARCH)/system.c
+SRC += fl-ar6.c fl-dolphin.c fl-dreamload.c fl-eload.c
+SRC += fl-epyxcart.c fl-fc3exos.c fl-geos.c fl-gijoe.c
+SRC += fl-mmzak.c fl-nippon.c fl-turbodisk.c fl-ulm3.c
+
 
 ifneq ($(CONFIG_NO_SD),y)
   SRC += sdcard.c

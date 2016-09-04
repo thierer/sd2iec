@@ -32,6 +32,8 @@
 
 #ifndef __ASSEMBLER__
 
+#define UNUSED_PARAMETER uint8_t __attribute__((unused)) unused__
+
 typedef enum {
   FL_NONE          = 0,
   FL_DREAMLOAD     = FLCODE_DREAMLOAD,
@@ -67,6 +69,9 @@ extern volatile uint8_t fl_sector;
 extern uint8_t (*fast_send_byte)(uint8_t byte);
 extern uint8_t (*fast_get_byte)(void);
 
+uint8_t check_keys(void);
+
+/* per-loader functions, located in separate fl-*.c files */
 void load_turbodisk(uint8_t);
 void load_fc3(uint8_t freezed);
 void load_fc3oldfreeze(uint8_t);
@@ -89,6 +94,10 @@ int16_t dolphin_getc(void);
 uint8_t dolphin_putc(uint8_t data, uint8_t with_eoi);
 void load_dolphin(void);
 void save_dolphin(void);
+
+/* functions that are shared between multiple loaders */
+/* currently located in fastloader.c                  */
+int16_t gijoe_read_byte(void);
 
 # ifdef PARALLEL_ENABLED
 extern volatile uint8_t parallel_rxflag;
