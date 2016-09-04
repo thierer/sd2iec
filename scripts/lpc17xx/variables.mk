@@ -3,7 +3,18 @@
 #---------------- Source code ----------------
 ASMSRC = lpc17xx/pseudoboot.S lpc17xx/startup.S lpc17xx/crc.S
 
-SRC += lpc17xx/fastloader-ll.c lpc17xx/iec-bus.c
+SRC += lpc17xx/iec-bus.c
+SRC += lpc17xx/llfl-common.c
+SRC += lpc17xx/llfl-jiffydos.c
+SRC += lpc17xx/llfl-turbodisk.c
+SRC += lpc17xx/llfl-fc3exos.c
+SRC += lpc17xx/llfl-ar6.c
+SRC += lpc17xx/llfl-dreamload.c
+SRC += lpc17xx/llfl-ulm3.c
+SRC += lpc17xx/llfl-epyxcart.c
+SRC += lpc17xx/llfl-geos.c
+SRC += lpc17xx/llfl-parallel.c
+
 
 ifeq ($(CONFIG_UART_DEBUG),y)
   SRC += lpc17xx/printf.c
