@@ -109,6 +109,9 @@ CONFIG_LOADER_ELOAD1=y
 # Enable Maniac Mansion/Zak McKracken fast loader
 CONFIG_LOADER_MMZAK=y
 
+# Enable N0stalgia fastloaders
+CONFIG_LOADER_N0SDOS=y
+
 # Enable DolphinDOS parallel speeder
 CONFIG_PARALLEL_DOLPHIN=y
 
