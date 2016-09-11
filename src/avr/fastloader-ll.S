@@ -1758,4 +1758,63 @@ parallel_send_handshake:
 
 #endif
 
+#ifdef CONFIG_LOADER_N0SDOS
+        ;; ====================================================================
+        ;;  N0stalgia loaders
+        ;; ====================================================================
+
+        ;; void n0sdos_send_byte(uint8_t byte)
+        .global n0sdos_send_byte
+n0sdos_send_byte:
+        cli
+
+        ;; set up data byte for transmission
+        mov     r0, r24
+
+        ;; clock and data high
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_CLOCK
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA
+
+        ;; wait until clock is high
+1:      sbis    _SFR_IO_ADDR(IEC_INPUT), IEC_PIN_CLOCK
+        rjmp    1b
+
+        ;; delay
+        delay_cycles 9*8 - 10
+
+        ;; send bits 0+1
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; delay
+        delay_cycles 8*8 - 16
+
+        ;; send bits 2+3
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; delay
+        delay_cycles 8*8 - 16
+
+        ;; send bits 4+5
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; delay
+        delay_cycles 8*8 - 16
+
+        ;; send bits 6+7
+        rcall   send_bits_to_clk_data ; 10+6
+
+        ;; delay
+        delay_cycles 5*8 - 6 - 2
+
+        ;; set clock high, data low
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_CLOCK ; 1
+        sbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA  ; 1
+
+        delay_cycles 6*8
+
+        sei
+        ret
+
+#endif
+
         .end

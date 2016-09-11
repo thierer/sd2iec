@@ -182,6 +182,9 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
 #ifdef CONFIG_LOADER_GIJOE
   { 0x0c92, FL_GI_JOE,           RXTX_NONE          }, // hacked-up GI Joe loader seen in an Eidolon crack
 #endif
+#ifdef CONFIG_LOADER_N0SDOS
+  { 0x327d, FL_N0SDOS_FILEREAD,  RXTX_NONE          }, // CRC up to 0x65f to avoid junk data
+#endif
 
   { 0, FL_NONE, 0 }, // end marker
 };
@@ -246,6 +249,9 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
 #endif
 #ifdef CONFIG_LOADER_MMZAK
   { 0x0500, FL_MMZAK,            load_mmzak,     0 },
+#endif
+#ifdef CONFIG_LOADER_N0SDOS
+  { 0x041b, FL_N0SDOS_FILEREAD,  load_n0sdos_fileread, 0 },
 #endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker

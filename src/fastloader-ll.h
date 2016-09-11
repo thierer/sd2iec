@@ -63,6 +63,8 @@ uint8_t wheels44_send_byte_2mhz(uint8_t byte);
 void ar6_1581_send_byte(uint8_t byte);
 uint8_t ar6_1581p_get_byte(void);
 
+void n0sdos_send_byte(uint8_t byte);
+
 typedef enum { PARALLEL_DIR_IN = 0,
                PARALLEL_DIR_OUT } parallel_dir_t;
 

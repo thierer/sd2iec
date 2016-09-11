@@ -14,7 +14,7 @@ SRC += lpc17xx/llfl-ulm3.c
 SRC += lpc17xx/llfl-epyxcart.c
 SRC += lpc17xx/llfl-geos.c
 SRC += lpc17xx/llfl-parallel.c
-
+SRC += lpc17xx/llfl-n0sdos.c
 
 ifeq ($(CONFIG_UART_DEBUG),y)
   SRC += lpc17xx/printf.c
