@@ -464,6 +464,9 @@ static void run_loader(uint16_t address) {
     ptr++;
   }
 
+  if (loader == FL_NONE)
+    set_error_ts(ERROR_UNKNOWN_DRIVECODE, datacrc >> 8, datacrc & 0xff);
+
   datacrc = 0xffff;
   previous_loader = detected_loader;
   detected_loader = FL_NONE;

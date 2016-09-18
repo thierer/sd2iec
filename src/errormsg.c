@@ -120,13 +120,16 @@ static const PROGMEM uint8_t messages[] = {
     'B','U','F','F','E','R',11,'S','M','A','L','L',
   EC(79),
     'I','M','A','G','E',' ',0,' ','I','N','V','A','L','I','D',
+  EC(98),
+    'U','N','K','N','O','W','N',' ','D','R','I','V','E','C','O','D','E',
   EC(99),
     'C','L','O','C','K',' ','U','N','S','T','A','B','L','E',
   EC(127)
 };
 
 static uint8_t *appendmsg(uint8_t *msg, const uint8_t *table, const uint8_t entry) {
-  uint8_t i,tmp;
+  uint8_t  tmp;
+  uint16_t i;
 
   i = 0;
   do {
