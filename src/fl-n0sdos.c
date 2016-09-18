@@ -140,7 +140,6 @@ void load_n0sdos_fileread(UNUSED_PARAMETER) {
 
     /* transfer contents */
     n0sdos_send_byte(0x00);
-    set_srq(0);
 
     while (1) {
       uint8_t *ptr = buf->data + buf->position;
