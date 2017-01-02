@@ -39,10 +39,6 @@
 #include "rtc.h"
 #include "ds1307-3231.h"
 
-#if defined(CONFIG_RTC_DS3231) && defined(CONFIG_RTC_DS1307)
-#  error "Cannot use both CONFIG_RTC_DS3231 and CONFIG_RTC_DS1307 at the same time!"
-#endif
-
 #define RTC_ADDR 0xd0
 
 #define REG_SECOND      0
@@ -53,24 +49,28 @@
 #define REG_MONTH       5
 #define REG_YEAR        6
 
-#ifdef CONFIG_RTC_DS3231
-#  define REG_AL1_SECOND  7
-#  define REG_AL1_MINUTE  8
-#  define REG_AL1_HOUR    9
-#  define REG_AL1_DAY    10
-#  define REG_AL2_MINUTE 11
-#  define REG_AL2_HOUR   12
-#  define REG_AL2_DAY    13
-#  define REG_CONTROL    14
-#  define REG_CTLSTATUS  15
-#  define REG_AGING      16
-#  define REG_TEMP_MSB   17
-#  define REG_TEMP_LSB   18
-#else
-#  define REG_CONTROL    7
-#endif
+/* DS3231 registers */
+#define REG_AL1_SECOND  7
+#define REG_AL1_MINUTE  8
+#define REG_AL1_HOUR    9
+#define REG_AL1_DAY    10
+#define REG_AL2_MINUTE 11
+#define REG_AL2_HOUR   12
+#define REG_AL2_DAY    13
+#define REG_CONTROL_31 14
+#define REG_CTLSTATUS  15
+#define REG_AGING      16
+#define REG_TEMP_MSB   17
+#define REG_TEMP_LSB   18
+
+/* DS1307 registers */
+#define REG_CONTROL_07  7
 
 #define STATUS_OSF     0x80  // oscillator stopped (1307: CH bit in reg 0)
+
+static enum {
+  RTC_1307, RTC_3231
+} dsrtc_type;
 
 /* Read the current time from the RTC */
 void dsrtc_read(struct tm *time) {
@@ -110,59 +110,59 @@ void dsrtc_set(struct tm *time) {
   tmp[REG_MONTH]  = int2bcd(time->tm_mon+1) | 0x80 * (time->tm_year >= 2100);
   tmp[REG_YEAR]   = int2bcd(time->tm_year % 100);
   i2c_write_registers(RTC_ADDR, REG_SECOND, 7, tmp);
-  i2c_write_register(RTC_ADDR, REG_CONTROL, 0);   // 3231: enable oscillator on battery, interrupts off
-                                                  // 1307: disable SQW output
-#ifdef CONFIG_RTC_DS3231
-  i2c_write_register(RTC_ADDR, REG_CTLSTATUS, 0); // clear "oscillator stopped" flag
-#endif
+
+  if (dsrtc_type == RTC_1307) {
+    i2c_write_register(RTC_ADDR, REG_CONTROL_07, 0); // disable SQW output
+  } else {
+    i2c_write_register(RTC_ADDR, REG_CONTROL_31, 0); // enable oscillator on battery, interrupts off
+    i2c_write_register(RTC_ADDR, REG_CTLSTATUS, 0); // clear "oscillator stopped" flag
+  }
+
   rtc_state = RTC_OK;
 }
 void set_rtc(struct tm *time) __attribute__ ((weak, alias("dsrtc_set")));
 
-#ifdef CONFIG_RTC_DS3231
-/* DS3231 version, checks oscillator stop flag in status register */
+/* detect DS RTC type and initialize */
 void dsrtc_init(void) {
   int16_t tmp;
 
   rtc_state = RTC_NOT_FOUND;
 
-  uart_puts_P(PSTR("DS3231 "));
-  tmp = i2c_read_register(RTC_ADDR, REG_CTLSTATUS);
+  uart_puts_P(PSTR("DSrtc "));
+  tmp = i2c_read_register(RTC_ADDR, 0);
   if (tmp < 0) {
     uart_puts_P(PSTR("not found"));
-  } else {
-    if (tmp & STATUS_OSF) {
-      rtc_state = RTC_INVALID;
-      uart_puts_P(PSTR("invalid"));
-    } else {
-      rtc_state = RTC_OK;
-      uart_puts_P(PSTR("ok"));
-    }
+    goto fail;
   }
+
+  /* check if register 0x12 (temp low) is writeable */
+  i2c_write_register(RTC_ADDR, REG_TEMP_LSB, 0x55);
+
+  tmp = i2c_read_register(RTC_ADDR, REG_TEMP_LSB);
+
+  if (tmp == 0x55) {
+    /* "register" is writeable (actually RAM), RTC is DS1307 */
+    dsrtc_type = RTC_1307;
+    uart_puts_P(PSTR("1307 "));
+
+    tmp = i2c_read_register(RTC_ADDR, REG_SECOND);
+
+  } else {
+    /* register is read-only, RTC is DS3231 */
+    dsrtc_type = RTC_3231;
+    uart_puts_P(PSTR("3231 "));
+
+    tmp = i2c_read_register(RTC_ADDR, REG_CTLSTATUS);
+  }
+
+  if (tmp & STATUS_OSF) {
+    rtc_state = RTC_INVALID;
+    uart_puts_P(PSTR("invalid"));
+  } else {
+    rtc_state = RTC_OK;
+    uart_puts_P(PSTR("ok"));
+  }
+
+fail:
   uart_putcrlf();
 }
-void rtc_init(void) __attribute__ ((weak, alias("dsrtc_init")));
-
-#else
-/* DS1307 version, checks clock halt bit in seconds register */
-void dsrtc_init(void) {
-  int16_t tmp;
-
-  rtc_state = RTC_NOT_FOUND;
-  uart_puts_P(PSTR("DS1307 "));
-  tmp = i2c_read_register(RTC_ADDR, REG_SECOND);
-  if (tmp < 0) {
-    uart_puts_P(PSTR("not found"));
-  } else {
-    if (tmp & STATUS_OSF) {
-      rtc_state = RTC_INVALID;
-      uart_puts_P(PSTR("invalid"));
-    } else {
-      rtc_state = RTC_OK;
-      uart_puts_P(PSTR("ok"));
-    }
-  }
-  uart_putcrlf();
-}
-void rtc_init(void) __attribute__ ((weak, alias("dsrtc_init")));
-#endif
