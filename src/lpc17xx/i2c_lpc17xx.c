@@ -183,12 +183,13 @@ void I2C_HANDLER(void) {
 
   case 0x50: // data byte received, ACK sent
     /* decide to ACK/NACK next cycle, read current byte */
+    write_byte(I2C_REGS->I2DAT);
+
     if (on_last_byte())
       I2C_REGS->I2CONCLR = BV(I2CAA);
     else
       I2C_REGS->I2CONSET = BV(I2CAA);
 
-    write_byte(I2C_REGS->I2DAT);
     I2C_REGS->I2CONCLR = BV(I2CSTA) | BV(I2CSI);
     break;
 
