@@ -39,7 +39,11 @@
 #include "rtc.h"
 #include "pcf8583.h"
 
-#define PCF8583_ADDR 0xa0
+#if defined(I2C_EEPROM_ADDRESS) && I2C_EEPROM_ADDRESS == 0xa0
+#  define PCF8583_ADDR 0xa2
+#else
+#  define PCF8583_ADDR 0xa0
+#endif
 
 #define REG_CONTROL 0
 #define REG_S100    1
@@ -126,7 +130,7 @@ void pcf8583_init(void) {
   uint8_t tmp[4];
 
   rtc_state = RTC_NOT_FOUND;
-  uart_puts_P(PSTR("RTC "));
+  uart_puts_P(PSTR("PCF8583 "));
   if (i2c_write_register(PCF8583_ADDR, REG_CONTROL, CTL_START_CLOCK) ||
       i2c_read_registers(PCF8583_ADDR, REG_YEAR1, 4, tmp)) {
     uart_puts_P(PSTR("not found"));
