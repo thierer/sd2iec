@@ -93,16 +93,14 @@ static inline void board_init(void) {
 #if defined(CONFIG_RTC_SOFTWARE) || \
     defined(CONFIG_RTC_PCF8583)  || \
     defined(CONFIG_RTC_LPC17XX)  || \
-    defined(CONFIG_RTC_DS3231)   || \
-    defined(CONFIG_RTC_DS1307)
+    defined(CONFIG_RTC_DSRTC)
 #  define HAVE_RTC
 
 /* calculate the number of enabled RTCs */
 #  if defined(CONFIG_RTC_SOFTWARE) + \
       defined(CONFIG_RTC_PCF8583)  + \
       defined(CONFIG_RTC_LPC17XX)  + \
-      defined(CONFIG_RTC_DS3231)   + \
-      defined(CONFIG_RTC_DS1307) > 1
+      defined(CONFIG_RTC_DSRTC)  > 1
 #    define NEED_RTCMUX
 #  endif
 #endif

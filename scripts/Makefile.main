@@ -113,12 +113,7 @@ ifdef CONFIG_ADD_ATA
 endif
 
 # Various RTC implementations
-ifeq ($(CONFIG_RTC_DS1307),y)
-  SRC += rtc.c ds1307-3231.c
-  NEED_I2C := y
-endif
-
-ifeq ($(CONFIG_RTC_DS3231),y)
+ifeq ($(CONFIG_RTC_DSRTC),y)
   SRC += rtc.c ds1307-3231.c
   NEED_I2C := y
 endif
