@@ -133,6 +133,7 @@ uint8_t match_name(uint8_t *matchstr, cbmdirent_t *dent, uint8_t ignorecase) {
   uint8_t *filename = dent->name;
   uint8_t *starpos;
   uint8_t m,f;
+  uint8_t chars_remain = 16;
 
 #if 0
   /* Shortcut for chaining fastloaders ("!*file") */
@@ -140,7 +141,7 @@ uint8_t match_name(uint8_t *matchstr, cbmdirent_t *dent, uint8_t ignorecase) {
     return 1;
 #endif
 
-  while (*filename) {
+  while (chars_remain && *filename) {
     if (ignorecase) {
       m = tolower_pet(*matchstr);
       f = tolower_pet(*filename);
@@ -152,6 +153,7 @@ uint8_t match_name(uint8_t *matchstr, cbmdirent_t *dent, uint8_t ignorecase) {
     case '?':
       filename++;
       matchstr++;
+      chars_remain--;
       break;
 
     case '*':
@@ -180,10 +182,11 @@ uint8_t match_name(uint8_t *matchstr, cbmdirent_t *dent, uint8_t ignorecase) {
         return 0;
       matchstr++;
       filename++;
+      chars_remain--;
       break;
     }
   }
-  if (*matchstr && *matchstr != '*')
+  if (*matchstr && *matchstr != '*' && chars_remain != 0)
     return 0;
   else
     return 1;
