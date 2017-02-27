@@ -166,3 +166,4 @@ void dsrtc_init(void) {
 fail:
   uart_putcrlf();
 }
+void rtc_init(void) __attribute__ ((weak, alias("dsrtc_init")));
