@@ -1097,7 +1097,20 @@ static void parse_getpartition(void) {
   *ptr++ = (partition[part].fatfs.fatbase      ) & 0xff;
   ptr += 5; // reserved bytes
 
-  uint32_t size = (partition[part].fatfs.max_clust - 1) * partition[part].fatfs.csize;
+  uint32_t size;
+
+  if (partition[part].fop == &d64ops) {
+    /* return the size of the disk image, rounded up */
+    size = (partition[part].imagehandle.fsize + 511) / 512;
+
+  } else {
+    /* return the size of the FAT partition */
+    size = (partition[part].fatfs.max_clust - 1) * partition[part].fatfs.csize;
+  }
+
+  if (size > 0xffffff)
+    size = 0xffffff;
+
   *ptr++ = (size >> 16) & 0xff;
   *ptr++ = (size >>  8) & 0xff;
   *ptr   = size & 0xff;
