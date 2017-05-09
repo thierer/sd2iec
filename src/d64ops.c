@@ -1401,7 +1401,7 @@ static uint16_t d64_freeblocks(uint8_t part) {
       break;
 
     case D64_TYPE_DNP:
-      // DNP doesn't exclude anything
+      /* DNP reserves a partial track, handled below */
       break;
 
     case D64_TYPE_D41:
@@ -1413,7 +1413,17 @@ static uint16_t d64_freeblocks(uint8_t part) {
 
     }
 
-    blocks += sectors_free(part,i);
+    if ((partition[part].imagetype & D64_TYPE_MASK)
+        == D64_TYPE_DNP && i == 1) {
+      /* DNP: ignore sectors 0-63 on track 1 */
+      for (uint16_t j = 64; j < 256; j++) {
+        if (is_free(part, 1, j) > 0)
+          blocks++;
+      }
+
+    } else {
+      blocks += sectors_free(part,i);
+    }
   }
 
   return blocks;
