@@ -9,6 +9,13 @@ IEEE488 support by Nils Eilers
 Free software under GPL version 2 ONLY, see comments in main.c and
 COPYING for details.
 
+# Note #
+
+If you found this file on Github, you found an unofficial clone of the
+original repository. The original repository is available on
+[https://www.sd2iec.de](https://www.sd2iec.de)
+
+
 FIXME:This file still needs to be expanded. A lot.
 FIXME: sprinkle mentions of IEEE488 where appropiate
 
