@@ -73,10 +73,11 @@ implementations that just transmit one data block per detected file or
 one that transmits as much data as can fit into a single data block
 should also work.
 
-FIXME: It is currently not known if the C64 side of the loader will
-only request transmission of files by track/sector using the entries
-received from this command or if it tries to load from other
-track/sector pairs too.
+It is currently not known for certain if the C64 side of the loader
+will only request transmission of files by track/sector using the
+entries received from this command or if it tries to load from other
+track/sector pairs too. However, an implementation that only supports
+loading known files from their beginning appears to work fine.
 
 
 Command $02: Read file by name
@@ -126,12 +127,11 @@ current sector is written to disk again, preserving any following data
 that has not been modified.
 
 The original loader can handle data blocks of arbitrary size even if
-they cross sector boundaries. FIXME: It is currently not known if this
-capability is utilized.
+they cross sector boundaries, but this capability does not seem to be
+utilized.
 
-FIXME: It is currently not known if an alternative implementation that
-deletes the file and writes a new one using just the received data
-would work.
+An alternative implementation that just deletes the existing file and
+rewrites it using the data received from the C64 appears to work fine.
 
 Command $83: Write file by track+sector
 ---------------------------------------
