@@ -687,8 +687,9 @@ Note: Using sd2iec without an external crystal or similiar precise
   reimplementation in sd2iec can handle both disk images and extracted
   files stored in a single directory directly on the SD
   card. The loader is captive, but it tries to exit cleanly when
-  possible - but if you reset the C64 while it is reading data, sd2iec
-  will hang and require a reset or powercycle to recover.
+  possible - but if you reset the C64 while it is reading data (busy
+  LED lit, e.g. during the intro), sd2iec will hang and requires a
+  reset or powercycle to recover.
 
 JiffyDOS:
 =========
