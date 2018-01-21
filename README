@@ -680,6 +680,16 @@ Note: Using sd2iec without an external crystal or similiar precise
   Same as Maniac Mansion, but this game only has a code list protection,
   so images of original disks should work fine.
 
+  Sam's Journey
+  -------------
+  The loader in Sam's Journey expects that there is only a single
+  drive active on the serial bus and that this drive has ID 8. The
+  reimplementation in sd2iec can handle both disk images and extracted
+  files stored in a single directory directly on the SD
+  card. The loader is captive, but it tries to exit cleanly when
+  possible - but if you reset the C64 while it is reading data, sd2iec
+  will hang and require a reset or powercycle to recover.
+
 JiffyDOS:
 =========
 The JiffyDOS protocol has very relaxed timing constraints compared to

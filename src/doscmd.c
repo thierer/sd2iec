@@ -185,6 +185,9 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
 #ifdef CONFIG_LOADER_N0SDOS
   { 0x327d, FL_N0SDOS_FILEREAD,  RXTX_NONE          }, // CRC up to 0x65f to avoid junk data
 #endif
+#ifdef CONFIG_LOADER_SAMSJOURNEY
+  { 0x6af4, FL_SAMSJOURNEY,      RXTX_NONE          }, // CRC of penultimate M-W
+#endif
 
   { 0, FL_NONE, 0 }, // end marker
 };
@@ -252,6 +255,9 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
 #endif
 #ifdef CONFIG_LOADER_N0SDOS
   { 0x041b, FL_N0SDOS_FILEREAD,  load_n0sdos_fileread, 0 },
+#endif
+#ifdef CONFIG_LOADER_SAMSJOURNEY
+  { 0x0400, FL_SAMSJOURNEY,      load_samsjourney, 0 },
 #endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker

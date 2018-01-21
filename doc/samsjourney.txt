@@ -1,0 +1,197 @@
+Sam's Journey Loader Protocol
+=============================
+
+Documented by Ingo Korb
+
+Sam's Journey uses a command-based loader which uses an asynchronous
+1-bit receive and an asynchronous, ATN-using 2-bit transmit
+protocol. Although all data appears to be stored in files with unique
+names which are occasionally duplicated among the disks to reduce disk
+swapping, actual file access can happen by either name or track and
+sector. File names are one-byte hexadecimal numbers, encoded using
+lower-case PETSCII letters and digits.
+
+
+Main Loop
+=========
+1. receive a command byte
+2. receive a length byte
+3. if length byte is nonzero:
+4.   receive as many bytes as specified by length byte
+5. run the handler for the received command byte
+6. go to 1
+
+
+Commands
+========
+
+Only five commands are valid: $01, $02, $03, $82 and $83. Any other
+command byte results in an error response.
+
+All responses consist of a single length byte indicating the number of
+data bytes following plus one (alternatively: the total length
+including the length byte) and as many data bytes as specified by the
+length. A length byte of $00 is used to specify a data length of 255
+(total length 256).
+
+In the following description, only the actual data without the length
+byte is considered. It is assumed that the correct length byte for the
+data block will be transmitted before it. For example, the single $ff
+byte for the error response will be transmitted as "$02 $ff" by the
+drive, indicating a data length of 1 ($02 - 1) and the single $ff byte.
+
+Error response
+--------------
+Transmit a single $ff byte and return to the main loop.
+
+
+Command $01: Scan directory
+---------------------------
+This command builds a table of file names and starting track/sector
+pairs for the current disk and transmits it to the C64. It ignores all
+non-PRG files. For each PRG file in the directory, an attempt is made
+to interpret the first two characters of the name as a hexadecimal
+number, ignoring any characters beyond that. If the file name does not
+start with a hex number, it is assigned the number $ff instead.
+
+For each sector of the directory, a data block is transferred back to
+the C64. The first byte of the block is $01 if this is the last
+directory sector or $00 if another directory sector will be following.
+
+After this initial marker byte, the loader creates one 3-byte info group
+per directory entry. The first byte in this group is the binary
+representation of the file name (decoded hex), the second is the
+starting track and the third is the starting sector from the directory
+entry.
+
+After transmitting one such data block for each directory sector, the
+command handler returns to the main loop.
+
+Note: The C64-side implementation appears to implement a deblocking
+subroutine and can handle up to 256 file info groups, so alternative
+implementations that just transmit one data block per detected file or
+one that transmits as much data as can fit into a single data block
+should also work.
+
+FIXME: It is currently not known if the C64 side of the loader will
+only request transmission of files by track/sector using the entries
+received from this command or if it tries to load from other
+track/sector pairs too.
+
+
+Command $02: Read file by name
+------------------------------
+This command reads a file from disk and transmits it to the C64. The
+file is identified by its file name, which is received as a single
+byte following the command byte. If no PRG file matching that name is
+found, an error response is sent.
+
+For each sector of the file, a data block is sent that consists of one
+marker byte followed by the sector's contents. The marker byte is 1 if
+the current data block is the last sector of the file or 0 if more
+sectors follow. For the last sector, only the actually used data is
+transmitted.
+
+After transmitting the full contents of the file, the command handler
+returns to the main loop.
+
+Command $82: Read file by track+sector
+--------------------------------------
+This command reads a file and transmits it to the C64. The file is
+identified by its starting track and sector, which are received as
+two bytes following the command byte.
+
+This commands functions the same as command $02 with the exception of
+the directory lookup.
+
+
+Command $03: Write file by name
+-------------------------------
+This command receives data from the C64 and writes it to a file
+identified by its file name, which is received as a single byte
+following the command byte. The file must already exist on disk -
+if no file matching that name is found on disk, an error response is
+sent.
+
+When the file has been located, a data block consisting of a
+single $00 byte is sent to indicate success.
+
+Each sector of the file is rewritten using data received from the
+C64. If more data is received than is currently stored in the file,
+the excess data is silently discarded, even if the final sector of the
+file still has empty space in it. The data received uses the same
+length byte plus data structure as transmissions for receiving a
+file. A length of 0 indicates the end of reception, in which case the
+current sector is written to disk again, preserving any following data
+that has not been modified.
+
+The original loader can handle data blocks of arbitrary size even if
+they cross sector boundaries. FIXME: It is currently not known if this
+capability is utilized.
+
+FIXME: It is currently not known if an alternative implementation that
+deletes the file and writes a new one using just the received data
+would work.
+
+Command $83: Write file by track+sector
+---------------------------------------
+This command receives data from the C64 and writes it to a file
+identified by its starting track and sector, which are received as two
+bytes following the command byte.
+
+This command functions the same as command $03 with the exception of
+the directory lookup. Even though there is no lookup that could fail,
+it still transmits a success indicator before switching to receive
+mode.
+
+
+Byte receive
+============
+The byte receive routine is fully handshaking in both directions, so
+it can be used with interrupts enabled on both sides. Data is
+transferred one bit at a time over both CLOCK and DATA lines starting
+with the LSB.
+
+1. repeat 8 times:
+2.   set both CLOCK and DATA high
+3.   wait until CLOCK or DATA are low
+4.   copy inverted DATA line to received byte (LSB first)
+5.   if DATA is low, set CLOCK low
+5a.    otherwise set DATA low
+6.   wait until CLOCK or DATA are high
+
+Note that the final acknowledgement (either CLOCK or DATA low) is not
+cleared at the end of the routine, it is used to signal not-ready-ness
+to the computer.
+
+Untested: It may be possible to use ATN to detect if the loader quit
+because the C64 is attempting to do a normal IEC transaction again.
+
+
+Block transmit
+==============
+The block transmit routine uses handshaking from the C64 to the drive
+only. It transmits 2 bits of data over the CLOCK and DATA lines and
+uses ATN for controlling the transmission. If a hardware ATN
+acknowledge circuit is used, care must be taken to avoid interference
+with the transmission.
+
+ 1. set both CLOCK and DATA high
+ 2. wait until ATN is low
+ 3. set CLOCK and DATA low
+ 4. for the length byte and all bytes in the data buffer:
+ 5.   wait until ATN is high
+ 6.   send inverted bit 7 on CLOCK and inverted bit 5 on DATA
+ 7.   wait until ATN is low
+ 8.   send inverted bit 6 on CLOCK and inverted bit 4 on DATA
+ 9.   wait until ATN is high
+10.   send inverted bit 3 on CLOCK and inverted bit 1 on DATA
+11.   wait until ATN is low
+12.   send inverted bit 2 on CLOCK and inverted bit 0 on DATA
+13. wait until ATN is high
+14. set CLOCK and DATA low
+
+Note: The original loader is coded in a way that ensures a very short
+delay between steps 13 and 14, but it is not known if this is a
+requirement.
+

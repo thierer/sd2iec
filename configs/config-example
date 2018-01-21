@@ -112,6 +112,9 @@ CONFIG_LOADER_MMZAK=y
 # Enable N0stalgia fastloaders
 CONFIG_LOADER_N0SDOS=y
 
+# Enable Sam's Journey fastloader
+CONFIG_LOADER_SAMSJOURNEY=y
+
 # Enable DolphinDOS parallel speeder
 CONFIG_PARALLEL_DOLPHIN=y
 
