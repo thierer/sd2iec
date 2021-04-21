@@ -81,7 +81,7 @@ static void confirm_blink(uint8_t type) {
   }
 }
 
-static uint8_t mount_line(void) {
+static bool mount_line(void) {
   FRESULT res;
   UINT bytesread;
   uint8_t *buffer_start;
@@ -99,7 +99,7 @@ static uint8_t mount_line(void) {
   buffer_t* readbuf = alloc_buffer();
 
   if (!readbuf) {
-    return 0;
+    return false;
   }
 
   curpos = 0;
@@ -115,13 +115,13 @@ static uint8_t mount_line(void) {
     res = f_lseek(&swaplist, curpos);
     if (res != FR_OK) {
       parse_error(res, 1);
-      return 0;
+      return false;
     }
 
     res = f_read(&swaplist, str, MAX_LINE_LEN, &bytesread);
     if (res != FR_OK) {
       parse_error(res, 1);
-      return 0;
+      return false;
     }
 
     /* Terminate string in buffer */
@@ -209,10 +209,10 @@ static uint8_t mount_line(void) {
 
   if (current_error != 0 && current_error != ERROR_DOSVERSION) {
     current_error = olderror;
-    return 0;
+    return false;
   }
 
-  return 1;
+  return true;
 }
 
 /**
