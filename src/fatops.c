@@ -190,6 +190,9 @@ imgtype_t check_imageext(uint8_t *name) {
   if (ext == NULL)
     return IMG_UNKNOWN;
 
+  if (ustrlen(ext) != 4)
+    return IMG_UNKNOWN;
+
   f = toupper(*++ext);
   s = toupper(*++ext);
   t = toupper(*++ext);
@@ -199,14 +202,51 @@ imgtype_t check_imageext(uint8_t *name) {
     return IMG_IS_M2I;
 #endif
 
-  if (f == 'D')
+  if (f == 'D') {
     if ((s == '6' && t == '4') ||
         (s == 'N' && t == 'P') ||
         ((s == '4' || s == '7' || s == '8') &&
-         (t == '1')))
+         (t == '1'))) {
       return IMG_IS_DISK;
+    }
+  }
 
- return IMG_UNKNOWN;
+  return IMG_UNKNOWN;
+}
+
+/**
+ * should_save_raw - check if the file should be saved header-free
+ * @name: pointer to the file name
+ *
+ * This function checks if the file of the given name should be saved
+ * without any header for improved PC compatiblity.
+ */
+static bool should_save_raw(uint8_t* name) {
+  if (check_imageext(name) != IMG_UNKNOWN)
+    return true;
+
+  uint8_t* ext = ustrrchr(name, '.');
+  if (ext == NULL)
+    return false;
+
+  ext++;
+
+  if (*ext == 't' || *ext == 'T')
+    ext++;
+
+  if (ustrlen(ext) != 3)
+    return false;
+
+  uint8_t ucext[3];
+
+  for (int i = 0; i < 3; i++) {
+    ucext[i] = toupper(*ext++);
+  }
+
+  if (ucext[0] == 'C' && ucext[1] == 'R' && ucext[2] == 'T')
+    return true;
+
+  return false;
 }
 
 /**
@@ -305,7 +345,7 @@ static uint8_t* build_name(uint8_t *name, uint8_t type) {
 #endif
 
   /* known disk-image extensions are always without header or suffix */
-  if (type == TYPE_PRG && check_imageext(name) != IMG_UNKNOWN)
+  if (type == TYPE_PRG && should_save_raw(name))
     return NULL;
 
   /* PC64 mode or invalid FAT name? */
