@@ -672,19 +672,22 @@ FRESULT create_file(path_t *path, cbmdirent_t *dent, uint8_t type, buffer_t *buf
   }
 
   partition[path->part].fatfs.curr_dir = path->dir.fat;
-  do {
-    res = f_open(&partition[path->part].fatfs, &buf->pvt.fat.fh, name,FA_WRITE | FA_CREATE_NEW | (recordlen?FA_READ:0));
-    if (res == FR_EXIST && x00ext != NULL) {
-      /* File exists, increment extension */
-      *x00ext += 1;
-      if (*x00ext == '9'+1) {
-        *x00ext = '0';
-        *(x00ext-1) += 1;
-        if (*(x00ext-1) == '9'+1)
-          break;
-      }
+
+  res = f_open(&partition[path->part].fatfs, &buf->pvt.fat.fh,
+               name, FA_WRITE | FA_CREATE_NEW | (recordlen ? FA_READ : 0));
+  while (x00ext != NULL && res == FR_EXIST) {
+    /* File exists, increment extension */
+    *x00ext += 1;
+    if (*x00ext == '9'+1) {
+      *x00ext = '0';
+      *(x00ext-1) += 1;
+      if (*(x00ext-1) == '9'+1)
+        break;
     }
-  } while (res == FR_EXIST);
+
+    res = f_open(&partition[path->part].fatfs, &buf->pvt.fat.fh,
+                 name, FA_WRITE | FA_CREATE_NEW | (recordlen ? FA_READ : 0));
+  }
 
   if (res != FR_OK)
     return res;
