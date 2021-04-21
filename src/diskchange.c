@@ -41,6 +41,10 @@
 #include "ustring.h"
 #include "diskchange.h"
 
+_Static_assert(CONFIG_COMMAND_BUFFER_SIZE < 256, "command buffer too large");
+
+#define MAX_LINE_LEN (CONFIG_COMMAND_BUFFER_SIZE - 1)
+
 static const char PROGMEM autoswap_lst_name[] = "AUTOSWAP.LST";
 static const char PROGMEM autoswap_gen_name[] = "AUTOSWAP.GEN"; // FIXME: must be 15 chars or less
 static const char PROGMEM petscii_marker[8]   = "#PETSCII";
@@ -80,58 +84,80 @@ static void confirm_blink(uint8_t type) {
 static uint8_t mount_line(void) {
   FRESULT res;
   UINT bytesread;
-  uint8_t i,*str,*strend, *buffer_start;
-  uint16_t curpos;
+  uint8_t *buffer_start;
+  uint16_t curpos; /* offset of current line in swaplist */
   bool got_colon = false;
+  bool seen_nonwhite = false;
+  bool is_comment = false;
   uint8_t olderror = current_error;
   current_error = ERROR_OK;
 
   /* Kill all buffers */
   free_multiple_buffers(FMB_USER_CLEAN);
 
+  /* allocate work area */
+  buffer_t* readbuf = alloc_buffer();
+
+  if (!readbuf) {
+    return 0;
+  }
+
   curpos = 0;
-  strend = NULL;
-  buffer_start = command_buffer + 1;
+  buffer_start = readbuf->data;
   globalflags |= SWAPLIST_ASCII;
+  buffer_start[MAX_LINE_LEN] = 0;
 
-  for (i=0;i<=linenum;i++) {
-    str = buffer_start;
+  uint8_t effective_line = 0;
+  while (effective_line <= linenum) {
+    uint8_t* strend = NULL;
+    uint8_t* str = buffer_start;
 
-    res = f_lseek(&swaplist,curpos);
+    res = f_lseek(&swaplist, curpos);
     if (res != FR_OK) {
-      parse_error(res,1);
+      parse_error(res, 1);
       return 0;
     }
 
-    res = f_read(&swaplist, str, CONFIG_COMMAND_BUFFER_SIZE - 1, &bytesread);
+    res = f_read(&swaplist, str, MAX_LINE_LEN, &bytesread);
     if (res != FR_OK) {
-      parse_error(res,1);
+      parse_error(res, 1);
       return 0;
     }
 
     /* Terminate string in buffer */
-    if (bytesread < CONFIG_COMMAND_BUFFER_SIZE - 1)
+    if (bytesread < MAX_LINE_LEN)
       str[bytesread] = 0;
 
     if (bytesread == 0) {
       if (linenum == 255) {
         /* Last entry requested, found it */
-        linenum = i-1;
+        linenum = effective_line - 1;
       } else {
         /* End of file - restart loop to read the first entry */
         linenum = 0;
       }
-      i = -1; /* I could've used goto instead... */
+      effective_line = 0;
       curpos = 0;
       continue;
     }
 
-    /* Skip name */
+    /* parse line */
+    is_comment = false;
     got_colon = false;
+    seen_nonwhite = false;
 
-    while (*str != '\r' && *str != '\n') {
+    while (*str && *str != '\r' && *str != '\n') {
       if (*str == ':')
         got_colon = true;
+
+      if (*str == ';' && !seen_nonwhite) {
+        is_comment = true;
+      }
+
+      if (*str != ' ' && *str != '\t') {
+        seen_nonwhite = true;
+      }
+
       str++;
     }
 
@@ -145,15 +171,19 @@ static uint8_t mount_line(void) {
       if (!memcmp_P(buffer_start, petscii_marker, sizeof(petscii_marker))) {
         /* swaplist is in PETSCII, ignore this line */
         globalflags &= ~SWAPLIST_ASCII;
-        i--;
+        is_comment = true;
       }
     }
 
     curpos += str - buffer_start;
-  }
 
-  /* Terminate file name */
-  *strend = 0;
+    if (!is_comment) {
+      /* an actual entry, copy it in case it is the last one in the file */
+      effective_line += 1;
+      *strend = 0;
+      memcpy(command_buffer + 1, buffer_start, strend - buffer_start + 1);
+    }
+  }
 
   if (partition[swappath.part].fop != &fatops)
     image_unmount(swappath.part);
@@ -164,9 +194,10 @@ static uint8_t mount_line(void) {
   partition[current_part].current_dir = swappath.dir;
 
   /* add a colon if neccessary */
-  if (!got_colon && buffer_start[0] != '/') {
+  buffer_start = command_buffer + 1;
+  if (!got_colon && *buffer_start != '/') {
     command_buffer[0] = ':';
-    buffer_start = command_buffer;
+    buffer_start--;
   }
 
   /* recode entry if neccessary */

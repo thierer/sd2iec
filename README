@@ -799,6 +799,9 @@ but if the first line of the file exactly reads "#PETSCII" (in hex: 23
 50 45 54 53 43 49 49), file names are assumed to be encoded in PETSCII
 instead and this marker line is skipped.
 
+To add comments to a swap list, start a line with a semicolon (;). Any
+such line will be skipped by sd2iec when parsing the swap list.
+
 An example swap list file could look like this:
 === example 1 ===
 FOO.D64
@@ -811,6 +814,8 @@ BAZ.D64
 //NEATGAME/:DISK1B.D64
 //NEATGAME/:DISK2A.D64
 //NEATGAME/:DISK2B.D64
+; save disk in separate directory for easier backup
+//SAVEDISKS/:NEATGAME.D64
 === end of example 2 ===
 
 The swap list is enabled by sending "XS:filename" over the command
