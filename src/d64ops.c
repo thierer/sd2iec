@@ -38,9 +38,11 @@
 #include "wrapops.h"
 #include "d64ops.h"
 
-#define D41_ERROR_OFFSET 174848
-#define D71_ERROR_OFFSET 349696
-#define D81_ERROR_OFFSET 819200
+#define D41_SIZE_MIN      174848
+/* Max 7 additional tracks with 17 256 byte sectors each + 802 error bytes */
+#define D41_SIZE_MAX      (D41_SIZE_MIN + 7*17*256 + 802)
+#define D71_SIZE          349696
+#define D81_SIZE          819200
 
 #define D41_BAM_TRACK           18
 #define D41_BAM_SECTOR          0
@@ -108,19 +110,19 @@ static void format_dnp_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t
 /* ------------------------------------------------------------------------- */
 
 static const PROGMEM struct param_s d41param = {
-  18, 1, 35, 0x90, 0xa2, 10, 3, format_d41_image
+  18, 1, 35, 35, 0x90, 0xa2, 10, 3, D41_SIZE_MIN, format_d41_image
 };
 
 static const PROGMEM struct param_s d71param = {
-  18, 1, 70, 0x90, 0xa2, 6, 3, format_d71_image
+  18, 1, 70, 70, 0x90, 0xa2, 6, 3,  D71_SIZE,     format_d71_image
 };
 
 static const PROGMEM struct param_s d81param = {
-  40, 3, 80, 0x04, 0x16, 1, 1, format_d81_image
+  40, 3, 80, 80, 0x04, 0x16, 1, 1,  D81_SIZE,     format_d81_image
 };
 
 static const PROGMEM struct param_s dnpparam = {
-  1, 1, 0, DNP_LABEL_OFFSET, DNP_ID_OFFSET, 1, 1, format_dnp_image
+  1, 1, 0, 0, DNP_LABEL_OFFSET, DNP_ID_OFFSET, 1, 1, 0, format_dnp_image
 };
 
 /**
@@ -150,13 +152,14 @@ static uint16_t sector_lba(uint8_t part, uint8_t track, const uint8_t sector) {
   track--; /* Track numbers are 1-based */
 
   switch (partition[part].imagetype & D64_TYPE_MASK) {
-  case D64_TYPE_D41:
   case D64_TYPE_D71:
   default:
     if (track >= 35) {
       offset = 683;
       track -= 35;
     }
+    /* falls through */
+  case D64_TYPE_D41:
     if (track < 17)
       return track*21 + sector + offset;
     if (track < 24)
@@ -195,11 +198,12 @@ static uint32_t sector_offset(uint8_t part, uint8_t track, const uint8_t sector)
  */
 static uint16_t sectors_per_track(uint8_t part, uint8_t track) {
   switch (partition[part].imagetype & D64_TYPE_MASK) {
-  case D64_TYPE_D41:
   case D64_TYPE_D71:
   default:
     if (track > 35)
       track -= 35;
+    /* falls through */
+  case D64_TYPE_D41:
     if (track < 18)
       return 21;
     if (track < 25)
@@ -245,19 +249,10 @@ static uint8_t checked_read(uint8_t part, uint8_t track, uint8_t sector, uint8_t
 
       switch (partition[part].imagetype & D64_TYPE_MASK) {
       case D64_TYPE_D41:
-        if (image_read(part, D41_ERROR_OFFSET + sector_lba(part,track,0),
-                       errorcache.errors, sectors_per_track(part, track)) >= 2)
-          return 2;
-        break;
-
       case D64_TYPE_D71:
-        if (image_read(part, D71_ERROR_OFFSET + sector_lba(part,track,0),
-                       errorcache.errors, sectors_per_track(part, track)) >= 2)
-          return 2;
-        break;
-
       case D64_TYPE_D81:
-        if (image_read(part, D81_ERROR_OFFSET + sector_lba(part,track,0),
+        if (image_read(part,
+                       partition[part].d64data.error_offset+sector_lba(part,track,0),
                        errorcache.errors, sectors_per_track(part, track)) >= 2)
           return 2;
         break;
@@ -617,7 +612,7 @@ static int8_t is_free(uint8_t part, uint8_t track, uint8_t sector) {
 static uint16_t sectors_free(uint8_t part, uint8_t track) {
   uint8_t *trackmap = NULL;
 
-  if (track < 1 || track > get_param(part, LAST_TRACK))
+  if (track < 1 || track > get_param(part, LAST_BAM_TRACK))
     return 0;
 
   switch (partition[part].imagetype & D64_TYPE_MASK) {
@@ -762,7 +757,7 @@ static uint8_t get_first_sector(uint8_t part, uint8_t *track, uint8_t *sector) {
     while (sectors_free(part, *track) == 0) {
       (*track)++;
 
-      if (*track == get_param(part, LAST_TRACK) ||
+      if (*track == get_param(part, LAST_BAM_TRACK) ||
           *track == 0) {
         /* Wrap to track 1 */
         *track = 1;
@@ -774,7 +769,7 @@ static uint8_t get_first_sector(uint8_t part, uint8_t *track, uint8_t *sector) {
     }
   } else {
     /* Look for a track with free sectors close to the directory */
-    while (distance < get_param(part, LAST_TRACK)) {
+    while (distance < get_param(part, LAST_BAM_TRACK)) {
       if (sectors_free(part, get_param(part, DIR_TRACK)-distance))
         break;
 
@@ -786,7 +781,7 @@ static uint8_t get_first_sector(uint8_t part, uint8_t *track, uint8_t *sector) {
         distance++;
     }
 
-    if (distance == get_param(part, LAST_TRACK)) {
+    if (distance == get_param(part, LAST_BAM_TRACK)) {
       if (current_error == ERROR_OK)
         set_error(ERROR_DISK_FULL);
       return 1;
@@ -826,7 +821,7 @@ static uint8_t get_next_sector(uint8_t part, uint8_t *track, uint8_t *sector) {
     while (sectors_free(part, newtrack) == 0) {
       newtrack++;
 
-      if (newtrack == get_param(part, LAST_TRACK) ||
+      if (newtrack == get_param(part, LAST_BAM_TRACK) ||
           newtrack == 0) {
         /* Wrap to track 1 */
         newtrack = 1;
@@ -887,7 +882,7 @@ static uint8_t get_next_sector(uint8_t part, uint8_t *track, uint8_t *sector) {
       *sector = 0;
       tries++;
     }
-    if (*track > get_param(part, LAST_TRACK)) {
+    if (*track > get_param(part, LAST_BAM_TRACK)) {
       *track = get_param(part, DIR_TRACK) - 1;
       *sector = 0;
       tries++;
@@ -1204,55 +1199,74 @@ uint8_t d64_mount(path_t *path, uint8_t *name) {
   uint32_t fsize = partition[part].imagehandle.fsize;
 
   switch (fsize) {
-  case 174848:
-    imagetype = D64_TYPE_D41;
-    memcpy_P(&partition[part].d64data, &d41param, sizeof(struct param_s));
-    break;
-
-  case 175531:
-    imagetype = D64_TYPE_D41 | D64_HAS_ERRORINFO;
-    memcpy_P(&partition[part].d64data, &d41param, sizeof(struct param_s));
-    break;
-
-  case 349696:
+  case D71_SIZE:
     imagetype = D64_TYPE_D71;
     memcpy_P(&partition[part].d64data, &d71param, sizeof(struct param_s));
     break;
 
-  case 351062:
+  case D71_SIZE + D71_SIZE/256:
     imagetype = D64_TYPE_D71 | D64_HAS_ERRORINFO;
     memcpy_P(&partition[part].d64data, &d71param, sizeof(struct param_s));
     break;
 
-  case 819200:
+  case D81_SIZE:
     imagetype = D64_TYPE_D81;
     memcpy_P(&partition[part].d64data, &d81param, sizeof(struct param_s));
     break;
 
-  case 822400:
+  case D81_SIZE + D81_SIZE/256:
     imagetype = D64_TYPE_D81 | D64_HAS_ERRORINFO;
     memcpy_P(&partition[part].d64data, &d81param, sizeof(struct param_s));
     break;
 
   default:
+    /* check for D41 image (with possibly more than 35 tracks) */
+    if (fsize >= D41_SIZE_MIN && fsize <= D41_SIZE_MAX) {
+      /* Make sure we don't confuse a 3*256*256 DNP image for a 40 track D41 */
+      uint8_t *ptr = fsize != 196608 ? NULL : ustrrchr(name, '.');
+
+      if (ptr == NULL || ptr[2] != 'N') {
+        uint16_t extra = fsize - D41_SIZE_MIN;
+
+        /*
+         * check if the total image size could be valid for either
+         * - an image without error info (256 byte per sector), or
+         * - an image with 1 additional byte error info per sector (256+1 bytes
+         *   per sector).
+         *
+         * In both cases the additional data must also be a multiple of
+         * 17 sectors (the expected sector count for tracks > 35).
+         */
+        if (fsize % 256 == 0 && (extra/256) % 17 == 0) {
+          imagetype = D64_TYPE_D41;
+          extra /= 256; /* extra bytes => extra sectors */
+        } else if (fsize % (256+1) == 0 && ((extra-683)/(256+1)) % 17 == 0) {
+          imagetype = D64_TYPE_D41 | D64_HAS_ERRORINFO;
+          extra = (extra - D41_SIZE_MIN/256) / 257; /* bytes => sectors */
+        } else {
+          imagetype = 0;
+        }
+
+        if (imagetype != 0) { /* found a valid D41 image */
+          memcpy_P(&partition[part].d64data, &d41param, sizeof(struct param_s));
+          partition[part].d64data.last_track += extra / 17;
+          partition[part].d64data.error_offset += 256 * extra;
+          break;
+        }
+      }
+    }
+
+    /* Not recognized as neither D41, D71 nor D81 image; last try is DNP */
     if ((fsize % (256*256L)) != 0) {
       set_error(ERROR_IMAGE_INVALID);
       return 1;
     }
 
-    /* sanity check: ignore 40-track D64 images */
-    if (fsize == 196608) {
-      uint8_t *ptr = ustrrchr(name, '.');
-
-      if (ptr[2] == '6' && ptr[3] == '4') {
-        set_error(ERROR_IMAGE_INVALID);
-        return 1;
-      }
-    }
-
     imagetype = D64_TYPE_DNP;
     memcpy_P(&partition[part].d64data, &dnpparam, sizeof(struct param_s));
     partition[part].d64data.last_track = fsize / (256*256L);
+    partition[part].d64data.last_bam_track = partition[part].d64data.last_track;
+    partition[part].d64data.error_offset = fsize;
   }
 
   /* allocate the first BAM buffer if required */
@@ -1392,7 +1406,7 @@ static uint16_t d64_freeblocks(uint8_t part) {
   uint16_t blocks = 0;
   uint8_t i;
 
-  for (i = 1; i != 0 && i <= get_param(part, LAST_TRACK); i++) {
+  for (i = 1; i != 0 && i <= get_param(part, LAST_BAM_TRACK); i++) {
     /* Skip directory track */
     switch (partition[part].imagetype & D64_TYPE_MASK) {
     case D64_TYPE_D81:
@@ -1990,7 +2004,7 @@ static void d64_format(uint8_t part, uint8_t *name, uint8_t *id) {
 
   if (id != NULL) {
     /* Clear the data area of the disk image */
-    for (t=1; t<=get_param(part, LAST_TRACK); t++) {
+    for (t=1; t<=get_param(part, LAST_BAM_TRACK); t++) {
       for (s=0; s<sectors_per_track(part, t); s++) {
         if (image_write(part, sector_offset(part, t, s),
                         buf->data, 256, 0))
@@ -2022,7 +2036,7 @@ static void d64_format(uint8_t part, uint8_t *name, uint8_t *id) {
   idbuf[2] = 0xa0;
 
   /* Mark all sectors as free */
-  for (t=1; t<=get_param(part, LAST_TRACK); t++) {
+  for (t=1; t<=get_param(part, LAST_BAM_TRACK); t++) {
     for (s=0; s<sectors_per_track(part, t); s++)
       free_sector(part,t,s);
   }

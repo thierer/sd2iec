@@ -711,11 +711,19 @@ x00 files are recognized by checking both the extension of the file
 Disk Images:
 ============
 Disk images are recognized by their file extension (.D64, .D41, .D71, .D81,
-.DNP) and their file size (must be one of 174848, 175531, 349696, 351062,
-819200 or a multiple of 65536 for DNP). If the image has an error info block
-appended it will be used to simulate read errors. Writing to a sector with
-an error will always work, but it will not clear the indicated error.
-D81 images with error info blocks are not supported.
+.DNP) and their file size.
+
+D41 images with more than 35 tracks can be mounted, if the additional
+data is a multiple of 17 sectors and within a maximum of 42 tracks total.
+It's up to the individual loader implementations to actually make use of
+these extra sectors. Allocation e.g. for SAVE won't take them into
+account. Unlike original CBM DOS, B-R/U1 and B-W/U2 will access sectors
+on non-standard tracks without error.
+
+If the image has an error info block appended it will be used to simulate
+read errors. Writing to a sector with an error will always work, but it
+will not clear the indicated error. D81 images with error info blocks are
+not supported.
 
 Warning: There is at least one program out there (DirMaster v2.1/Style by
 THE WIZ) which generates broken DNP files. The usual symptom is that

@@ -223,7 +223,7 @@ typedef struct dh_s {
 
 /* This enum must match the struct param_s below! */
 typedef enum { DIR_TRACK = 0, DIR_START_SECTOR,
-               LAST_TRACK, LABEL_OFFSET, ID_OFFSET,
+               LAST_TRACK, LAST_BAM_TRACK, LABEL_OFFSET, ID_OFFSET,
                FILE_INTERLEAVE, DIR_INTERLEAVE
                /* , FORMAT_FUNCTION */ } param_t;
 
@@ -232,10 +232,12 @@ typedef enum { DIR_TRACK = 0, DIR_START_SECTOR,
  * @dir_track       : track of the (current) directory
  * @dir_start_sector: first sector of the directory on dir_track
  * @last_track      : highest valid track number
+ * @last_bam_track  : highest track number that has BAM entries
  * @label_offset    : byte offset of the disk label from the beginning of dir_track/0
  * @id_offset       : as label_offset, for the disk ID
  * @file_interleave : interleave factor for file sectors
  * @dir_interleave  : interleave factor for directory sectors
+ * @error_offset    : offset of potential error info in image
  * @format_function : image-specific format function
  *
  * This structure holds those parameters that differ between various Dxx
@@ -245,11 +247,13 @@ struct param_s {
   uint8_t dir_track;
   uint8_t dir_start_sector;
   uint8_t last_track;
+  uint8_t last_bam_track;
   uint8_t label_offset;
   uint8_t id_offset;
   uint8_t file_interleave;
   uint8_t dir_interleave;
   // Insert new fields here, otherwise get_param will fail!
+  uint32_t error_offset;
   void    (*format_function)(uint8_t part, struct buffer_s *buf, uint8_t *name, uint8_t *idbuf);
 };
 
