@@ -1604,7 +1604,7 @@ void image_mkdir(path_t *path, uint8_t *dirname) {
  * byte into buffer. It returns 0 on success, 1 if less than
  * bytes byte could be read and 2 on failure.
  */
-uint8_t image_read(uint8_t part, DWORD offset, void *buffer, uint16_t bytes) {
+uint8_t image_read(uint8_t part, LONG offset, void *buffer, uint16_t bytes) {
   FRESULT res;
   UINT bytesread;
 
@@ -1640,7 +1640,7 @@ uint8_t image_read(uint8_t part, DWORD offset, void *buffer, uint16_t bytes) {
  * byte into buffer. It returns 0 on success, 1 if less than
  * bytes byte could be written and 2 on failure.
  */
-uint8_t image_write(uint8_t part, DWORD offset, void *buffer, uint16_t bytes, uint8_t flush) {
+uint8_t image_write(uint8_t part, LONG offset, void *buffer, uint16_t bytes, uint8_t flush) {
   FRESULT res;
   UINT byteswritten;
 
