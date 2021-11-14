@@ -58,7 +58,7 @@ ifeq ($(CONFIG_HAVE_IEC),y)
   SRC += fl-ar6.c fl-dolphin.c fl-dreamload.c fl-eload.c
   SRC += fl-epyxcart.c fl-fc3exos.c fl-geos.c fl-gijoe.c
   SRC += fl-mmzak.c fl-nippon.c fl-turbodisk.c fl-ulm3.c
-  SRC += fl-n0sdos.c fl-samsjourney.c
+  SRC += fl-n0sdos.c fl-samsjourney.c fl-ultraboot.c
 endif
 
 ifneq ($(CONFIG_NO_SD),y)

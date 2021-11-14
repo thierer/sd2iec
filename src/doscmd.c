@@ -259,6 +259,9 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
 #ifdef CONFIG_LOADER_SAMSJOURNEY
   { 0x0400, FL_SAMSJOURNEY,      load_samsjourney, 0 },
 #endif
+#ifdef CONFIG_LOADER_ULTRABOOT
+  { 0x0205, FL_ULTRABOOT,        load_ultraboot, 0 },
+#endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker
 };
@@ -429,6 +432,17 @@ static void save_capbuffer(void) {
 #endif // CONFIG_CAPTURE_LOADERS
 
 static void run_loader(uint16_t address) {
+#ifdef CONFIG_LOADER_ULTRABOOT
+  /*
+   * UB sends all code in the M-E command buffer and loads the rest from disk,
+   * so it can't be detected by a M-W checksum.
+   */
+  if (detected_loader == FL_NONE && datacrc == 0xffff) {
+    if (detect_ultraboot(address))
+      detected_loader = FL_ULTRABOOT;
+  }
+#endif
+
   if (detected_loader == FL_NONE) {
     uart_puts_P(PSTR("Code exec at "));
     uart_puthex(address >> 8);
