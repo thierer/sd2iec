@@ -63,6 +63,7 @@ typedef enum {
   FL_MMZAK,
   FL_N0SDOS_FILEREAD,
   FL_SAMSJOURNEY,
+  FL_ULTRABOOT,
 } fastloaderid_t;
 
 extern fastloaderid_t detected_loader;
@@ -93,6 +94,7 @@ bool save_ar6_1581(uint8_t);
 bool load_mmzak(uint8_t);
 bool load_n0sdos_fileread(uint8_t);
 bool load_samsjourney(uint8_t);
+bool load_ultraboot(uint8_t);
 
 int16_t dolphin_getc(void);
 uint8_t dolphin_putc(uint8_t data, uint8_t with_eoi);

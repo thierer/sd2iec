@@ -1082,7 +1082,7 @@ uload3_bitloop:
         ret
 #endif
 
-#ifdef CONFIG_LOADER_EPYXCART
+#if defined CONFIG_LOADER_EPYXCART || defined CONFIG_LOADER_ULTRABOOT
         ;; send bits 7 and 5 of r0 to clock/data
         ;; masked contents of IEC_OUTPUT expected in r19
         ;; 8 (or 9 for 22 bit PC MCUs) cycles from rcall to out, 4 (or 5) to return
@@ -1094,7 +1094,9 @@ epyx_bitpair:
         bld     r19, IEC_OPIN_DATA         ; 1
         out     _SFR_IO_ADDR(IEC_OUTPUT), r19 ; 1
         ret                                ; 4 or 5
+#endif
 
+#if defined CONFIG_LOADER_EPYXCART
         ;;
         ;; Send a byte using the Epyx Fastload cartridge protocol
         ;;
@@ -1848,4 +1850,66 @@ n0sdos_send_byte:
 
 #endif
 
+#ifdef CONFIG_LOADER_ULTRABOOT
+        ;;
+        ;; send a byte using the Ultraboot protocol
+        ;; called with byte in r24, returns status (host set DATA) in r24
+        ;;
+        ;; Ultraload uses the same bit order as Epyx but with a slightly
+        ;; different timing.
+        .global ultraboot_send_byte
+ultraboot_send_byte:
+
+        cli
+
+        ;; prepare data
+        in      r19, _SFR_IO_ADDR(IEC_OUTPUT)
+        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ)
+
+        ;; wait for DATA high
+1:      sbis    _SFR_IO_ADDR(IEC_INPUT), IEC_PIN_DATA
+        rjmp    1b
+
+        ;; 0 us: set DATA
+        sbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA         ; 2
+
+        ;; 15 us: release DATA
+        delay_us 15, -2
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA         ; 2
+
+        mov     r0, r24                                         ; 1
+
+        ;; 19 us: first bitpair
+        delay_us 4, -11-RCALL_OFFSET
+        rcall   epyx_bitpair            ; 8+4 or 9+5 - bits 7 and 5
+
+        ;; 27 us: second bitpair
+        lsl     r0                                              ; 1
+        delay_us 8, -13-RET_OFFSET-RCALL_OFFSET
+        rcall   epyx_bitpair            ; 8+4 or 9+5 - bits 6 and 4
+
+        ;; 35 us: third bitpair
+        swap    r24                                             ; 1
+        mov     r0, r24                                         ; 1
+        delay_us 8, -14-RET_OFFSET-RCALL_OFFSET
+        rcall   epyx_bitpair            ; 8+4 or 9+5 - bits 3 and 1
+
+        ;; 43 us: last bitpair
+        lsl     r0                                              ; 1
+        delay_us 8, -13-RET_OFFSET-RCALL_OFFSET
+        rcall   epyx_bitpair            ; 8+4 or 9+5 - bits 2 and 0
+
+        ;; 51 us: release DATA
+        delay_us 8, -5-RET_OFFSET
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA         ; 2
+
+        ;; 56 us: the host should have set DATA now
+        delay_us 5, -1
+        in      r24, _SFR_IO_ADDR(IEC_INPUT)
+        andi    r24, IEC_BIT_DATA
+
+        sei
+        ret
+
+#endif
         .end

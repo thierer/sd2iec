@@ -1,0 +1,117 @@
+Ultraboot and Ultraboot Menue
+=============================
+
+Documented by Martin Thierer
+
+General
+-------
+Ultraboot and its companion Ultraboot Menue were both published in the
+german computer magazine "Happy Computer", issues 04/86 and 07/86.
+They were written by Martin Pfost, also author of other popular floppy
+speeders ("Ultra-Save", "Ultraload Plus" and "Heureka Sprint").
+
+Storage format
+--------------
+The storage format has a few peculiarities:
+
+- The payload is written to the (normally unused) tracks 36 to 40 of a
+  disk in 1541 format. The host part of the loader code is stored in a
+  free block of the directory track, so none of the standard disk
+  capacity is used.
+- The extra tracks are formatted with up to 21 sectors per track.
+  Sector 36/0 contains the drive code, so this results in a maximum
+  payload length of (40-35)*21-1 = 104 sectors.
+- The bytes are stored pre-bitshuffled and inverted, so the C64 can
+  just shift the bits in from the clock and data lines without need
+  for remapping.
+- The link to the next sector is not in bytes 0 and 1, as usual, but
+  at byte offsets 254 (sector) and 255 (track). The last sector of
+  each data chain is marked by a zero for the next track and contains
+  the number of bytes used in the sector value.
+
+Load process
+============
+A small (one block) loader is stored in the directory track and
+referenced by a "U" directory entry (the so called "U-File"). It loads
+to $0324 and therefore auto-starts when loaded with LOAD "U",8,1.
+
+Instead of transferring drive code from the host, only a small code
+fragment is sent in a "M-E" command, which loads and executes the real
+transfer code from sector 36/0.
+
+Ultraboot Menue
+---------------
+Ultraboot can only load one pre-selected program with the load address
+fixed at $0801. To make it more useful, the payload can be a bundle of
+the small "Ultraboot Menue" program and any (within the 104 block
+capacity) number of applications. This allows to load (and possibly
+start) these applications in random combinations that can both be
+pre-defined and selected at runtime.
+
+The menu program reuses the drive code from the U-File loader to load
+the selected application(s).
+
+Sending a byte
+--------------
+The data line is used for handshaking. The host releases it when it's
+ready to receive. The drive then sets it to signal the start of the
+transfer. After each byte the host sets data until it is ready to
+receive the next byte.
+
+Byte timing
+-----------
+The loader transfers each byte in the same bit-order as the Epyx Fast
+Load cartridge, but with a different timing:
+
+   Time  Clock Data
+   ----------------
+    0us    -   1->0   drive sets data -> timing reference
+   15us    -   0->1   for jitter compensation, see below
+   19us   !b7  !b5
+   27us   !b6  !b4
+   35us   !b3  !b1
+   43us   !b2  !b0
+   56us    -    0     host sets data -> busy signal
+
+Note: The bit numbers refer to the bytes as they are stored on disk.
+The Ultraboot installer encodes them as 76543210 -> ~02134657 to avoid
+mapping that would otherwise be needed when running on original
+hardware.
+
+End of transfer
+---------------
+As only full sectors are transferred, there is no need for a dedicated
+EOI signal. Both the drive and the host check the last byte (track
+link) of the sector and end the transfer if it is $00.
+
+Jitter compensation
+-------------------
+The host releases data to signal that it's ready to receive and then
+waits in a BIT/BMI loop for the drive to set it again. This loop
+introduces a 7 cycle jitter to the time when the host detects the low
+level of data and therefore the reference time. On the other hand, the
+time between bit-pairs is just 8 cycles.
+
+To partially compensate for that, the drive releases data 4 us before
+it sends the first bit-pair. The host adds a 4 cycle delay if it still
+reads data as low 7 cycles before it would read the first bit-pair.
+
+                  -5    0    5   10   15   20   25   30
+                   |    |    |    |    |    |    |    |
+                   _____                ___
+Data            ...     |______________|   555555554...
+                   _____
+Clock           ...     |__________________777777776...
+
+ 0 host early           +         0      |-->r
++1 cycle                 +         0      |-->r
++2                        +         0      |-->r
++3                         +         0      |-->r
++4                          +         0      |-->r
++5                           +         1      r
++6 host late                  +         1      r
+
++: host detects low data here
+0: data low at check  -> read first bit-pair 11 cycles later
+1: data high at check -> read first bit-pair  7 cycles later
+r: host reads first bit-pair here

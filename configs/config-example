@@ -115,6 +115,9 @@ CONFIG_LOADER_N0SDOS=y
 # Enable Sam's Journey fastloader
 CONFIG_LOADER_SAMSJOURNEY=y
 
+# Enable Ultraboot fastloader
+CONFIG_LOADER_ULTRABOOT=n
+
 # Enable DolphinDOS parallel speeder
 CONFIG_PARALLEL_DOLPHIN=y
 

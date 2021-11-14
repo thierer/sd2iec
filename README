@@ -696,6 +696,18 @@ Note: Using sd2iec without an external crystal or similiar precise
   LED lit, e.g. during the intro), sd2iec will hang and requires a
   reset or powercycle to recover.
 
+  Ultraboot
+  ---------
+  Both standard Ultraboot and Ultraboot Menue are supported. Ultraboot
+  stores its data on the nonstandard tracks 36 to 40 with up to 21
+  sectors per track. It therefore only works from extended, "D41" style
+  D64 images. The D64 format is defined with a fixed number of 17 sectors
+  for these tracks, so the sd2iec implementation expects the additional
+  sectors to be linearly mapped to D64 sectors. That is, sectors 17 to 20
+  of track 36 are equivalent to sectors 0 to 3 of track 37 in standard
+  D64 format and so on. Likewise, sector 40/20 (the last possible sector
+  for Ultraboot) corresponds to D64 sector 41/19.
+
 JiffyDOS:
 =========
 The JiffyDOS protocol has very relaxed timing constraints compared to
