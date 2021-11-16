@@ -1832,7 +1832,7 @@ void d64_unmount(uint8_t part) {
   }
 
   /* decrease BAM buffer refcounter - it can never be zero while a Dxx is mounted*/
-  if (--bam_refcount) {
+  if (--bam_refcount == 0) {
     free_buffer(bam_buffer);
     free_buffer(bam_buffer2);
     bam_buffer  = NULL;
