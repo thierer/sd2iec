@@ -416,7 +416,7 @@ uint8_t d64_bam_commit(void) {
   if (bam_buffer2)
     res |= bam_buffer2->cleanup(bam_buffer2);
 
-  return 0;
+  return res;
 }
 
 /**
