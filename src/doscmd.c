@@ -2108,7 +2108,7 @@ void parse_doscommand(void) {
   display_doscommand(command_length, command_buffer);
 
   /* MD/CD/RD clash with other commands, so they're checked first */
-  if (command_buffer[0] != 'X' && command_buffer[1] == 'D') {
+  if (command_buffer[1] == 'D'&& command_length > 1 && command_buffer[0] != 'X') {
     parse_dircommand();
     return;
   }
