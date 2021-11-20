@@ -2023,6 +2023,20 @@ uint8_t d64_set_error(uint8_t part, uint8_t track, uint8_t sector, uint8_t error
 /*  Formatting disk images                                                   */
 /* ------------------------------------------------------------------------- */
 
+/* Initializes sector contents and resets error info, if applicable. */
+static uint8_t d64_format_track(uint8_t part, buffer_t *buf, uint8_t track) {
+  uint8_t sector;
+
+  for (sector = 0; sector < sectors_per_track(part, track); sector++) {
+    if (image_write(part, sector_offset(part, track, sector), buf->data, 256, 0))
+      return 1;
+    if (partition[part].imagetype & D64_HAS_ERRORINFO)
+      d64_set_error(part, track, sector, 1); // no error
+  }
+
+  return 0;
+}
+
 /* create a 1581/DNP BAM signature */
 static void format_add_bam_signature(uint8_t doschar, uint8_t *idbuf) {
   uint8_t *ptr = bam_buffer->data + 2;
@@ -2183,11 +2197,8 @@ static void d64_format(uint8_t part, uint8_t *name, uint8_t *id) {
   if (id != NULL) {
     /* Clear the data area of the disk image */
     for (t=1; t<=get_param(part, LAST_BAM_TRACK); t++) {
-      for (s=0; s<sectors_per_track(part, t); s++) {
-        if (image_write(part, sector_offset(part, t, s),
-                        buf->data, 256, 0))
-          return;
-      }
+      if (d64_format_track(part, buf, t))
+        return;
     }
 
     /* Copy the new ID into the buffer */
@@ -2204,12 +2215,8 @@ static void d64_format(uint8_t part, uint8_t *name, uint8_t *id) {
 
     /* clear the entire directory track */
     /* This is not accurate, but I do not care. */
-    t = get_param(part, DIR_TRACK);
-    for (s=0; s < sectors_per_track(part, t); s++) {
-      if (image_write(part, sector_offset(part, t, s),
-                      buf->data, 256, 0))
-        return;
-    }
+    if (d64_format_track(part, buf, get_param(part, DIR_TRACK)))
+      return;
   }
   idbuf[2] = 0xa0;
 
@@ -2221,8 +2228,6 @@ static void d64_format(uint8_t part, uint8_t *name, uint8_t *id) {
 
   /* call imagetype-specific format function */
   partition[part].d64data.format_function(part, buf, name, idbuf);
-
-  /* FIXME: Clear the error info block */
 }
 
 
