@@ -61,6 +61,9 @@ uint8_t d64_commit(void);
 void d64_raw_directory(path_t *path, buffer_t *buf);
 void d64_invalidate(void);
 
+/* add extended tracks to a D41 image */
+uint8_t d64_extend_image(uint8_t part, uint8_t tracks);
+
 /* set an error code for a sector */
 uint8_t d64_set_error(uint8_t part, uint8_t track, uint8_t sector, uint8_t error);
 
