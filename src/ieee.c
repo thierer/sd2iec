@@ -565,7 +565,8 @@ static void cmd_handler (void)
 
   /* We're done, clean up unused buffers */
   free_multiple_buffers(FMB_UNSTICKY);
-  d64_bam_commit();
+  /* commit BAM buffers and errorcache */
+  d64_commit();
 }
 
 /* ------------------------------------------------------------------------- */
