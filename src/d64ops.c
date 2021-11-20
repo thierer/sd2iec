@@ -2018,6 +2018,58 @@ uint8_t d64_set_error(uint8_t part, uint8_t track, uint8_t sector, uint8_t error
   return 0;
 }
 
+/**
+ * d64_extend_image - extend a D41 image up to a maximum of 42 tracks
+ * @part  : partition number
+ * @tracks: number of tracks to extend to
+ *
+ * The image can't be extended if it already contains an error info block.
+ * (The error info would need to be relocated, which is not supported).
+ *
+ * When extending, an error info block is created, though, and all newly
+ * added sectors are marked with an NO SYNC error. When a track is
+ * formatted, this error is cleared for all its sectors.
+ */
+uint8_t d64_extend_image(uint8_t part, uint8_t tracks) {
+  buffer_t *buf;
+  uint8_t  last = get_param(part, LAST_TRACK);
+
+  if (last >= tracks) // nothing to do
+    return 0;
+
+  // Only continue if a D41 image without error info is mounted.
+  if (partition[part].fop != &d64ops || partition[part].imagetype != D64_TYPE_D41) {
+    set_error(ERROR_IMAGE_INVALID);
+    return 1;
+  }
+
+  // No more than 42 tracks total
+  if (tracks > 42) {
+    set_error_ts(ERROR_ILLEGAL_TS_COMMAND, tracks, 0);
+    return 1;
+  }
+
+  buf = alloc_buffer();
+  if (!buf)
+    return 1;
+
+  // add error info. This automatically extends the image to the requested size.
+  partition[part].d64data.error_offset = sector_offset(part, tracks+1, 0);
+  if (add_errorinfo(part, buf))
+    return 1;
+
+  // mark all added sectors as NOSYNC. This error will be cleared by formatting.
+  memset(buf->data, ERROR_READ_NOSYNC - 20 + 2, 17*(tracks - last));
+  if (image_write(part,
+                  partition[part].d64data.error_offset + sector_lba(part,last+1,0),
+                  buf->data, 17*(tracks - last), 1))
+    return 1;
+
+  partition[part].d64data.last_track = tracks;
+
+  return 0;
+}
+
 
 /* ------------------------------------------------------------------------- */
 /*  Formatting disk images                                                   */
@@ -2196,7 +2248,7 @@ static void d64_format(uint8_t part, uint8_t *name, uint8_t *id) {
 
   if (id != NULL) {
     /* Clear the data area of the disk image */
-    for (t=1; t<=get_param(part, LAST_BAM_TRACK); t++) {
+    for (t=1; t<=get_param(part, LAST_TRACK); t++) {
       if (d64_format_track(part, buf, t))
         return;
     }

@@ -261,7 +261,9 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
   { 0x0400, FL_SAMSJOURNEY,      load_samsjourney, 0 },
 #endif
 #ifdef CONFIG_LOADER_ULTRABOOT
-  { 0x0205, FL_NONE,             load_ultraboot, 0 },
+  { 0x0205, FL_NONE,             load_ultraboot,   0 },
+  { 0x0417, FL_NONE,             format_ultraboot, 0 },
+  { 0x0424, FL_ULTRABOOT,        write_ultraboot,  0 },
 #endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker

@@ -34,6 +34,7 @@
 #include "config.h"
 #include "crc.h"
 #include "buffers.h"
+#include "d64ops.h"
 #include "doscmd.h"
 #include "errormsg.h"
 #include "fastloader-ll.h"
@@ -49,29 +50,66 @@
 static const PROGMEM uint8_t sectors_per_track[] = { 17, 18, 19, 21 };
 static uint8_t speedzone;
 
+// Check if a D41 image is mounted.
+static bool check_d41_image(void) {
+  partition_t *p = &partition[current_part];
+
+  if (p->fop != &d64ops || (p->imagetype & D64_TYPE_MASK) != D64_TYPE_D41) {
+    set_error(ERROR_IMAGE_INVALID);
+    return false;
+  }
+
+  return true;
+}
+
 static bool detect_ultraboot(void) {
   uint16_t crc;
+  buffer_t *buf;
   uint8_t  i;
 
   crc = 0xffff;
 
-  for (i = 5; i < command_length; i++) {
-    // Bytes at offsets 6 and 11 are variable: track, sector
-    if (i == 6 || i == 11) continue;
-    crc = crc16_update(crc, command_buffer[i]);
-  }
+  switch (*(uint16_t *)(command_buffer+3)) { /* M-E address */
+    case 0x0205: // Ultraboot or Ultraboot Menue
+      for (i = 5; i < command_length; i++) {
+        // Bytes at offsets 6 and 11 are variable: track, sector
+        if (i == 6 || i == 11) continue;
+        crc = crc16_update(crc, command_buffer[i]);
+      }
 
-  switch (crc) {
-    case 0xd75a: // Ultraboot
-      fl_track  = 36;
-      fl_sector = 0;
-      // avoid mapping for 36/0; the correct speedzone is applied later
-      speedzone = 0;
-      return true;
-    case 0x3e82: // Ultraboot Menue
-      fl_track  = command_buffer[6];
-      fl_sector = command_buffer[11];
-      return true;
+      switch (crc) {
+        case 0xd75a: // Ultraboot
+          fl_track  = 36;
+          fl_sector = 0;
+          // avoid mapping for 36/0; the correct speedzone is applied later
+          speedzone = 0;
+          return true;
+        case 0x3e82: // Ultraboot Menue
+          fl_track  = command_buffer[6];
+          fl_sector = command_buffer[11];
+          return true;
+        default:
+          break;
+      }
+      break;
+
+    case 0x0417: // Ultraboot Maker's format code
+      buf = find_buffer(2);
+      if (!buf)
+        return false;
+
+      // Channel 2 contains the format drivecode. The last two bytes are
+      // variable (speedzone and sectors/track), so ignore them for the hash.
+      for (i = 0; i < buf->position-2; i++)
+        crc = crc16_update(crc, buf->data[i]);
+
+      if (crc == 0x60db && (buf->data[buf->position-2] & ~0x60) == 0) {
+        fl_track = command_buffer[5];
+        speedzone = buf->data[buf->position-2] >> 5;
+        return true;
+      }
+      break;
+
     default:
       break;
   }
@@ -89,6 +127,75 @@ static void map_sector(volatile uint8_t *track, volatile uint8_t *sector) {
   index = pgm_read_byte(&sectors_per_track[speedzone]) * (*track-36) + *sector;
   *track = 36 + index / 17;
   *sector = index % 17;
+}
+
+bool format_ultraboot(UNUSED_PARAMETER) {
+  uint8_t t;
+  uint8_t s;
+
+  if (!detect_ultraboot())
+    return false;
+
+  if (!check_d41_image())
+    return true;
+
+  if (fl_track > 40) {
+    set_error_ts(ERROR_ILLEGAL_TS_COMMAND, fl_track, 0);
+    return true;
+  }
+
+  if (fl_track < 36)
+    return true;
+
+  if (fl_track == 36) {
+    if (d64_extend_image(current_part, speedzone > 0 ? 42 : 40))
+      return true;
+  }
+
+  fl_sector = 0;
+  map_sector(&fl_track, &fl_sector);
+
+  t = fl_track;
+  s = pgm_read_byte(&sectors_per_track[speedzone]) - 1;
+  map_sector(&t, &s);
+
+  // mark all (mapped) sectors of the given track as valid
+  while (t > fl_track || (t == fl_track && s >= fl_sector)) {
+    d64_set_error(current_part, t, s, 1);
+
+    if (s-- == 0) {
+      t--;
+      s = 16;
+    }
+  }
+
+  // set loader for write_ultraboot() detection
+  detected_loader = FL_ULTRABOOT;
+
+  return true;
+}
+
+bool write_ultraboot(UNUSED_PARAMETER) {
+  buffer_t *buf;
+
+  fl_track = command_buffer[5];
+  fl_sector = command_buffer[6];
+
+  if (fl_track > 40) {
+    set_error_ts(ERROR_ILLEGAL_TS_COMMAND, fl_track, fl_sector);
+    return true;
+  }
+
+  map_sector(&fl_track, &fl_sector);
+
+  // Channel 2 has the sector data
+  buf = find_buffer(2);
+  if (!buf)
+    return true;
+
+  write_sector(buf, current_part, fl_track, fl_sector);
+
+  return true;
 }
 
 static uint8_t ultraboot_send_block(const uint8_t* data) {

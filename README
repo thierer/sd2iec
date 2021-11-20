@@ -708,6 +708,14 @@ Note: Using sd2iec without an external crystal or similiar precise
   D64 format and so on. Likewise, sector 40/20 (the last possible sector
   for Ultraboot) corresponds to D64 sector 41/19.
 
+  Ultraboot Maker can be used to add Ultraboot to D41 images mounted
+  on the sd2iec. The image will be automatically extended to either 40
+  or 42 tracks, depending on the size of the payload. This only works
+  if no error information block is present in the image, as relocating
+  the error information is not supported. An error info block is added
+  in the process and sectors on unused (mapped) tracks will have a NO
+  SYNC error set.
+
 JiffyDOS:
 =========
 The JiffyDOS protocol has very relaxed timing constraints compared to
