@@ -87,8 +87,9 @@ typedef enum { BAM_BITFIELD, BAM_FREECOUNT } bamdata_t;
 struct {
   uint8_t part;
   uint8_t track;
+  uint8_t mustflush;
   uint8_t errors[MAX_SECTORS_PER_TRACK];
-} errorcache;
+} errorcache = { 255, 0, 0, {0} };
 
 static buffer_t *bam_buffer;  // recently-used buffer
 static buffer_t *bam_buffer2; // secondary buffer
@@ -97,6 +98,9 @@ static uint8_t   bam_refcount;
 /* ------------------------------------------------------------------------- */
 /*  Forward declarations                                                     */
 /* ------------------------------------------------------------------------- */
+
+static uint8_t errorcache_read(uint8_t part, uint8_t track);
+static uint8_t errorcache_commit(void);
 
 static uint8_t d64_opendir(dh_t *dh, path_t *path);
 
@@ -241,32 +245,8 @@ static uint8_t checked_read(uint8_t part, uint8_t track, uint8_t sector, uint8_t
     return 2;
   }
 
-  if (partition[part].imagetype & D64_HAS_ERRORINFO) {
-    /* Check if the sector is marked as bad */
-    if (errorcache.part != part || errorcache.track != track) {
-      /* Read the error info for this track */
-      memset(errorcache.errors, 1, sizeof(errorcache.errors));
-
-      switch (partition[part].imagetype & D64_TYPE_MASK) {
-      case D64_TYPE_D41:
-      case D64_TYPE_D71:
-      case D64_TYPE_D81:
-        if (image_read(part,
-                       partition[part].d64data.error_offset+sector_lba(part,track,0),
-                       errorcache.errors, sectors_per_track(part, track)) >= 2)
-          return 2;
-        break;
-
-      default:
-        /* Should not happen unless someone enables error info
-           for additional image formats */
-        return 2;
-
-      }
-      errorcache.part  = part;
-      errorcache.track = track;
-    }
-
+  /* Check if the sector is marked as bad */
+  if (!errorcache_read(part, track)) {
     /* Calculate error message from the code */
     if (errorcache.errors[sector] >= 2 && errorcache.errors[sector] <= 11) {
       /* Most codes can be mapped directly */
@@ -399,24 +379,6 @@ static uint8_t bam_buffer_flush(buffer_t *buf) {
     return res;
   } else
     return 0;
-}
-
-/**
- * d64_bam_commit - write BAM buffers to disk
- *
- * This function is the exported interface to force the BAM buffer
- * contents to disk. Returns 0 if successful, != 0 otherwise.
- */
-uint8_t d64_bam_commit(void) {
-  uint8_t res = 0;
-
-  if (bam_buffer)
-    res |= bam_buffer->cleanup(bam_buffer);
-
-  if (bam_buffer2)
-    res |= bam_buffer2->cleanup(bam_buffer2);
-
-  return res;
 }
 
 /**
@@ -1190,6 +1152,92 @@ static uint8_t d64_write_cleanup(buffer_t *buf) {
 
 
 /* ------------------------------------------------------------------------- */
+/*  error cache handling                                                     */
+/* ------------------------------------------------------------------------- */
+
+/**
+ * errorcache_read - read error info for specified track
+ * @part : partition number
+ * @track: track number for which error info should be fetched
+ *
+ * This function updates the error cache with the error info
+ * for the given track. It will first flush the current error
+ * cache back to disk if it is valid and was modified.
+ *
+ * Returns 0 on success, 1 in case of an error.
+ */
+
+static uint8_t errorcache_read(uint8_t part, uint8_t track) {
+  uint32_t pos;
+
+  if ((partition[part].imagetype & D64_HAS_ERRORINFO) == 0)
+    return 1;
+
+  if (errorcache.part == part && errorcache.track == track)
+    return 0;
+
+  /* write back the current error cache if it was modified */
+  if (errorcache_commit())
+    return 1;
+
+  /* Read the error info for this track */
+  memset(errorcache.errors, 1, sizeof(errorcache.errors));
+  errorcache.part = 255;
+
+  pos = partition[part].d64data.error_offset + sector_lba(part,track,0);
+
+  switch (partition[part].imagetype & D64_TYPE_MASK) {
+  case D64_TYPE_D41:
+  case D64_TYPE_D71:
+  case D64_TYPE_D81:
+    if (image_read(part, pos, errorcache.errors, sectors_per_track(part, track)) >= 2)
+      return 1;
+    break;
+
+  default:
+    /* Should not happen unless someone enables error info
+        for additional image formats */
+    return 1;
+
+  }
+
+  errorcache.part  = part;
+  errorcache.track = track;
+
+  return 0;
+}
+
+/**
+ * errorcache_commit - write error cache to disk, if modified
+ *
+ * This function writes the error cache back to the image file
+ * if it is valid and was modified.
+ *
+ * Returns 0 on success, 1 if there was an error updating
+ * the image file.
+ */
+static uint8_t errorcache_commit(void) {
+  uint8_t  part;
+  uint8_t  track;
+  uint32_t pos;
+
+  if (errorcache.mustflush == 0 || errorcache.part == 255)
+    return 0;
+
+  part = errorcache.part;
+  track = errorcache.track;
+  pos = partition[part].d64data.error_offset + sector_lba(part,track,0);
+
+  if (image_write(part, pos, errorcache.errors, sectors_per_track(part, track), 1))
+    return 1;
+
+  errorcache.mustflush = 0;
+
+  return 0;
+}
+
+
+/* ------------------------------------------------------------------------- */
 /*  fileops-API                                                              */
 /* ------------------------------------------------------------------------- */
 
@@ -1807,6 +1855,26 @@ static void d64_mkdir(path_t *path, uint8_t *dirname) {
 }
 
 /**
+ * d64_commit - write BAM buffers and errorcache to disk
+ *
+ * This function is the exported interface to force the BAM buffer and the
+ * errorcache contents to disk. Returns 0 if successful, != 0 otherwise.
+ */
+uint8_t d64_commit(void) {
+  uint8_t res = 0;
+
+  if (bam_buffer)
+    res |= bam_buffer->cleanup(bam_buffer);
+
+  if (bam_buffer2)
+    res |= bam_buffer2->cleanup(bam_buffer2);
+
+  res |= errorcache_commit();
+
+  return res;
+}
+
+/**
  * d64_invalidate - invalidate internal state
  *
  * This function invalidates all cached state when
@@ -1818,6 +1886,9 @@ void d64_invalidate(void) {
   free_buffer(bam_buffer2);
   bam_buffer2  = NULL;
   bam_refcount = 0;
+
+  errorcache.part = 255;
+  errorcache.mustflush = 0;
 }
 
 /**
@@ -1848,6 +1919,103 @@ void d64_unmount(uint8_t part) {
     bam_buffer  = NULL;
     bam_buffer2 = NULL;
   }
+
+  if (errorcache.part == part) {
+    errorcache_commit();
+    errorcache.part = 255;
+  }
+}
+
+static uint8_t add_errorinfo(uint8_t part, buffer_t *buf) {
+  int16_t  sectors;
+  uint32_t pos;
+
+  memset(buf->data, 1, 256);
+
+  pos = partition[part].d64data.error_offset;
+  sectors = pos / 256;
+
+  while (sectors > 0) {
+    if (image_write(part, pos, buf->data, sectors > 256 ? 256 : sectors, 0))
+      return 1;
+
+    pos += 256;
+    sectors -= 256;
+  }
+
+  partition[part].imagetype |= D64_HAS_ERRORINFO;
+
+  return 0;
+}
+
+/**
+ * d64_set_error - set error code for sector
+ * @part  : partition number
+ * @track : track number
+ * @sector: sector number
+ * @error : error code
+ *
+ * Sets the error code for the specified sector in the error info block
+ * of the image. Adds the error info block if necessary.
+ *
+ * Returns 0 on success and != 0 on error.
+ *
+ * | error code |         CBM DOS equivalent          |
+ * |:----------:|:------------------------------------|
+ * |      0     | invalid (!)                         |
+ * |      1     | 00 (OK)                             |
+ * |      2     | 20 (block header not found)         |
+ * |      3     | 21 (no SYNC)                        |
+ * |      4     | 22 (data block not found)           |
+ * |      5     | 23 (data block checksum error)      |
+ * |      6     | 24 (invalid GCR)                    |
+ * |    7, 8    | 25, 26 (write errors)               |
+ * |      9     | 27 (header checksum error)          |
+ * |     10     | 28 (write error)                    |
+ * |     11     | 29 (disc id mismatch)               |
+ * |   12..14   | invalid                             |
+ * |     15     | 74 (drive not ready)                |
+ */
+uint8_t d64_set_error(uint8_t part, uint8_t track, uint8_t sector, uint8_t error) {
+  buffer_t *buf;
+
+  // Refuse if no D64 image is mounted
+  if (partition[part].fop != &d64ops)
+    return 1;
+
+  // DNP doesn't support error info
+  if ((partition[part].imagetype & D64_TYPE_MASK) == D64_TYPE_DNP)
+    return 0;
+
+  // Better be safe and check that track and sector are valid
+  if (track < 1 || track > get_param(part, LAST_TRACK) ||
+      sector >= sectors_per_track(part, track)) {
+    set_error_ts(ERROR_ILLEGAL_TS_COMMAND, track, sector);
+    return 1;
+  }
+
+  // Add error info if not already present
+  if ((partition[part].imagetype & D64_HAS_ERRORINFO) == 0) {
+    if (error == 1) // this is the default; nothing to do
+      return 0;
+
+    buf = alloc_buffer();
+    if (!buf)
+      return 1;
+
+    if (add_errorinfo(part, buf))
+      return 1;
+  }
+
+  if (errorcache_read(part, track))
+    return 1;
+
+  if (errorcache.errors[sector] != error) {
+    errorcache.errors[sector] = error;
+    errorcache.mustflush = 1;
+  }
+
+  return 0;
 }
 
 
@@ -2007,7 +2175,7 @@ static void d64_format(uint8_t part, uint8_t *name, uint8_t *id) {
   memset(buf->data, 0, 256);
 
   /* Flush BAM buffers and mark their contents as invalid */
-  d64_bam_commit();
+  d64_commit();
   bam_buffer->pvt.bam.part = 0xff;
   if (bam_buffer2)
     bam_buffer2->pvt.bam.part = 0xff;
