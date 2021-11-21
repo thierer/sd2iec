@@ -64,6 +64,7 @@ typedef enum {
   FL_N0SDOS_FILEREAD,
   FL_SAMSJOURNEY,
   FL_ULTRABOOT,
+  FL_HYPRALOAD,
 } fastloaderid_t;
 
 extern fastloaderid_t detected_loader;
@@ -98,6 +99,7 @@ uint8_t detect_ultraboot(uint16_t address);
 void load_ultraboot(uint8_t);
 void write_ultraboot(uint8_t);
 void format_ultraboot(uint8_t);
+void load_hypraload(uint8_t);
 
 int16_t dolphin_getc(void);
 uint8_t dolphin_putc(uint8_t data, uint8_t with_eoi);

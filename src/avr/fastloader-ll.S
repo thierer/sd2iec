@@ -596,7 +596,7 @@ tdbitloop2:
         ret
 #endif
 
-#if defined(CONFIG_LOADER_DREAMLOAD) || defined(CONFIG_LOADER_FC3) || defined(CONFIG_LOADER_ULOAD3) || defined(CONFIG_LOADER_ELOAD1) || defined(CONFIG_LOADER_GEOS)
+#if defined(CONFIG_LOADER_DREAMLOAD) || defined(CONFIG_LOADER_FC3) || defined(CONFIG_LOADER_ULOAD3) || defined(CONFIG_LOADER_ELOAD1) || defined(CONFIG_LOADER_GEOS) || defined(CONFIG_LOADER_HYDPRALOAD)
         ;;
         ;; Set bit 0 of r0 on CLOCK and bit 1 on DATA
         ;; A bit value of one means pull down
@@ -1912,4 +1912,58 @@ ultraboot_send_byte:
         ret
 
 #endif
+
+#ifdef CONFIG_LOADER_HYPRALOAD
+        ;;
+        ;; send a byte using the Hypra-Load protocol
+        ;; called with byte in r24, no return value
+        .global hypraload_send_byte
+hypraload_send_byte:
+
+        cli
+
+        mov     r0, r24
+
+        rcall   wait_atn_low
+
+        ;; release DATA
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA
+
+        rcall   wait_atn_high           ; 6 or 7 after ATN high
+
+        ;; delay
+        delay_us 30, -16-RET_OFFSET-RCALL_OFFSET
+
+        ;; send bits 0+1
+        rcall   send_bits_to_clk_data   ; 10+6 or 11+7
+
+        ;; delay
+        delay_us 25, -16-RET_OFFSET-RCALL_OFFSET
+
+        ;; send bits 2+3
+        rcall   send_bits_to_clk_data   ; 10+6 or 11+7
+
+        ;; delay
+        delay_us 25, -16-RET_OFFSET-RCALL_OFFSET
+
+        ;; send bits 4+5
+        rcall   send_bits_to_clk_data   ; 10+6 or 11+7
+
+        ;; delay
+        delay_us 25, -16-RET_OFFSET-RCALL_OFFSET
+
+        ;; send bits 6+7
+        rcall   send_bits_to_clk_data   ; 10+6 or 11+7
+
+        ;; delay
+        delay_us 25, -6-RET_OFFSET
+
+        ;; set DATA
+        sbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA
+
+        sei
+        ret
+
+#endif
+
         .end
