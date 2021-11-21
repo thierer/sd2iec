@@ -1,0 +1,76 @@
+Hypra-Load Protocol
+===================
+
+Documented by Martin Thierer
+
+General
+-------
+Hypra-Load is a classic software fastloader published in the german
+computer magazine "64'er" issue 10/84 (subheading "Why waste time?
+Load your programs five times faster."). It was written by Karsten
+Schramm and Boris Schneider. Karsten Schramm is also known as author
+of the books "Die Floppy 1541" and "Die Floppy 1570/1571" (both in
+german).
+
+The BASIC and KERNAL ROMs are copied to RAM and patched to include the
+new loader routines. They replace some of the tape and RS232 code,
+which become non-functional. Hypra-Load deactivates itself by
+switching back to ROM, if a checksum test of the first 256 bytes of
+the copied BASIC ROM indicates that it was overwritten. This check is
+done both before and after loading.
+
+Load process
+------------
+The patched load code is called from the original LOAD routine after
+the first two bytes (the load address) were already received using the
+standard serial bus protocol. No checks are performed for the load
+address (like if it would overwrite memory used by Hypra-Load). Only
+directory load (filename starts with "$") falls back to the original
+code path.
+
+Hypra-Load uses the ATN line for handshake and therefore only works
+with a single drive connected to the bus. It checks for other devices
+and prompts the user to turn them off, if found. The drive address is
+hardcoded to #8 (but the article gave instructions how to change it).
+
+The transfer of each sector is preceeded by sending a status byte.
+Value $FF signals a read error and aborts the transfer. Interestingly,
+for this status byte distinct code with a slightly different timing
+than the normal byte transfers is used in both the host and the drive.
+Fortunately, the timing is close and (by today's standards) relaxed
+enough that one implementation can cover both cases.
+
+Hypra-Load always transfers full 256 byte blocks, even the last block,
+which might be only partially used. The procedure to deal with that is
+somewhat awkward: Every sector is first stored in a buffer at $FBA6
+(originally tape write) and then copied to its real destination after
+the full block has been transfered. The copy code respects the number
+of used bytes as indicated in the final block and therefore doesn't
+overwrite any memory beyond the real end address.
+
+Sending a byte
+--------------
+The host sets ATN when it is ready to receive. It then waits for the
+drive to acknowledge ATN and release DATA, to signal its readiness to
+send. The host then releases ATN. This release of ATN is the timing
+reference for the byte transfer.
+
+                     |  sd2iec  |    host [cycles]
+    ATN  Clock  Data |   [us]   |  status    payload
+   --------------------------------------------------
+    0->1   -     0   |     0    |     0         0    timing reference
+                     |          |
+          !b0   !b1  |    30    |    42        40
+          !b2   !b3  |    55    |    69        64
+          !b4   !b5  |    80    |    96        88
+          !b6   !b7  |   105    |   123       112
+           -     0   |   130    |                    drive busy
+                     |          |
+      0    -     0   |          |   168       149    host busy
+
+End of transfer
+---------------
+As only full sectors are transferred, there is no need for a dedicated
+EOI signal. Both the drive and the host check the first byte of the
+sector for zero as marker for the last sector and end the transfer, if
+found.

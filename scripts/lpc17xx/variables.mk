@@ -16,6 +16,7 @@ SRC += lpc17xx/llfl-geos.c
 SRC += lpc17xx/llfl-parallel.c
 SRC += lpc17xx/llfl-n0sdos.c
 SRC += lpc17xx/llfl-ultraboot.c
+SRC += lpc17xx/llfl-hypraload.c
 
 ifeq ($(CONFIG_UART_DEBUG),y)
   SRC += lpc17xx/printf.c

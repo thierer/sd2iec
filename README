@@ -716,6 +716,11 @@ Note: Using sd2iec without an external crystal or similiar precise
   in the process and sectors on unused (mapped) tracks will have a NO
   SYNC error set.
 
+  Hypra-Load
+  ----------
+  Hypra-Load uses the ATN line for handshake, so it only works if no
+  other device is connected to the IEC bus.
+
 JiffyDOS:
 =========
 The JiffyDOS protocol has very relaxed timing constraints compared to

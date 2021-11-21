@@ -189,6 +189,9 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
 #ifdef CONFIG_LOADER_SAMSJOURNEY
   { 0x6af4, FL_SAMSJOURNEY,      RXTX_NONE          }, // CRC of penultimate M-W
 #endif
+#ifdef CONFIG_LOADER_HYPRALOAD
+  { 0xd2f2, FL_HYPRALOAD,        RXTX_NONE          },
+#endif
 
   { 0, FL_NONE, 0 }, // end marker
 };
@@ -264,6 +267,9 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
   { 0x0205, FL_NONE,             load_ultraboot,   0 },
   { 0x0417, FL_NONE,             format_ultraboot, 0 },
   { 0x0424, FL_ULTRABOOT,        write_ultraboot,  0 },
+#endif
+#ifdef CONFIG_LOADER_HYPRALOAD
+  { 0x048b, FL_HYPRALOAD,        load_hypraload, 0 },
 #endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker
