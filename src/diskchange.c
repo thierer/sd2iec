@@ -256,7 +256,7 @@ static uint8_t create_changelist(path_t *path, uint8_t *filename) {
       break;
 
     if (!(finfo.fattrib & AM_DIR)) {
-      if (check_imageext(finfo.fname) == IMG_IS_DISK) {
+      if (check_imageext(finfo.fname) & IMG_IS_DISK) {
         /* write the name of disk image to file */
         found = 1;
 

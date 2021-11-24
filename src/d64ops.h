@@ -50,6 +50,11 @@
 #define D64_TYPE_D81  4
 #define D64_HAS_ERRORINFO 128
 
+/* Disk image sizes */
+#define D41_SIZE          174848
+#define D71_SIZE          349696
+#define D81_SIZE          819200
+
 extern const fileops_t d64ops;
 
 uint8_t d64_mount(path_t *path, uint8_t *name);

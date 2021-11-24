@@ -180,8 +180,8 @@ static exttype_t check_extension(uint8_t *name, uint8_t **ext) {
  *
  * This function checks if the given file name has an extension that
  * indicates a known image file type. Returns IMG_IS_M2I for M2I files,
- * IMG_IS_DISK for D64/D41/D71/D81 files or IMG_UNKNOWN for an unknown
- * file extension.
+ * IMG_IS_[DNP|D41|D71|D81] for D64/D41/D71/D81 files or IMG_UNKNOWN
+ * for an unknown file extension.
  */
 imgtype_t check_imageext(uint8_t *name) {
   uint8_t f,s,t;
@@ -203,11 +203,15 @@ imgtype_t check_imageext(uint8_t *name) {
 #endif
 
   if (f == 'D') {
-    if ((s == '6' && t == '4') ||
-        (s == 'N' && t == 'P') ||
-        ((s == '4' || s == '7' || s == '8') &&
-         (t == '1'))) {
-      return IMG_IS_DISK;
+    if (s == 'N' && t == 'P')
+      return IMG_IS_DNP;
+    if ((s == '6' && t == '4') || (s == '4' && t == '1'))
+      return IMG_IS_D41;
+    if (t == '1') {
+      if (s == '7')
+        return IMG_IS_D71;
+      if (s == '8')
+        return IMG_IS_D81;
     }
   }
 
@@ -1667,9 +1671,129 @@ uint8_t image_write(uint8_t part, LONG offset, void *buffer, uint16_t bytes, uin
   return 0;
 }
 
-/* Dummy function for format */
-void format_dummy(uint8_t drive, uint8_t *name, uint8_t *id) {
-  set_error(ERROR_SYNTAX_UNKNOWN);
+/**
+ * check_free - Check if a specified number of bytes is free on the partition
+ * @part: partition number
+ * @need: minimum number of free bytes needed
+ *
+ * This function checks if the minimum number of clusters required to hold the
+ * specified number of bytes is free in the filesystem.
+ *
+ * Returns 0 if enough free storage is available, != 0 otherwise.
+ */
+static uint8_t check_free(uint8_t part, uint32_t need) {
+  FRESULT res;
+  DWORD have;
+
+  need = need / (512 * partition[part].fatfs.csize) + 1;
+
+  res = l_getfree(&partition[part].fatfs, NULLSTRING, &have, need);
+  if (res != FR_OK) {
+    parse_error(res,0);
+    return 2;
+  }
+
+  return have < need;
+}
+
+/* Create D41, D71 or D81 image */
+void fat_format_image(path_t *path, uint8_t *name, uint8_t *id) {
+  FRESULT  res;
+  uint8_t  imagetype;
+  uint8_t  *ext;
+  uint32_t fsize;
+
+  if (id != NULL && ustrlen(id) != 2) {
+    set_error(ERROR_SYNTAX_UNKNOWN);
+    return;
+  }
+
+  /* derive filename from name given to NEW: and store it in ops_scratch */
+  ustrcpy(ops_scratch, name);
+
+  ext = ustrrchr(name, '.');
+  imagetype = check_imageext(name);
+
+  if (ext != NULL && imagetype != IMG_UNKNOWN) {
+    /* remove extension from name (which will be used as the disk label) */
+    *ext = '\0';
+  } else {
+    /* no extension provided; default to .d64 */
+    ext = ops_scratch + ustrlen(ops_scratch);
+    if (ext > ops_scratch + sizeof(ops_scratch) - 5)
+      ext = ops_scratch + sizeof(ops_scratch) - 5;
+    ustrcpy(ext, ".d64");
+    imagetype = IMG_IS_D41;
+    ext = NULL;
+  }
+
+  partition[path->part].fatfs.curr_dir = path->dir.fat;
+  /* ops_scratch contains the filename for the image */
+  pet2asc(ops_scratch);
+
+  res = f_open(&partition[path->part].fatfs,
+               &partition[path->part].imagehandle,
+               ops_scratch, FA_OPEN_EXISTING|FA_READ|FA_WRITE);
+  if (res == FR_NO_FILE) { // image file doesn't exists, create it
+    /* Creating a new image requires a valid id */
+    if (id == NULL || id[0] == '\0') {
+      set_error(ERROR_SYNTAX_UNKNOWN);
+      return;
+    }
+
+    switch (imagetype) {
+      case IMG_IS_D41:
+        fsize = D41_SIZE;
+        break;
+      case IMG_IS_D71:
+        fsize = D71_SIZE;
+        break;
+      case IMG_IS_D81:
+        fsize = D81_SIZE;
+        break;
+      default:
+        fsize = 0;
+        break;
+    }
+
+    if (fsize == 0) {
+      set_error(ERROR_FILE_NOT_FOUND);
+      return;
+    }
+
+    if (check_free(path->part, fsize)) {
+      set_error(ERROR_DISK_FULL);
+      return;
+    }
+
+    res = f_open(&partition[path->part].fatfs,
+                 &partition[path->part].imagehandle,
+                 ops_scratch, FA_CREATE_NEW|FA_READ|FA_WRITE);
+
+    if (res == FR_OK)
+      res = f_lseek(&partition[path->part].imagehandle, fsize);
+  } else if (res == FR_OK) { // image file exists
+    /* Don't overwrite the image if the extension was auto-appended */
+    if (ext == NULL) {
+      f_close(&partition[path->part].imagehandle);
+      set_error(ERROR_FILE_EXISTS);
+      return;
+    }
+  }
+
+  if (res != FR_OK) {
+    parse_error(res,1);
+    return;
+  }
+
+  if (d64_mount(path, name)) {
+    f_close(&partition[path->part].imagehandle);
+    return;
+  }
+
+  partition[path->part].fop = &d64ops;
+  format(path, name, id);
+  image_unmount(path->part);
 }
 
 const PROGMEM fileops_t fatops = {  // These should be at bottom, to be consistent with d64ops and m2iops
@@ -1683,7 +1807,7 @@ const PROGMEM fileops_t fatops = {  // These should be at bottom, to be consiste
   &fat_freeblocks,
   &fat_read_sector,
   &fat_write_sector,
-  &format_dummy,
+  &fat_format_image,
   &fat_opendir,
   &fat_readdir,
   &fat_mkdir,
