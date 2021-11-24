@@ -434,6 +434,11 @@ static void m2i_rename(path_t *path, cbmdirent_t *dent, uint8_t *newname) {
   update_leds();
 }
 
+/* Dummy function for format */
+static void format_dummy(path_t *path, uint8_t *name, uint8_t *id) {
+  set_error(ERROR_SYNTAX_UNKNOWN);
+}
+
 const PROGMEM fileops_t m2iops = {
   m2i_open_read,
   m2i_open_write,

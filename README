@@ -218,9 +218,29 @@ Supported commands:
   missing bytes are assumed to be zero.
 
 - N:
-  Format works only if a D64 image is already mounted. This command will
-  be ignored for DNP images unless the current directory is the root
-  directory of the DNP image.
+  This command will be ignored for DNP images unless the current directory
+  is the root directory of the DNP image.
+
+  If an image is mounted, it will be formatted.
+
+  If no image is mounted and 1. the "name" part of the command includes a
+  known D64 file extension (.D64/.D41/.D71/.D81) and 2. no file with that
+  name exists, an image file in the respective format (.D41 is a synonym
+  for .D64) is created. The disk label is derived from the filename by
+  removing the extension. As this is a full format, it requires an id to
+  be present in the command string.
+
+  If an image file with that name already exists, it is formatted, like
+  if it was mounted.
+
+  If the name doesn't end in a known D64 image extension, it defaults to
+  ".D64". As a precaution and exception to the rules above, an existing
+  image will not be formatted if the filename results from adding the
+  default extension. In this case the command aborts with a "FILE EXISTS"
+  error instead.
+
+  Path specifiers are supported, so "N//SUBDIR:D64TEST.D64,XX" will
+  create the image in the directory "/SUBDIR".
 
 - R
   Renaming files should work the same as it does on CMD drives, although

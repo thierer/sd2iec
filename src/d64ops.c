@@ -38,11 +38,9 @@
 #include "wrapops.h"
 #include "d64ops.h"
 
-#define D41_SIZE_MIN      174848
+#define D41_SIZE_MIN      D41_SIZE
 /* Max 7 additional tracks with 17 256 byte sectors each + 802 error bytes */
 #define D41_SIZE_MAX      (D41_SIZE_MIN + 7*17*256 + 802)
-#define D71_SIZE          349696
-#define D81_SIZE          819200
 
 #define D41_BAM_TRACK           18
 #define D41_BAM_SECTOR          0
@@ -2216,8 +2214,9 @@ static void format_dnp_image(uint8_t part, buffer_t *buf, uint8_t *name, uint8_t
   clear_dir_sector(part, 1, DNP_ROOTDIR_SECTOR, buf->data);
 }
 
-static void d64_format(uint8_t part, uint8_t *name, uint8_t *id) {
+static void d64_format(path_t *path, uint8_t *name, uint8_t *id) {
   buffer_t *buf;
+  uint8_t  part = path->part;
   uint8_t  idbuf[5];
   uint16_t t;
   uint16_t  s;
@@ -2258,11 +2257,7 @@ static void d64_format(uint8_t part, uint8_t *name, uint8_t *id) {
     idbuf[1] = id[1];
   } else {
     /* Read the old ID into the buffer */
-    path_t path;
-    path.part = part;
-    path.dir.dxx.track  = get_param(part, DIR_TRACK);
-    path.dir.dxx.sector = 1; // only relevant for DNP
-    if (d64_getid(&path, idbuf))
+    if (d64_getid(path, idbuf))
       return;
 
     /* clear the entire directory track */

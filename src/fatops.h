@@ -46,7 +46,7 @@ uint8_t  fat_opendir(dh_t *dh, path_t *dir);
 int8_t   fat_readdir(dh_t *dh, cbmdirent_t *dent);
 void     fat_read_sector(buffer_t *buf, uint8_t part, uint8_t track, uint8_t sector);
 void     fat_write_sector(buffer_t *buf, uint8_t part, uint8_t track, uint8_t sector);
-void     format_dummy(uint8_t drive, uint8_t *name, uint8_t *id);
+void     fat_format_image(path_t *path, uint8_t *name, uint8_t *id);
 
 extern const fileops_t fatops;
 extern uint8_t file_extension_mode;
@@ -58,7 +58,16 @@ void    image_mkdir(path_t *path, uint8_t *dirname);
 uint8_t image_read(uint8_t part, LONG offset, void *buffer, uint16_t bytes);
 uint8_t image_write(uint8_t part, LONG offset, void *buffer, uint16_t bytes, uint8_t flush);
 
-typedef enum { IMG_UNKNOWN, IMG_IS_M2I, IMG_IS_DISK } imgtype_t;
+typedef enum {
+   IMG_UNKNOWN = 0,
+   IMG_IS_M2I  = 1<<0,
+   IMG_IS_DNP  = 1<<1,
+   IMG_IS_D41  = 1<<2,
+   IMG_IS_D71  = 1<<3,
+   IMG_IS_D81  = 1<<4,
+} imgtype_t;
+
+#define IMG_IS_DISK (IMG_IS_DNP|IMG_IS_D41|IMG_IS_D71|IMG_IS_D81)
 
 imgtype_t check_imageext(uint8_t *name);
 

@@ -1434,17 +1434,16 @@ static void parse_memory(void) {
 /* --------- */
 static void parse_new(void) {
   uint8_t *name, *id;
-  uint8_t part;
+  path_t  path;
 
   clean_cmdbuffer();
 
-  name = command_buffer+1;
-  part = parse_partition(&name);
-  name = ustrchr(command_buffer, ':');
-  if (name++ == NULL) {
+  if (!ustrchr(command_buffer, ':')) {
     set_error(ERROR_SYNTAX_NONAME);
     return;
   }
+  if (parse_path(command_buffer+1, &path, &name, 0))
+    return;
 
   id = ustrchr(name, ',');
   if (id != NULL) {
@@ -1452,7 +1451,12 @@ static void parse_new(void) {
     id++;
   }
 
-  format(part, name, id);
+  if (name[0] == '\0') {
+    set_error(ERROR_SYNTAX_NONAME);
+    return;
+  }
+
+  format(&path, name, id);
 }
 
 
