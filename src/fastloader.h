@@ -35,7 +35,7 @@
 #define UNUSED_PARAMETER uint8_t __attribute__((unused)) unused__
 
 typedef enum {
-  FL_NONE          = 0,
+  FL_NONE          = 0x80,
   FL_DREAMLOAD     = FLCODE_DREAMLOAD,
   FL_DREAMLOAD_OLD = FLCODE_DREAMLOAD_OLD,
   FL_TURBODISK,
@@ -64,6 +64,8 @@ typedef enum {
   FL_N0SDOS_FILEREAD,
   FL_SAMSJOURNEY,
 } fastloaderid_t;
+
+#define FL_MASK ((uint8_t)~FL_NONE)
 
 extern fastloaderid_t detected_loader;
 extern volatile uint8_t fl_track;

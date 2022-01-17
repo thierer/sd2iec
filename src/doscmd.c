@@ -316,7 +316,7 @@ date_t date_match_start;
 date_t date_match_end;
 
 uint16_t datacrc = 0xffff;
-static fastloaderid_t previous_loader;
+static fastloaderid_t previous_loader = FL_NONE;
 
 /* partial fastloader data capture */
 static uint16_t  capture_address, capture_remain;
@@ -442,21 +442,16 @@ static void run_loader(uint16_t address) {
   if (detected_loader == FL_NONE)
     detected_loader = previous_loader;
 
-#ifdef CONFIG_CAPTURE_LOADERS
-  if (detected_loader == FL_NONE && datacrc != 0xffff) {
-    dump_command();
-    dump_buffer_state();
-    save_capbuffer();
-  }
-#endif
-
   /* Try to find a handler for loader */
   const struct fastloader_handler_s *ptr = fl_handler_table;
   uint8_t loader,parameter;
   fastloader_handler_t handler;
 
   while ( (loader = pgm_read_byte(&ptr->loadertype)) != FL_NONE ) {
-    if (detected_loader == loader &&
+    /* "detected_loader" either matches loadertype, or it is == FL_NONE and  */
+    /* loadertype has the FL_NONE flag set, which marks a "catch all" entry. */
+    if ((detected_loader == (loader & FL_MASK) ||
+          (detected_loader & loader & FL_NONE) != 0) &&
         address == pgm_read_word(&ptr->address)) {
       /* Found it */
       handler   = (fastloader_handler_t)pgm_read_word(&ptr->handler);
@@ -465,10 +460,21 @@ static void run_loader(uint16_t address) {
       /* Call */
       handler(parameter);
 
-      break;
+      /* A catch all handler is responsible for setting "detected_loader", */
+      /* if applicable. Otherwise the loop continues looking for a match.  */
+      if (detected_loader != FL_NONE)
+        break;
     }
     ptr++;
   }
+
+#ifdef CONFIG_CAPTURE_LOADERS
+  if (detected_loader == FL_NONE && datacrc != 0xffff) {
+    dump_command();
+    dump_buffer_state();
+    save_capbuffer();
+  }
+#endif
 
   if (loader == FL_NONE)
     set_error_ts(ERROR_UNKNOWN_DRIVECODE, datacrc >> 8, datacrc & 0xff);

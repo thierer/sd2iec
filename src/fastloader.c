@@ -38,7 +38,7 @@
 #include "timer.h"
 #include "fastloader.h"
 
-uint8_t detected_loader;
+uint8_t detected_loader = FL_NONE;
 
 /* Function pointer to the current byte transmit/receive functions */
 /* (to simplify loaders with multiple variations of these)         */
