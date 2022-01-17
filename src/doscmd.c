@@ -281,11 +281,6 @@ static const PROGMEM struct fastloader_capture_s fl_capture_table[] = {
 
 /* ---- Minimal drive rom emulation ---- */
 
-typedef struct magic_value_s {
-  uint16_t address;
-  uint8_t  val[2];
-} magic_value_t;
-
 /* These are address/value pairs used by some programs to detect a 1541. */
 /* Currently we remember two bytes per address since that's the longest  */
 /* block required. */
@@ -295,6 +290,11 @@ static const PROGMEM magic_value_t c1541_magics[] = {
   { 0xfffe, { 0x00, 0x00 } }, /* Disable AR6 fastloader */
   { 0,      { 0, 0 } }        /* end mark */
 };
+
+/* Temporary magic value for M-R response, that can be set by a fastloader */
+/* handler e.g. in response to a M-E call. Will be reset after the next    */
+/* M-R command. */
+magic_value_t custom_magic;
 
 /* System partition G-P answer */
 static const PROGMEM uint8_t system_partition_info[] = {
@@ -1209,16 +1209,25 @@ static void handle_memread(void) {
 
   } else {
   use_internal:
-    /* Check some special addresses used for drive detection. */
-    p = (magic_value_t*) c1541_magics;
-    while ( (check = pgm_read_word(&p->address)) ) {
-      if (check == address) {
-        error_buffer[0] = pgm_read_byte(p->val);
-        error_buffer[1] = pgm_read_byte(p->val + 1);
-        break;
+    if (custom_magic.address == address) {
+      /* A custom magic value has been set by a fastloader handler */
+      error_buffer[0] = custom_magic.val[0];
+      error_buffer[1] = custom_magic.val[1];
+    } else {
+      /* Check some special addresses used for drive detection. */
+      p = (magic_value_t*) c1541_magics;
+      while ( (check = pgm_read_word(&p->address)) ) {
+        if (check == address) {
+          error_buffer[0] = pgm_read_byte(p->val);
+          error_buffer[1] = pgm_read_byte(p->val + 1);
+          break;
+        }
+        p++;
       }
-      p++;
     }
+
+    /* This might not work for all scenarios, but for now better be strict */
+    custom_magic.address = 0;
   }
 
   /* possibly the host wants to read more bytes than error_buffer size */

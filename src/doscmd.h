@@ -26,6 +26,13 @@
 #ifndef DOSCMD_H
 #define DOSCMD_H
 
+typedef struct magic_value_s {
+  uint16_t address;
+  uint8_t  val[2];
+} magic_value_t;
+
+extern magic_value_t custom_magic;
+
 extern uint8_t command_buffer[CONFIG_COMMAND_BUFFER_SIZE+2];
 extern uint8_t command_length;
 extern date_t date_match_start;
