@@ -281,14 +281,18 @@ static const PROGMEM struct fastloader_capture_s fl_capture_table[] = {
 
 /* ---- Minimal drive rom emulation ---- */
 
-/* These are address/value pairs used by some programs to detect a 1541. */
-/* Currently we remember two bytes per address since that's the longest  */
+/* These are address/value pairs used by some programs to detect a drive. */
+/* Currently we remember two bytes per address since that's the longest   */
 /* block required. */
-static const PROGMEM magic_value_t c1541_magics[] = {
-  { 0xfea0, { 0x0d, 0xed } }, /* used by DreamLoad and ULoad Model 3 */
-  { 0xe5c6, { 0x34, 0xb1 } }, /* used by DreamLoad and ULoad Model 3 */
-  // { 0xfffe, { 0x00, 0x00 } }, /* Disable AR6 fastloader; entry no longer needed, as 0 is the default now */
-  { 0,      { 0, 0 } }        /* end mark */
+static const PROGMEM magic_value_t drive_magics[] = {
+  /* used by DreamLoad and ULoad Model 3 */
+  { 0xfea0, { 0x0d, 0xed }, DRIVE_1541|DRIVE_1571 },
+  { 0xe5c6, { 0x34, 0xb1 }, DRIVE_1541            },
+  /* Disable AR6 fastloader; entry no longer needed, as 0 is the default now */
+  // { 0xfffe, { 0x00, 0x00 }, 0xff },
+
+  /* end mark */
+  { 0, { 0, 0 }, 0 }
 };
 
 /* Temporary magic value for M-R response, that can be set by a fastloader */
@@ -1153,6 +1157,7 @@ static void handle_memexec(void) {
 static void handle_memread(void) {
   FRESULT res;
   uint16_t address, check;
+  uint8_t drive_type;
   magic_value_t *p;
 
   if (command_length < 6)
@@ -1209,15 +1214,29 @@ static void handle_memread(void) {
 
   } else {
   use_internal:
-    if (custom_magic.address == address) {
+    /* simulate drive depending on type of D64 image mounted, if any */
+    drive_type = DRIVE_1541; /* default is 1541 */
+
+    if (partition[current_part].fop == &d64ops) {
+      switch ((partition[current_part].imagetype & D64_TYPE_MASK)) {
+        case D64_TYPE_D71:
+          drive_type = DRIVE_1571;
+          break;
+        case D64_TYPE_D81:
+          drive_type = DRIVE_1581;
+          break;
+      }
+    }
+
+    if (custom_magic.drives & drive_type && custom_magic.address == address) {
       /* A custom magic value has been set by a fastloader handler */
       error_buffer[0] = custom_magic.val[0];
       error_buffer[1] = custom_magic.val[1];
     } else {
       /* Check some special addresses used for drive detection. */
-      p = (magic_value_t*) c1541_magics;
+      p = (magic_value_t*) drive_magics;
       while ( (check = pgm_read_word(&p->address)) ) {
-        if (check == address) {
+        if (check == address && (pgm_read_word(&p->drives) & drive_type) != 0) {
           error_buffer[0] = pgm_read_byte(p->val);
           error_buffer[1] = pgm_read_byte(p->val + 1);
           break;
@@ -1232,7 +1251,7 @@ static void handle_memread(void) {
     }
 
     /* This might not work for all scenarios, but for now better be strict */
-    custom_magic.address = 0;
+    custom_magic.drives = 0;
   }
 
   /* possibly the host wants to read more bytes than error_buffer size */

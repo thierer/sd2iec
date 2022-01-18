@@ -425,6 +425,10 @@ Supported commands:
   be returned for the first two bytes and more-or-less random data
   beyond.
 
+  This includes basic support for identifying the drive type based on
+  the type of D64 image mounted (1541 for D41, 1571 for D71 and 1581
+  for D81).
+
   Unfortunately GEOS reads rather large parts of the drive rom using
   M-R to detect the drive, which cannot be reasonably added into the
   internal table. To enable the GEOS drive detection to work properly

@@ -26,9 +26,16 @@
 #ifndef DOSCMD_H
 #define DOSCMD_H
 
+enum drive_type {
+  DRIVE_1541 = 1<<0,
+  DRIVE_1571 = 1<<1,
+  DRIVE_1581 = 1<<2
+};
+
 typedef struct magic_value_s {
   uint16_t address;
   uint8_t  val[2];
+  uint8_t  drives; /* bitmask of drive types to match */
 } magic_value_t;
 
 extern magic_value_t custom_magic;
