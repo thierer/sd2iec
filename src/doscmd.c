@@ -287,7 +287,7 @@ static const PROGMEM struct fastloader_capture_s fl_capture_table[] = {
 static const PROGMEM magic_value_t c1541_magics[] = {
   { 0xfea0, { 0x0d, 0xed } }, /* used by DreamLoad and ULoad Model 3 */
   { 0xe5c6, { 0x34, 0xb1 } }, /* used by DreamLoad and ULoad Model 3 */
-  { 0xfffe, { 0x00, 0x00 } }, /* Disable AR6 fastloader */
+  // { 0xfffe, { 0x00, 0x00 } }, /* Disable AR6 fastloader; entry no longer needed, as 0 is the default now */
   { 0,      { 0, 0 } }        /* end mark */
 };
 
@@ -1223,6 +1223,11 @@ static void handle_memread(void) {
           break;
         }
         p++;
+      }
+      if (check == 0) {
+        /* use 0 as default */
+        error_buffer[0] = 0;
+        error_buffer[1] = 0;
       }
     }
 

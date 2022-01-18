@@ -421,8 +421,9 @@ Supported commands:
   table of common drive-detection addresses and return data that
   forces most of the supported fast loaders into a compatible mode
   (e.g. 1541 mode for Dreamload and ULoad Model 3, disabled fastloader
-  for Action Replay 6). If the address is not recognized, more-or-less
-  random data will be returned.
+  for Action Replay 6). If the address is not recognized, zero will
+  be returned for the first two bytes and more-or-less random data
+  beyond.
 
   Unfortunately GEOS reads rather large parts of the drive rom using
   M-R to detect the drive, which cannot be reasonably added into the
