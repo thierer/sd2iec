@@ -36,27 +36,50 @@ typedef uint16_t tick_t;
 typedef int16_t stick_t;
 
 /**
- * start_timeout - start a timeout using timer0
- * @usecs: number of microseconds before timeout (maximum 256 for 8MHz clock)
+ * start_timeout - start a timeout using timer2
+ * @usecs: number of microseconds before timeout (maximum 16384 for 16MHz clock)
  *
- * This function sets timer 0 so it will time out after the specified number
+ * This function sets timer 2 so it will time out after the specified number
  * of microseconds. DON'T use a variable as parameter because it would cause
  * run-time floating point calculations (slow and huge).
+ *
+ * As timer 2 is 8 bit, it can count a maximum of 256 timer ticks, which is
+ * 256us with a /8 prescaler and a 8MHz clock speed (128us at 16MHz).
+ *
+ * For longer timeouts the /1024 prescaler is used at the cost of a reduced
+ * resolution. This always rounds up, so the timeout doesn't get shorter
+ * than expected.
  */
 static inline __attribute__((always_inline)) void start_timeout(uint16_t usecs) {
-  TCNT0  = 256 - ((float)F_CPU/8000000.0) * usecs;
-  TIFR0 |= _BV(TOV0);
+  tick_t ticks = ((float)F_CPU/8000000.0) * usecs;
+
+  if (ticks == 0)
+    return;
+
+  if (ticks <= 256) {
+    TCCR2B = _BV(CS21); /* F_CPU / 8 */
+  } else {
+    TCCR2B = _BV(CS22) | _BV(CS21) | _BV(CS20); /* F_CPU / 1024 */
+    ticks = (ticks+127) >> 7; /* adjust timer ticks, rounding up */
+  }
+
+  if (ticks > 256) /* at least prevent an overflow if timeout period too long*/
+    ticks = 256;
+
+  GTCCR  = _BV(PSRASY); /* reset timer 2 prescaler */
+  TCNT2  = 256 - ticks;
+  TIFR2 |= _BV(TOV2);   /* reset overflow flag */
 }
 
 /**
  * has_timed_out - returns true if timeout was reached
  *
- * This function returns true if the overflow flag of timer 0 is set which
+ * This function returns true if the overflow flag of timer 2 is set which
  * (together with start_timeout and TIMEOUT_US) will happen when the
  * specified time has elapsed.
  */
 static inline uint8_t has_timed_out(void) {
-  return TIFR0 & _BV(TOV0);
+  return TIFR2 & _BV(TOV2);
 }
 
 #endif

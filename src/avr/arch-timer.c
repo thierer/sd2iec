@@ -27,9 +27,6 @@
 #include "timer.h"
 
 void timer_init(void) {
-  /* Count F_CPU/8 in timer 0 */
-  TCCR0B = _BV(CS01);
-
   /* Set up a 100Hz interrupt using timer 1 */
   OCR1A  = F_CPU / 64 / 100 - 1;
   TCNT1  = 0;
