@@ -115,6 +115,9 @@ CONFIG_LOADER_N0SDOS=y
 # Enable Sam's Journey fastloader
 CONFIG_LOADER_SAMSJOURNEY=y
 
+# Enable Krill's loader
+CONFIG_LOADER_KRILL=n
+
 # Enable DolphinDOS parallel speeder
 CONFIG_PARALLEL_DOLPHIN=y
 

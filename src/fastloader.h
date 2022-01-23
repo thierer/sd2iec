@@ -63,6 +63,7 @@ typedef enum {
   FL_MMZAK,
   FL_N0SDOS_FILEREAD,
   FL_SAMSJOURNEY,
+  FL_KRILL,
 } fastloaderid_t;
 
 #define FL_MASK ((uint8_t)~FL_NONE)
@@ -95,6 +96,8 @@ void save_ar6_1581(uint8_t);
 void load_mmzak(uint8_t);
 void load_n0sdos_fileread(uint8_t);
 void load_samsjourney(uint8_t);
+void drive_detect_krill(uint8_t);
+void load_krill(uint8_t);
 
 int16_t dolphin_getc(void);
 uint8_t dolphin_putc(uint8_t data, uint8_t with_eoi);

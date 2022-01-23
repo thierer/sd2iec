@@ -188,6 +188,10 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
 #ifdef CONFIG_LOADER_SAMSJOURNEY
   { 0x6af4, FL_SAMSJOURNEY,      RXTX_NONE          }, // CRC of penultimate M-W
 #endif
+#ifdef CONFIG_LOADER_KRILL
+  { 0x7ff9, FL_KRILL,            RXTX_NONE          }, // CRC of the first chunk of the D64 stub
+  { 0x741d, FL_KRILL,            RXTX_NONE          }, // CRC of the first chunk of the D81 stub
+#endif
 
   { 0, FL_NONE, 0 }, // end marker
 };
@@ -259,6 +263,11 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
 #ifdef CONFIG_LOADER_SAMSJOURNEY
   { 0x0400, FL_SAMSJOURNEY,      load_samsjourney, 0 },
 #endif
+#ifdef CONFIG_LOADER_KRILL
+  { 0x0205, FL_KRILL | FL_NONE,  drive_detect_krill, 0 },
+  { 0x0770, FL_KRILL,            load_krill,         0 }, // stage 0 d64
+  { 0x0758, FL_KRILL,            load_krill,         0 }, // stage 0 d81
+#endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker
 };
@@ -287,7 +296,12 @@ static const PROGMEM struct fastloader_capture_s fl_capture_table[] = {
 static const PROGMEM magic_value_t drive_magics[] = {
   /* used by DreamLoad and ULoad Model 3 */
   { 0xfea0, { 0x0d, 0xed }, DRIVE_1541|DRIVE_1571 },
+  /* used by DreamLoad, ULoad Model 3 and Krill's loader */
   { 0xe5c6, { 0x34, 0xb1 }, DRIVE_1541            },
+  /* used by Krill's loader */
+  { 0xeaa3, { 0xff, 0x4c }, DRIVE_1541            },
+  { 0xe5c6, { 0x37, 0xb1 }, DRIVE_1571            },
+  { 0xa6e9, { 0x38, 0xb1 }, DRIVE_1581            },
 
   /* end mark */
   { 0, { 0, 0 }, 0 }
