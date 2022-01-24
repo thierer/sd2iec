@@ -35,6 +35,7 @@
 #define UNUSED_PARAMETER uint8_t __attribute__((unused)) unused__
 
 typedef enum {
+  FL_BUS_SILENCE   = 0x7f,
   FL_NONE          = 0x80,
   FL_DREAMLOAD     = FLCODE_DREAMLOAD,
   FL_DREAMLOAD_OLD = FLCODE_DREAMLOAD_OLD,
@@ -75,6 +76,7 @@ extern uint8_t (*fast_send_byte)(uint8_t byte);
 extern uint8_t (*fast_get_byte)(void);
 
 uint8_t check_keys(void);
+void bus_sleep(uint8_t);
 
 /* per-loader functions, located in separate fl-*.c files */
 void load_turbodisk(uint8_t);

@@ -71,6 +71,8 @@ CONFIG_UART_BUF_SHIFT=6
 # Not used if CONFIG_UART_DEBUG is disabled.
 CONFIG_COMMAND_CHANNEL_DUMP=y
 
+# Enable support for bus silence requests from fastloaders (ignore ATN)
+CONFIG_BUS_SILENCE_REQ=n
 
 # Enable Turbodisk soft fastloader support
 # This option requires an external crystal oscillator!

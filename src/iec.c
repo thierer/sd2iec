@@ -789,7 +789,9 @@ void iec_mainloop(void) {
       free_multiple_buffers(FMB_UNSTICKY);
       d64_bam_commit();
 
-      iec_data.bus_state = BUS_IDLE;
+      /* Enter idle state unless the command requested bus sleep */
+      if (iec_data.bus_state != BUS_SLEEP)
+        iec_data.bus_state = BUS_IDLE;
       break;
     }
   }

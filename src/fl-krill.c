@@ -126,7 +126,10 @@ void drive_detect_krill(UNUSED_PARAMETER) {
   mr_magic.val[0] = ~(uint8_t)0; /* the first read will have returned 0 */
 
   custom_magic = &mr_magic;
+
+#ifdef CONFIG_LOADER_KRILL
   detected_loader = FL_KRILL;
+#endif
 }
 
 static uint8_t wait_atn_low(void) {

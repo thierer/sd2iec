@@ -193,6 +193,11 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
   { 0x741d, FL_KRILL,            RXTX_NONE          }, // CRC of the first chunk of the D81 stub
 #endif
 
+#ifdef CONFIG_BUS_SILENCE_REQ
+  { 0x607d, FL_BUS_SILENCE,      RXTX_NONE          }, // Krill's loader
+  { 0x40c3, FL_BUS_SILENCE,      RXTX_NONE          }, // Krill's loader
+#endif
+
   { 0, FL_NONE, 0 }, // end marker
 };
 
@@ -263,10 +268,16 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
 #ifdef CONFIG_LOADER_SAMSJOURNEY
   { 0x0400, FL_SAMSJOURNEY,      load_samsjourney, 0 },
 #endif
-#ifdef CONFIG_LOADER_KRILL
+#if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_BUS_SILENCE_REQ)
   { 0x0205, FL_KRILL | FL_NONE,  drive_detect_krill, 0 },
+#endif
+#ifdef CONFIG_LOADER_KRILL
   { 0x0770, FL_KRILL,            load_krill,         0 }, // stage 0 d64
   { 0x0758, FL_KRILL,            load_krill,         0 }, // stage 0 d81
+#endif
+
+#ifdef CONFIG_BUS_SILENCE_REQ
+  { 0x0205, FL_BUS_SILENCE,      bus_sleep,      0 },
 #endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker
