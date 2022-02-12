@@ -1160,8 +1160,12 @@ static void handle_memread(void) {
   uint8_t drive_type;
   magic_value_t *p;
 
-  if (command_length < 6)
+  if (command_length < 5)
     return;
+
+  /* Read 1 Byte if no explicit length was provided */
+  if (command_length == 5)
+    command_buffer[5] = 1;
 
   address = command_buffer[3] + (command_buffer[4]<<8);
 
