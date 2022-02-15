@@ -112,14 +112,21 @@ typedef struct {
  * @track : track of the current directory sector
  * @sector: sector of the current directory sector
  * @entry : number of the current directory entry in its sector
+ * @hidden: include entries with filetype 0 as hidden files
  *
  * This structure addresses an entry in a D64 directory by its track,
  * sector and entry (8 entries per sector).
+ *
+ * *Caution* The "hidden" flag might be set *after* opendir() has been
+ * called. As d64dh is part of a union in dh_t, special care must be
+ * taken to confirm that a D64 type image is mounted, otherwise this
+ * will trash the active directory handle!
  */
 struct d64dh {
   uint8_t track;
   uint8_t sector;
   uint8_t entry;
+  int     hidden:1;
 };
 
 /* Ops type selector for cbmdirent_t */

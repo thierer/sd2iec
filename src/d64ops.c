@@ -1293,6 +1293,7 @@ static uint8_t d64_opendir(dh_t *dh, path_t *path) {
   dh->dir.d64.track  = path->dir.dxx.track;
   dh->dir.d64.sector = path->dir.dxx.sector;
   dh->dir.d64.entry  = 0;
+  dh->dir.d64.hidden = 0;
 
   if (partition[path->part].imagetype == D64_TYPE_DNP) {
     /* Read the real first directory sector from the header sector */
@@ -1318,12 +1319,21 @@ static int8_t d64_readdir(dh_t *dh, cbmdirent_t *dent) {
 
     if (ops_scratch[DIR_OFS_FILE_TYPE] != 0)
       break;
+
+    /* Treat file type 0 as hidden file if requested by flag and track != 0 */
+    if (ops_scratch[DIR_OFS_TRACK] != 0 && dh->dir.d64.hidden)
+      break;
   } while (1);
 
   memset(dent, 0, sizeof(cbmdirent_t));
 
   dent->opstype = OPSTYPE_DXX;
-  dent->typeflags = ops_scratch[DIR_OFS_FILE_TYPE] ^ FLAG_SPLAT;
+  dent->typeflags = ops_scratch[DIR_OFS_FILE_TYPE];
+  /* Treat entries with type == 0 as hidden */
+  if (dent->typeflags == 0)
+    dent->typeflags = FLAG_HIDDEN;
+  else
+    dent->typeflags ^= FLAG_SPLAT;
 
   if ((dent->typeflags & TYPE_MASK) > TYPE_DIR)
     /* Change invalid types to DEL */
