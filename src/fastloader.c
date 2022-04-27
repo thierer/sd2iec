@@ -76,6 +76,14 @@ uint8_t check_keys(void) {
   return 0;
 }
 
+#ifdef CONFIG_BUS_SILENCE_REQ
+/* ATN silence */
+bool bus_sleep(UNUSED_PARAMETER) {
+  iec_data.bus_state = BUS_SLEEP;
+
+  return true;
+}
+#endif
 
 /*
  *

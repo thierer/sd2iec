@@ -74,6 +74,7 @@ extern uint8_t (*fast_send_byte)(uint8_t byte);
 extern uint8_t (*fast_get_byte)(void);
 
 uint8_t check_keys(void);
+bool bus_sleep(uint8_t);
 
 /* per-loader functions, located in separate fl-*.c files */
 bool load_turbodisk(uint8_t);
