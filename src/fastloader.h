@@ -74,30 +74,30 @@ extern uint8_t (*fast_get_byte)(void);
 uint8_t check_keys(void);
 
 /* per-loader functions, located in separate fl-*.c files */
-void load_turbodisk(uint8_t);
-void load_fc3(uint8_t freezed);
-void load_fc3oldfreeze(uint8_t);
-void save_fc3(uint8_t);
-void load_dreamload(uint8_t);
-void load_uload3(uint8_t);
-void load_eload1(uint8_t);
-void load_gijoe(uint8_t);
-void load_epyxcart(uint8_t);
-void load_geos(uint8_t);
-void load_geos_s1(uint8_t version);
-void load_wheels_s1(uint8_t version);
-void load_wheels_s2(uint8_t);
-void load_nippon(uint8_t);
-void load_ar6_1581(uint8_t);
-void save_ar6_1581(uint8_t);
-void load_mmzak(uint8_t);
-void load_n0sdos_fileread(uint8_t);
-void load_samsjourney(uint8_t);
+bool load_turbodisk(uint8_t);
+bool load_fc3(uint8_t freezed);
+bool load_fc3oldfreeze(uint8_t);
+bool save_fc3(uint8_t);
+bool load_dreamload(uint8_t);
+bool load_uload3(uint8_t);
+bool load_eload1(uint8_t);
+bool load_gijoe(uint8_t);
+bool load_epyxcart(uint8_t);
+bool load_geos(uint8_t);
+bool load_geos_s1(uint8_t version);
+bool load_wheels_s1(uint8_t version);
+bool load_wheels_s2(uint8_t);
+bool load_nippon(uint8_t);
+bool load_ar6_1581(uint8_t);
+bool save_ar6_1581(uint8_t);
+bool load_mmzak(uint8_t);
+bool load_n0sdos_fileread(uint8_t);
+bool load_samsjourney(uint8_t);
 
 int16_t dolphin_getc(void);
 uint8_t dolphin_putc(uint8_t data, uint8_t with_eoi);
-void load_dolphin(void);
-void save_dolphin(void);
+bool load_dolphin(void);
+bool save_dolphin(void);
 
 /* functions that are shared between multiple loaders */
 /* currently located in fastloader.c                  */

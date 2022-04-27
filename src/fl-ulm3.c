@@ -112,7 +112,7 @@ static uint8_t uload3_transferchain(uint8_t track, uint8_t sector, uint8_t savin
   return 0;
 }
 
-void load_uload3(UNUSED_PARAMETER) {
+bool load_uload3(UNUSED_PARAMETER) {
   int16_t cmd,tmp;
   uint8_t t,s;
   dh_t dh;
@@ -135,17 +135,17 @@ void load_uload3(UNUSED_PARAMETER) {
     case 2: /* save and replace a file */
       tmp = uload3_get_byte();
       if (tmp < 0)
-        return;
+        return true;
       t = tmp;
 
       tmp = uload3_get_byte();
       if (tmp < 0)
         /* ATN received */
-        return;
+        return true;
       s = tmp;
 
       if (uload3_transferchain(t,s, (cmd == 2)))
-        return;
+        return true;
 
       break;
 
@@ -160,4 +160,6 @@ void load_uload3(UNUSED_PARAMETER) {
       break;
     }
   }
+
+  return true;
 }

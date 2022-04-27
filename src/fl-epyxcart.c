@@ -42,7 +42,7 @@
 
 
 
-void load_epyxcart(UNUSED_PARAMETER) {
+bool load_epyxcart(UNUSED_PARAMETER) {
   uint8_t checksum = 0;
   int16_t b,i;
 
@@ -55,7 +55,7 @@ void load_epyxcart(UNUSED_PARAMETER) {
 
   while (IEC_DATA)
     if (!IEC_ATN)
-      return;
+      return true;
 
   set_clock(1);
 
@@ -64,7 +64,7 @@ void load_epyxcart(UNUSED_PARAMETER) {
     b = gijoe_read_byte();
 
     if (b < 0)
-      return;
+      return true;
 
     if (i < 237)
       /* Stage 2 has some junk bytes at the end, ignore them */
@@ -73,13 +73,13 @@ void load_epyxcart(UNUSED_PARAMETER) {
 
   /* Check for known stage2 loaders */
   if (checksum != 0x91 && checksum != 0x5b) {
-    return;
+    return true;
   }
 
   /* Receive file name */
   i = gijoe_read_byte();
   if (i < 0) {
-    return;
+    return true;
   }
 
   command_length = i;
@@ -87,7 +87,7 @@ void load_epyxcart(UNUSED_PARAMETER) {
   do {
     b = gijoe_read_byte();
     if (b < 0)
-      return;
+      return true;
 
     command_buffer[--i] = b;
   } while (i > 0);
@@ -100,7 +100,7 @@ void load_epyxcart(UNUSED_PARAMETER) {
   buffer_t *buf = find_buffer(0);
   if (buf == NULL) {
     set_clock(1);
-    return;
+    return true;
   }
 
   /* Transfer data */
@@ -138,4 +138,6 @@ void load_epyxcart(UNUSED_PARAMETER) {
   set_clock(1);
   set_data(1);
   cleanup_and_free_buffer(buf);
+
+  return true;
 }

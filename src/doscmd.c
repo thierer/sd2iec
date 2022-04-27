@@ -24,6 +24,7 @@
 */
 
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include "config.h"
@@ -77,7 +78,7 @@ enum {
 
 typedef uint8_t (*fastloader_rx_t)(void);
 typedef uint8_t (*fastloader_tx_t)(uint8_t byte);
-typedef void    (*fastloader_handler_t)(uint8_t param);
+typedef bool    (*fastloader_handler_t)(uint8_t param);
 
 struct fastloader_rxtx_s {
   fastloader_rx_t rxfunc;
@@ -446,36 +447,48 @@ static void run_loader(uint16_t address) {
   if (detected_loader == FL_NONE)
     detected_loader = previous_loader;
 
+  /* Try to find a handler for loader */
+  const struct fastloader_handler_s *ptr = fl_handler_table;
+  uint8_t loader;
+  fastloader_handler_t handler;
+
+  while (1) {
+    handler = (fastloader_handler_t)pgm_read_word(&ptr->handler);
+
+    if (handler == NULL) { /* end of table */
+      if (detected_loader == FL_NONE) {
+        set_error_ts(ERROR_UNKNOWN_DRIVECODE, datacrc >> 8, datacrc & 0xff);
+        break;
+      }
+
+      /* try again with FL_NONE to match possible "catch all" entries */
+      detected_loader = FL_NONE;
+      ptr = fl_handler_table;
+      continue;
+    }
+
+    loader = pgm_read_byte(&ptr->loadertype);
+
+    if (detected_loader == loader && address == pgm_read_word(&ptr->address)) {
+      /* Found it: Call and exit loop if handled */
+      if (handler(pgm_read_byte(&ptr->parameter))) {
+        /* If handled and the handler didn't explicitly set  */
+        /* detected_loader, use the one from fl_handler_table. */
+        if (detected_loader == FL_NONE && loader != FL_NONE)
+          detected_loader = loader;
+        break;
+      }
+    }
+    ptr++;
+  }
+
 #ifdef CONFIG_CAPTURE_LOADERS
-  if (detected_loader == FL_NONE && datacrc != 0xffff) {
+  if (handler == NULL && datacrc != 0xffff) {
     dump_command();
     dump_buffer_state();
     save_capbuffer();
   }
 #endif
-
-  /* Try to find a handler for loader */
-  const struct fastloader_handler_s *ptr = fl_handler_table;
-  uint8_t loader,parameter;
-  fastloader_handler_t handler;
-
-  while ( (loader = pgm_read_byte(&ptr->loadertype)) != FL_NONE ) {
-    if (detected_loader == loader &&
-        address == pgm_read_word(&ptr->address)) {
-      /* Found it */
-      handler   = (fastloader_handler_t)pgm_read_word(&ptr->handler);
-      parameter = pgm_read_byte(&ptr->parameter);
-
-      /* Call */
-      handler(parameter);
-
-      break;
-    }
-    ptr++;
-  }
-
-  if (loader == FL_NONE)
-    set_error_ts(ERROR_UNKNOWN_DRIVECODE, datacrc >> 8, datacrc & 0xff);
 
   datacrc = 0xffff;
   previous_loader = detected_loader;

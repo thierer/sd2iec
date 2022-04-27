@@ -39,14 +39,14 @@
 
 
 /* 1581 loader */
-void load_ar6_1581(UNUSED_PARAMETER) {
+bool load_ar6_1581(UNUSED_PARAMETER) {
   buffer_t *buf;
   uint16_t i;
 
   buf = find_buffer(0);
   if (!buf) {
     /* The file should've been open? */
-    return;
+    return true;
   }
 
   set_clock(0);
@@ -77,10 +77,12 @@ void load_ar6_1581(UNUSED_PARAMETER) {
   delay_ms(1);
   set_clock(1);
   set_data(1);
+
+  return true;
 }
 
 /* 1581 saver */
-void save_ar6_1581(UNUSED_PARAMETER) {
+bool save_ar6_1581(UNUSED_PARAMETER) {
   buffer_t *buf;
   uint8_t i;
 
@@ -88,7 +90,7 @@ void save_ar6_1581(UNUSED_PARAMETER) {
 
   if (!buf) {
     /* File isn't open */
-    return;
+    return true;
   }
 
   set_clock(0);
@@ -119,4 +121,6 @@ void save_ar6_1581(UNUSED_PARAMETER) {
   } while (buf->data[0] != 0);
 
   cleanup_and_free_buffer(buf);
+
+  return true;
 }

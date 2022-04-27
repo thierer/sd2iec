@@ -38,7 +38,7 @@
 #include "fastloader.h"
 
 
-void load_fc3(uint8_t freezed) {
+bool load_fc3(uint8_t freezed) {
   buffer_t *buf;
   unsigned char step,pos;
   unsigned char sector_counter = 0;
@@ -50,7 +50,7 @@ void load_fc3(uint8_t freezed) {
     /* error, abort and pull down CLOCK and DATA to inform the host */
     set_data(0);
     set_clock(0);
-    return;
+    return true;
   }
 
   /* to make sure the C64 VIC DMA is off */
@@ -110,9 +110,11 @@ void load_fc3(uint8_t freezed) {
 
  cleanup:
   cleanup_and_free_buffer(buf);
+
+  return true;
 }
 
-void save_fc3(UNUSED_PARAMETER) {
+bool save_fc3(UNUSED_PARAMETER) {
   unsigned char n;
   unsigned char size;
   unsigned char eof = 0;
@@ -121,7 +123,7 @@ void save_fc3(UNUSED_PARAMETER) {
   buf = find_buffer(1);
   /* Check if this is a writable file */
   if (!buf || !buf->write)
-      return;
+      return true;
 
   /* to make sure the host pulled DATA low and is ready */
   delay_ms(5);
@@ -162,9 +164,11 @@ void save_fc3(UNUSED_PARAMETER) {
   while (!eof);
 
   cleanup_and_free_buffer(buf);
+
+  return true;
 }
 
-void load_fc3oldfreeze(UNUSED_PARAMETER) {
+bool load_fc3oldfreeze(UNUSED_PARAMETER) {
   buffer_t *buf;
   uint16_t i;
 
@@ -182,7 +186,7 @@ void load_fc3oldfreeze(UNUSED_PARAMETER) {
 
   if (!buf) {
     /* error */
-    return;
+    return true;
   }
 
   /* sector loop */
@@ -208,4 +212,6 @@ void load_fc3oldfreeze(UNUSED_PARAMETER) {
 
  done:
   cleanup_and_free_buffer(buf);
+
+  return true;
 }

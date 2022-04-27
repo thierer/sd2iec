@@ -62,7 +62,7 @@ static void gijoe_send_byte(uint8_t value) {
   }
 }
 
-void load_gijoe(UNUSED_PARAMETER) {
+bool load_gijoe(UNUSED_PARAMETER) {
   buffer_t *buf;
 
   set_data(1);
@@ -79,14 +79,14 @@ void load_gijoe(UNUSED_PARAMETER) {
 
     while (IEC_DATA)
       if (check_keys())
-        return;
+        return true;
 
     set_clock(1);
     uart_flush();
 
     /* First byte is ignored */
     if (gijoe_read_byte() < 0)
-      return;
+      return true;
 
     /* Read two file name characters */
     command_buffer[0] = gijoe_read_byte();
@@ -153,4 +153,6 @@ void load_gijoe(UNUSED_PARAMETER) {
       }
     }
   }
+
+  return true;
 }

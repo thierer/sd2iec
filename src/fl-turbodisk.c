@@ -49,7 +49,7 @@
  *  Turbodisk
  *
  */
-void load_turbodisk(UNUSED_PARAMETER) {
+bool load_turbodisk(UNUSED_PARAMETER) {
   uint8_t i,len,firstsector;
   buffer_t *buf;
 
@@ -61,7 +61,7 @@ void load_turbodisk(UNUSED_PARAMETER) {
   uint8_t tmp = boot_lock_fuse_bits_get(GET_LOW_FUSE_BITS) & 0x0f;
   if (tmp == 2) {
     set_error(ERROR_CLOCK_UNSTABLE);
-    return;
+    return true;
   }
 #endif
 
@@ -85,7 +85,7 @@ void load_turbodisk(UNUSED_PARAMETER) {
       set_clock(1);
       set_data(1);
     }
-    return;
+    return true;
   }
 
   firstsector = 1;
@@ -132,4 +132,6 @@ void load_turbodisk(UNUSED_PARAMETER) {
   cleanup_and_free_buffer(buf);
 
   set_clock(1);
+
+  return true;
 }

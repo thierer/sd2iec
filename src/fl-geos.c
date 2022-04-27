@@ -223,14 +223,14 @@ static void geos_write_sector_71(uint8_t track, uint8_t sector, buffer_t *buf) {
 
 
 /* GEOS stage 2/3 loader */
-void load_geos(UNUSED_PARAMETER) {
+bool load_geos(UNUSED_PARAMETER) {
   buffer_t *cmdbuf = alloc_system_buffer();
   buffer_t *databuf = alloc_system_buffer();
   uint8_t *cmddata;
   uint16_t cmd;
 
   if (!cmdbuf || !databuf)
-    return;
+    return true;
 
   cmddata = cmdbuf->data;
 
@@ -280,7 +280,7 @@ void load_geos(UNUSED_PARAMETER) {
     case 0x0475: // 1571 stage 3 quit
       while (!IEC_CLOCK) ;
       set_data(1);
-      return;
+      return true;
 
     case 0x0432: // 1541 stage 2 transmit
       if (current_error != 0) {
@@ -328,7 +328,7 @@ void load_geos(UNUSED_PARAMETER) {
     default:
       uart_puts_P(PSTR("unknown:\r\n"));
       uart_trace(cmddata, 0, 4);
-      return;
+      return true;
     }
   }
 }
@@ -385,7 +385,7 @@ static const PROGMEM uint8_t geos128_chains[] = {
 };
 
 /* GEOS 64 stage 1 loader */
-void load_geos_s1(uint8_t version) {
+bool load_geos_s1(uint8_t version) {
   buffer_t *encrbuf = find_buffer(BUFFER_SYS_CAPTURE1);
   buffer_t *databuf = alloc_buffer();
   uint8_t *encdata = NULL;
@@ -393,7 +393,7 @@ void load_geos_s1(uint8_t version) {
   const uint8_t *chainptr;
 
   if (!encrbuf || !databuf)
-    return;
+    return true;
 
   if (version == 0) {
     chainptr = geos64_chains;
@@ -426,6 +426,8 @@ void load_geos_s1(uint8_t version) {
   /* Done! */
   free_buffer(encrbuf);
   set_data(1);
+
+  return true;
 }
 
 
@@ -628,7 +630,7 @@ static void wheels_set_current_part_dir(void) {
 /* -------- */
 
 /* Wheels stage 1 loader */
-void load_wheels_s1(const uint8_t version) {
+bool load_wheels_s1(const uint8_t version) {
   buffer_t *buf;
 
   uart_flush();
@@ -672,10 +674,12 @@ void load_wheels_s1(const uint8_t version) {
   if (buf) {
     cleanup_and_free_buffer(buf);
   }
+
+  return true;
 }
 
 /* Wheels stage 2 loader */
-void load_wheels_s2(UNUSED_PARAMETER) {
+bool load_wheels_s2(UNUSED_PARAMETER) {
   struct {
     uint16_t address;
     uint8_t  track;
@@ -684,7 +688,7 @@ void load_wheels_s2(UNUSED_PARAMETER) {
   buffer_t *databuf = alloc_system_buffer();
 
   if (!databuf)
-    return;
+    return true;
 
   /* Initial handshake */
   uart_flush();
@@ -699,7 +703,7 @@ void load_wheels_s2(UNUSED_PARAMETER) {
     while (!IEC_CLOCK && IEC_ATN) {
       if (check_keys()) {
         /* User-requested exit */
-        return;
+        return true;
       }
     }
 
@@ -711,7 +715,7 @@ void load_wheels_s2(UNUSED_PARAMETER) {
     case 0x03: // QUIT
       while (!IEC_CLOCK) ;
       set_data(1);
-      return;
+      return true;
 
     case 0x06: // WRITE
       wheels_write_sector(cmdbuffer.track, cmdbuffer.sector, databuf);
@@ -748,7 +752,7 @@ void load_wheels_s2(UNUSED_PARAMETER) {
     default:
       uart_puts_P(PSTR("unknown:\r\n"));
       uart_trace(&cmdbuffer, 0, 4);
-      return;
+      return true;
     }
 
     set_busy_led(0);
@@ -757,8 +761,10 @@ void load_wheels_s2(UNUSED_PARAMETER) {
     while (IEC_CLOCK && IEC_ATN) {
       if (check_keys()) {
         /* User-requested exit */
-        return;
+        return true;
       }
     }
   }
+
+  return true;
 }

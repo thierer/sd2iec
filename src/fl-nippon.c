@@ -99,7 +99,7 @@ static uint8_t nippon_send_byte(uint8_t b) {
 }
 
 /* nippon idle loop */
-void load_nippon(UNUSED_PARAMETER) {
+bool load_nippon(UNUSED_PARAMETER) {
   uint8_t t, s, i=0, j;
   buffer_t *buf;
 
@@ -109,7 +109,7 @@ void load_nippon(UNUSED_PARAMETER) {
   buf = alloc_system_buffer();
   if (!buf) {
     uart_puts_P(PSTR("BUF ERR")); uart_putcrlf();
-    return;
+    return true;
   }
 
   /* loop until IEC master sends a track greater than $80 = exit code */
@@ -178,4 +178,6 @@ void load_nippon(UNUSED_PARAMETER) {
 
   free_buffer(buf);
   uart_puts_P(PSTR("NEXT")); uart_putcrlf();
+
+  return true;
 }

@@ -148,12 +148,12 @@ static void dolphin_write_hs(uint8_t value) {
 }
 
 /* DolphinDOS XQ command */
-void load_dolphin(void) {
+bool load_dolphin(void) {
   /* find the already open buffer */
   buffer_t *buf = find_buffer(0);
 
   if (!buf)
-    return;
+    return true;
 
   buf->position = 2;
 
@@ -181,7 +181,7 @@ void load_dolphin(void) {
     /* check DATA state before transmission */
     if (bus_state & IEC_BIT_DATA) {
       cleanup_and_free_buffer(buf);
-      return;
+      return true;
     }
 
     /* transmit the rest of the sector */
@@ -191,7 +191,7 @@ void load_dolphin(void) {
     /* read next sector */
     if (buf->refill(buf)) {
       cleanup_and_free_buffer(buf);
-      return;
+      return true;
     }
   }
 
@@ -208,10 +208,12 @@ void load_dolphin(void) {
   parallel_set_dir(PARALLEL_DIR_IN);
 
   cleanup_and_free_buffer(buf);
+
+  return true;
 }
 
 /* DolphinDOS XZ command */
-void save_dolphin(void) {
+bool save_dolphin(void) {
   buffer_t *buf;
   uint8_t eoi;
 
@@ -219,7 +221,7 @@ void save_dolphin(void) {
   buf = find_buffer(1);
 
   if (!buf)
-    return;
+    return true;
 
   /* reset buffer position */
   buf->position = 2;
@@ -240,7 +242,7 @@ void save_dolphin(void) {
     /* flush buffer if full */
     if (buf->mustflush)
       if (buf->refill(buf))
-        return; // FIXME: check error handling in Dolphin
+        return true; // FIXME: check error handling in Dolphin
 
     while (!parallel_rxflag) ;
 
@@ -262,4 +264,5 @@ void save_dolphin(void) {
   } while (!eoi);
 
   /* the file will be closed with ATN+0xe1 by DolphinDOS */
+  return true;
 }

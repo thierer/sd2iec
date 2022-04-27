@@ -316,7 +316,7 @@ static uint8_t write_file_by_ts(uint8_t track, uint8_t sector) {
   return write_file_by_name(ts_to_name(track, sector));
 }
 
-void load_samsjourney(UNUSED_PARAMETER) {
+bool load_samsjourney(UNUSED_PARAMETER) {
   int16_t tmp;
   uint8_t command, cmd_len, cmd_buffer[4];
   uint8_t abort = 0;
@@ -384,4 +384,6 @@ void load_samsjourney(UNUSED_PARAMETER) {
   /* release bus lines and return */
   set_data(1);
   set_clock(1);
+
+  return true;
 }

@@ -219,11 +219,11 @@ static bool mmzak_write_sector(uint8_t track, uint8_t sector, buffer_t *buf) {
   return false;
 }
 
-void load_mmzak(UNUSED_PARAMETER) {
+bool load_mmzak(UNUSED_PARAMETER) {
   buffer_t *buf = alloc_system_buffer();
 
   if (buf == NULL)
-    return;
+    return true;
 
   set_atn_irq(0);
 
@@ -241,7 +241,7 @@ void load_mmzak(UNUSED_PARAMETER) {
   while ((iec_bus_read() & (IEC_BIT_CLOCK | IEC_BIT_DATA)) !=
          (IEC_BIT_CLOCK | IEC_BIT_DATA)) {
     if (check_keys())
-      return;
+      return true;
   }
 
   /* command loop */
@@ -317,4 +317,6 @@ void load_mmzak(UNUSED_PARAMETER) {
   }
 
   set_busy_led(0);
+
+  return true;
 }

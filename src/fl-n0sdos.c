@@ -86,7 +86,7 @@ static int16_t getbyte(void) {
   return byte;
 }
 
-void load_n0sdos_fileread(UNUSED_PARAMETER) {
+bool load_n0sdos_fileread(UNUSED_PARAMETER) {
   buffer_t *buf;
 
   set_clock(1);
@@ -110,7 +110,7 @@ void load_n0sdos_fileread(UNUSED_PARAMETER) {
 
       /* abort if ATN is active */
       if (val < 0)
-        return;
+        return true;
 
       if (val == 0)
         break;
@@ -161,4 +161,6 @@ void load_n0sdos_fileread(UNUSED_PARAMETER) {
   leave:
     cleanup_and_free_buffer(buf);
   }
+
+  return true;
 }

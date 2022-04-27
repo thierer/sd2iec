@@ -72,7 +72,7 @@ static void dreamload_send_block(const uint8_t* p) {
   }
 }
 
-void load_dreamload(UNUSED_PARAMETER) {
+bool load_dreamload(UNUSED_PARAMETER) {
   uint16_t n;
   uint8_t  type;
   buffer_t *buf;
@@ -168,4 +168,6 @@ error:
   free_buffer(buf);
   set_clock_irq(0);
   set_atn_irq(0);
+
+  return true;
 }

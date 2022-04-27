@@ -43,7 +43,7 @@
  * eload
  *
  */
-void load_eload1(UNUSED_PARAMETER) {
+bool load_eload1(UNUSED_PARAMETER) {
   buffer_t *buf;
   int16_t cmd;
   uint8_t count, pos, end;
@@ -62,21 +62,21 @@ void load_eload1(UNUSED_PARAMETER) {
 
       if (!buf) {
         if (!IEC_ATN)
-          return;
+          return true;
         uload3_send_byte(0xff); /* error */
-        return;
+        return true;
       }
 
       end = 0;
       do {
         count = buf->lastused - 1;
         if (!IEC_ATN)
-          return;
+          return true;
         uload3_send_byte(count);
         pos = 2;
         while (count--) {
           if (!IEC_ATN)
-            return;
+            return true;
           uload3_send_byte(buf->data[pos++]);
         }
         if (buf->sendeoi) {
@@ -96,4 +96,6 @@ void load_eload1(UNUSED_PARAMETER) {
       break;
     }
   }
+
+  return true;
 }
