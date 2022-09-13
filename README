@@ -773,8 +773,7 @@ on non-standard tracks without error.
 If the image has an error info block appended it will be used to simulate
 read errors. Writing to a sector with an error will always work, but it
 will not clear the indicated error. Formatting will not remove the error
-info block but clear all errors. D81 images with error info blocks are
-not supported.
+info block but clear all errors.
 
 Warning: There is at least one program out there (DirMaster v2.1/Style by
 THE WIZ) which generates broken DNP files. The usual symptom is that
