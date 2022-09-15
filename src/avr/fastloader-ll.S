@@ -1966,4 +1966,58 @@ hypraload_send_byte:
 
 #endif
 
+#ifdef CONFIG_LOADER_KRILL
+        ;;
+        ;; send a byte using Krill's loader's resend protocol
+        ;; called with byte in r24, always returns zero
+        ;;
+
+        ;; uint8_t krill_send_byte_resend(uint8_t byte)
+        .global krill_send_byte_resend
+krill_send_byte_resend:
+        ;; called from an ATOMIC_BLOCK, so no need to inhibit interrupts
+
+        ;; set up data byte for transmission
+        com     r24
+1:
+        mov     r0, r24
+
+        rcall   wait_atn_low
+        rcall   wait_atn_high
+
+        ;; send bits 0+1
+        delay_us 10, -16-RET_OFFSET-RCALL_OFFSET
+        rcall   send_bits_to_clk_data ; 10+6 or 11+7
+
+        ;; send bits 2+3
+        delay_us 18-10, -16-RET_OFFSET-RCALL_OFFSET
+        rcall   send_bits_to_clk_data ; 10+6 or 11+7
+
+        ;; send bits 4+5
+        delay_us 26-18, -16-RET_OFFSET-RCALL_OFFSET
+        rcall   send_bits_to_clk_data ; 10+6 or 11+7
+
+        ;; send bits 6+7
+        delay_us 34-26, -16-RET_OFFSET-RCALL_OFFSET
+        rcall   send_bits_to_clk_data ; 10+6 or 11+7
+
+        delay_us 42-34, -7-RET_OFFSET
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_CLOCK ; 2
+
+        delay_us 50-42, -2
+
+        ;; return if the host has set ATN in time
+        sbis    _SFR_IO_ADDR(IEC_INPUT), IEC_PIN_ATN
+        rjmp    2f
+
+        ;; otherwise set clock to signal that we are going to send again
+        sbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_CLOCK
+        rjmp    1b
+
+2:
+        clr     r24
+        ret
+
+#endif
+
         .end

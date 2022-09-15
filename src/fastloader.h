@@ -65,6 +65,15 @@ typedef enum {
   FL_SAMSJOURNEY,
   FL_ULTRABOOT,
   FL_HYPRALOAD,
+  FL_KRILL_SLEEP,
+  FL_KRILL_R58PRE,
+  FL_KRILL_R58,
+  FL_KRILL_R146,
+  FL_KRILL_R159,
+  FL_KRILL_R164,
+  FL_KRILL_R184,
+  FL_KRILL_R186,
+  FL_KRILL_R192,
 } fastloaderid_t;
 
 extern fastloaderid_t detected_loader;
@@ -100,6 +109,9 @@ bool load_ultraboot(uint8_t);
 bool write_ultraboot(uint8_t);
 bool format_ultraboot(uint8_t);
 bool load_hypraload(uint8_t);
+bool drvchkme_krill(uint8_t);
+bool bus_sleep_krill(uint8_t);
+bool load_krill(uint8_t);
 
 int16_t dolphin_getc(void);
 uint8_t dolphin_putc(uint8_t data, uint8_t with_eoi);

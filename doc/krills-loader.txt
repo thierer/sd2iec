@@ -1,0 +1,760 @@
+Krill's Loader Protocols
+=============================
+& sd2iec Implementation Notes
+
+Documented by Martin Thierer
+
+Note this is the IRQ-loader, *not* Transwarp (also by Krill, but an
+entirely different loader). It is mostly used by demos and some games.
+You can find a list of known productions using it at the end of this
+document.
+
+Loader Revisions
+================
+
+Various revisions have been publicly released, but some productions
+use in-between revisions, which protocol-wise in most cases match a
+released version.
+
+ 58pre    protocol version that predates r58, no public release
+ 58       https://csdb.dk/release/?id=78348
+146       https://csdb.dk/release/?id=118713 protocol matches r58
+159       no public release
+164       https://csdb.dk/release/?id=167152
+166       https://csdb.dk/release/?id=169364 protocol matches r164
+184       https://csdb.dk/release/?id=189130
+186       no public release
+192       https://csdb.dk/release/?id=220685
+
+Byte-Transfer Protocols
+=======================
+
+The actual bus lines used vary between revisions, but otherwise the
+protocols are similar.
+
+Most protocols use a clock line, which is always driven by the host.
+The only exception is the "resend" protocol (only available as an
+option in r146), which uses cycle-exact timing instead.
+
+1-Bit Receive Protocol
+----------------------
+
+Used for drivecode download, the filename of file requests and the
+save plugin of revisions >= 186.
+
+r164/r166 uses this protocol with different lines when receiving the
+drivecode and for request filenames.
+
+                    | Clock  |  Data
+--------------------|--------|--------
+<= 146              |   CLK  |  DATA
+159                 |  DATA  |   CLK
+164/166 (drivecode) |  DATA  |   CLK
+164/166 (filenames) |   CLK  |   ATN
+>= 184              |  DATA  |   CLK
+
+The byte transfer starts on a negative edge of the respective clock
+line, with the exception of r164/r166, which starts on the positive
+edge.
+
+Bytes are sent LSB-first with the bit values inverted (data line
+low is bit == 1 and vice versa).
+
+The host acknowledges each bit with a clock edge. After 8 bits the
+clock line is in the same state as in the beginning of the byte
+transfer.
+
+1-Bit Send Protocol
+-------------------
+
+Only used by the save plugin (added in r186, first used in Scramble
+Infinity 1.2 [010]), to send a drive memory backup and metadata to
+the host.
+
+CLK is the clock line (driven by the host) and DATA is the data line.
+
+Bytes are sent MSB-first with the bit values inverted (data line
+low is bit == 1 and vice versa).
+
+The byte transfer starts with CLK high and the DATA line set to !b7.
+
+2-Bit Send "ATN" Protocol
+-------------------------
+
+Used during file transfers for sending both the payload and the
+metadata bytes. This protocol is identical for all revisions but
+58pre, which uses a different bit-order and -polarity.
+
+ATN is used as the clock line and CLK & DATA are the data lines.
+
+      |  c0/d0  |  c1/d1  |  c2/d2  |  c3/d3
+------|---------|---------|---------|---------
+58pre | !b7/!b5 | !b6/!b4 | !b3/!b1 | !b2/!b0
+>= 58 |  b0/b1  |  b2/b3  |  b4/b5  |  b6/b7
+
+2-Bit Send "Resend" Protocol
+----------------------------
+
+Alternative 2-bit send protocol, only available in r146.
+
+This is the only protocol which doesn't utilize a clock line to fully
+synchronize the byte transfer, but instead sends the bits with a
+fixed timing and just keeps trying if the host was interrupted
+during the transfer.
+
+The host triggers the start of the byte by releasing ATN and keeps
+it released during the transfer. If ATN is not set in time after the
+last bit was sent, it's assumed the host was interrupted and the same
+byte is sent again. This is signaled to the host by setting CLK.
+
+ [us] |  ATN |  CLK | DATA |
+----------------------------
+    0 | 0->1 |   1  |      | timing reference
+   14 |   1  |  b0  |  b1  |
+   22 |   1  |  b2  |  b3  |
+   30 |   1  |  b4  |  b4  |
+   38 |   1  |  b6  |  b7  |
+42/46 |   1  |   1  |      | 42us if TWO_BITS_RESEND_OPTIMIZE is set
+
+   50 |  (1) | 1->0 |      | if ATN was not set by host -> send again
+
+Build-Time Options
+==================
+
+Some of the loader's many configuration options are relevant for the
+transfer protocol.
+
+Revision r192 sends the values of these options together with the M-E
+command which starts the request loop (see "ID-Strings", below).
+
+For legacy productions the values are extracted from the drivecode
+download, if the specific variant is known. For unknown variants
+default values are used, which might not be correct and therefore not
+work.
+
+Maximum Filename Length
+-----------------------
+
+For protocol version r58pre the maximum length is always 2, for later
+revisions it is a configuration option.
+
+If the configured value is less than the CBM DOS standard of 16 bytes,
+the filename used for the request only has to match as a prefix for a
+directory entry.
+
+The option value is included in the ID-String present starting with
+r192 (see below). For earlier revisions, the value is extracted from
+the drivecode download if the variant is known, otherwise it defaults
+to 16.
+
+Non-standard Directory
+----------------------
+
+The loader can be configured to use a non-standard location for the
+directory ("shadow directory"). Early releases (until r146) allowed
+both the track and sector to be configured. In this case the sector
+denotes the equivalent of the BAM sector, so the first directory
+sector is the one referenced from this sector. In later releases
+it's only possible to change the directory track, in this case the
+directory always starts at sector 1 of that track.
+
+The directory track is only relevant if a D64 image is mounted. It
+is included in the ID-String present starting in r192 and later. For
+earlier revisions, the value is extracted from the drivecode download
+if the variant is known, otherwise it defaults to the mounted image
+type's standard.
+
+Productions using a non-standard directory start sector are marked
+with a "D" in the rightmost column of the "Known Productions" table
+below.
+
+2-Bit Protocol Variant
+----------------------
+
+The few known productions using the "resend" protocol are detected
+by their respective, distinct installer stub CRC values. They are
+marked with a "R" in the rightmost column of the "Known Productions"
+table below.
+
+Other, unknown productions using this protocol might not work.
+
+File Addressing Mode
+--------------------
+
+A few productions use the start sector instead of the filename for
+addressing files.
+
+The sd2iec implementation tries to detect these by checking if the
+first two bytes are a valid track and sector, if the first requested
+file wasn't found by name. This isn't 100% reliable, but works for
+all known productions using this loader. Not supported for D71 and
+D81 images.
+
+Productions using start sector addressing are marked with a "T" in
+the rightmost column in the "Known Productions" table below.
+
+Loader revisions r164 and later only support filename addressing.
+
+Installation
+============
+
+The initial installation of the loader code in the drive has the
+following phases:
+
+1) Various checks are performed to identify the drive and make sure
+   it is able to execute custom code. In the early revisions (up to
+   r146) this code is transferred using M-W commands, later revisions
+   send it as extra payload in the M-E command.
+
+   The sd2iec implementation simulates the drive type according to
+   the mounted image's type:
+   - none or D64/D41 -> 1541
+   - D71 -> 1571
+   - D81 -> 1581
+
+2) A loader stub is transferred to the drive using a couple of M-W
+   commands.
+
+3) The loader stub is started with a M-E command and takes over the
+   transfer of the rest of the drive code. On a 1541 the drive code
+   uses most of the available drive memory, including the zero page.
+
+4) After the drivecode has been installed, the drive releases its
+   "busy" line, then the host releases a different line to start a
+   request. The actual bus lines used for both purposes differ
+   between revisions.
+
+ID-Strings
+----------
+
+Starting with r192, an ID-String is added to some of the M-E commands
+sent during installation, to simplify identification of the loader
+without relying on crcs (which otherwise might require a sd2iec
+firmware update for new loader revisions):
+
+- Drive Identification
+
+  4d 2d 45 0a 02 4b 52 49 4c 4c <drive identification code>
+  M  -  E  $020a K  R  I  L  L
+
+- Request Loop Start
+
+  This M-E command also includes the values of some configuration
+  options.
+
+  Example:
+
+  4d 2d 45 09 02 4b 52 49 4c 4c xx xx c0 00 40 29 12 10 00
+  M  -  E  $0209 K  R  I  L  L  AD AD RV RV PF DR DT FL CF
+
+  AD Drivecode start-address low/high (variable)
+
+  RV Loader revision low/high (here: $00c0 == 192)
+  PF Platform (here: $40 == 64 == C64)
+  DR Drive model (here: $29 == 41 == 1541)
+  DT Directory track (here: $12 == 18)
+  FL Maximum filename length (here: $10 == 16)
+  CF Internal configuration flags
+
+  Currently only the directory track and the maximum filename length
+  are actually used by the sd2iec implementation.
+
+- ATN Responder
+
+  If the loader detects a secondary device on the bus, it tries to
+  silence it by installing an ATN responder. The M-E command which
+  then starts the ATN responder also has an ID-String.
+
+  4d 2d 45 0b 02 4b 52 49 4c 4c <ATN responder start code>
+  M  -  E  $020b K  R  I  L  L
+
+Drivecode Download
+------------------
+
+1) Drive sets CLK when it's ready to receive
+2) Host sets either ATN (r184 and later) or DATA (earlier revisions)
+3) Drive releases CLK
+4) Drive receives drivecode using the 1-bit receive protocol (see
+   "Transfer Protocols", above).
+5) Only <= r146: Host waits for drive to set CLK.
+
+The length of the drivecode is implicitly embedded in both the first
+byte of the drivecode (only high byte) and the loop instructions of
+the loader stub sent in M-W commands before the drivecode (only low
+byte) and is therefore cumbersome and unreliable to extract.
+
+So the sd2iec implementation uses a 90ms timeout waiting for a change
+on the clock line instead.
+
+This works for revisions r146 and earlier, as the host waits for
+the drive to set CLK before continuing (step 5 above).
+
+Later revisions don't have this handshake, so the host might start
+its first request immediately after the transfer is complete. To
+prevent that, the sd2iec firmware sets the "busy" line as soon as
+the last build-time option value has been extracted from the
+drivecode download.
+
+Request Handling
+================
+
+After the drivecode has been transferred, the drive enters the request
+loop.
+
+There are four types of requests:
+  - File request
+  - "File exists" check
+  - Uninstall command (drive resets)
+  - Custom drivecode upload
+
+In the sd2iec firmware, custom drivecode is generally not supported,
+only the save plugin introduced in r186 is emulated (see below).
+
+To signal a request, the host releases the respective "request" line.
+The drive responds by releasing the "busy" line.
+
+               | request |   busy
+---------------|---------|---------
+<= 146         |   ATN   |   CLK
+159            |   DATA  |   CLK
+164/166        |   ATN   |   DATA
+>= 184         |   DATA  |   CLK
+
+If the host sets the "busy" line when releasing the "request" line,
+this signals either a uninstall request (the drive does a reset) or
+a custom drivecode upload (see below).
+
+Otherwise it's a file request.
+
+File Transfer
+-------------
+
+For a file request, the host usually sends a filename, with the
+following exceptions/peculiarities:
+
+- Filename bytes are transferred until either a zero byte is sent or
+  the maximum filename length (see "Loader Configuration Option",
+  above) is reached. The r192 revision always sends a trailing zero
+  byte.
+
+- An empty filename (only a zero byte is sent) denotes a "next file"
+  request.
+
+- File types are ignored, even directory entries with file type zero
+  are considered, as long as the entry has a non-zero track number
+  for the first file sector.
+
+- If Track/Sector addressing is used (only <= r146), the protocol
+  is the same as for the filename, except the transfer always stops
+  after the second byte.
+
+After the filename was transferred, the drive sets the busy line
+again, until the first block is available.
+
+If there was an error when opening the file ("file not found"), only
+one byte of metadata ($ff) is sent as an error code (see below).
+
+The transfer always starts with the first sector of the file, after
+that the sectors might be transferred out of order, as they are read
+from the disk.
+
+All revisions generally transfer 254 bytes for full blocks and
+possibly fewer for the file's last sector.
+
+The sector link bytes are not transferred and instead replaced with
+up to two bytes of metadata. The significance and encoding of these
+two bytes differs between protocol revisions, but generally this
+information is included, sometimes implicitly:
+
+- Index of current block (or delta to previous block as 2s-complement)
+- Flag for the file's last block and in this case also the number of
+  payload bytes (which might be fewer than the standard of 254)
+- Number of contiguous blocks transferred (total number of transferred
+  blocks might be higher for out-of-order transfers)
+- EOF indicator
+
+If the first byte of metadata indicates either "file not found" ($ff)
+or "end of file" ($fe or $00, depending on the protocol version) no
+more bytes are sent for the request (not even a second metadata byte).
+
+<= r146:
+  Byte 0: $ff: "file not found"
+          $fe: "end of file"
+          otherwise: 0-based blockindex
+  Byte 1: number of bytes in block
+
+r159, r164/r166:
+  Byte 0: $ff: "file not found"
+          $00: "end of file"
+          otherwise:
+            Bits 7-1: 0x40 ^ blockindex delta in respect to previous
+                             block (0 for last block)
+            Bit    0: flag for "last block"
+  Byte 1: last block: 1 - number of bytes in block
+          otherwise:  1 + number of contiguous blocks
+
+r184:
+  Byte 0: $ff: "file not found"
+          $00: "end of file"
+          otherwise:
+            Bits 7-1: blockindex delta in respect to previous block
+            Bit    0: flag for "last block"
+  Byte 1: last block: 0 - number of bytes in block
+          otherwise:  1 + number of contiguous blocks
+
+>= r186:
+  Byte 0: $ff: "file not found"
+          $00: "end of file"
+          otherwise:
+            last block: 0 - number of bytes in block
+            otherwise:  number of contiguous blocks
+  Byte 1: Bits 7-1: blockindex delta in respect to previous block
+          Bit    0: flag for "last block"
+
+The 2-bit protocol is used for the entire transfer. After each block
+the drive sets the busy line. If either "file not found" or "end of
+file" was sent, the transfer is complete. Otherwise the next block
+is fetched and sent.
+
+Note that the final block of the transfer isn't necessarily the last
+(logical) block of the file, as blocks might be sent out of order.
+
+"File exists" Check
+-------------------
+
+Revision r192 adds a "file exists" check: If the host set CLK before
+releasing ATN when the drive is about to send the first metadata byte,
+the transfer is aborted and the drive instead only indicates if the
+requested file exists (DATA released) or not (DATA set).
+
+Custom Code Upload
+------------------
+
+Universal support of custom code would require specific detection and
+emulation of the respective custom code (or a full drive emulation).
+
+Therefore only the official save plugin introduced with r186 is
+supported.
+
+In r186, the host signals a custom code upload request by setting
+CLK when releasing the request line. In r192 the code upload is just
+sent like the filename. If the "filename" is longer than 16+1 bytes,
+then it is a code upload.
+
+Before installing the actual custom code, the plugin framework first
+sends a backup of most of the drive memory to the host. This isn't
+really relevant for the sd2iec implementation, but still has to
+be simulated. The protocol of r186 (used for the save plugin of
+Scramble Infinity 1.2 [010]) relies on the drive sending the exact
+number of bytes expected for the backup, which therefore has to be
+extracted from the code download. The protocol was redesigned for
+r192 to work with a timeout, similar to how the initial drivecode
+download is handled.
+
+Save-Plugin
+-----------
+
+The save plugin is restricted in that it can only overwrite (not
+create or extend) an existing file. This isn't fully implemented in
+the sd2iec emulation, which deletes and re-creates the file, but
+still refuses to write to a non-existing file.
+
+Communication with the host is using the 1-bit send and receive
+protocols. The filename is sent as part of the save plugin code.
+
+The save plugin then sends a metadata byte, which is either an error
+code ($fe "write protect on" or $ff "file not found"), or the length
+of the file in blocks.
+
+After that, the host sends the new data for the file in blocks of
+a maximum of 254 bytes. Every block is preceded by one byte for
+the number of bytes in the block (only relevant for the last block,
+otherwise always $fe).
+
+After the file has been sent, the drive restores the memory backup
+it sent before downloading the custom code and then re-enters the
+request loop.
+
+ATN Responder
+=============
+
+Starting with release r164, the loader checks for other active devices
+on the bus during installation. If found (and if they pass the drive
+detection) an "ATN responder" is installed, which monitors the ATN IN
+signal and sets ATNA accordingly, to minimize the effect on the DATA
+line.
+
+The sd2iec firmware also detects this and enters "sleep mode", which
+is indicated by the static error LED and which can be deactivated by
+a long press of the disk change button.
+
+Known Productions using this Loader (as of September 2022)
+==========================================================
+
+Note: The table below is compiled from releases on CSDb crediting
+      Krill for the loader. Some (mostly pre-2007) productions use
+      a different codebase/protocol and therefore are neither
+      supported by the sd2iec implementation nor listed here.
+
+The protocol version listed in the table doesn't necessarily match
+the actual loader revision used, but the public loader release that
+uses this protocol. Exceptions are revisions "58pre", "159" and "186",
+which all don't have public stand-alone loader releases.
+
+Reference:
+  ! = See specific comment at end of table
+  D = Non-standard directory location ("shadow directory")
+  R = Resend protocol
+  T = Track/Sector addressing
+  S = Save plugin
+  4 = 40 Track diskimage
+
+Ref | Title                                      |  CSDb  | Prot. | N
+----|--------------------------------------------|--------|-------|---
+000 | Strawberry Strings                         | 221819 |  184  |
+001 | Sloth Party Scroller                       | 221531 |  192  | D
+002 | Quo Vadis                                  | 220616 |  146  |
+003 | Strikeback Preview Trainer Loader +3D      | 220532 |  184  |
+004 | Madwoods Ahoy                              | 220443 |  192  | D
+005 | Fleshlite                                  | 220016 |  184  |
+006 | Retro SID-Cover Essentials                 | 219251 |  184  |
+007 | Pro Patria                                 | 218352 |  184  |
+008 | Vandalism News #72                         | 216880 |  192  | D
+009 | Salvaged                                   | 216865 |  164  |
+010 | Scramble Infinity V1.2                     | 212590 |  186  | DS
+011 | Sonic the Hedgehog V1.2                    | 212523 |  184  |
+012 | Merry Twistmas                             | 212283 |  184  |
+013 | Sonic the Hedgehog V1.1                    | 212277 |  184  | !
+014 | Scramble Infinity                          | 212252 |  184  | D
+015 | Sonic the Hedgehog                         | 212190 |  184  |
+016 | Attitude #21                               | 212061 |  184  |
+017 | Sidmachine 3003                            | 211728 |  184  |
+018 | SUPER 16                                   | 211717 |  186  |
+019 | Submerged                                  | 211702 |  146  |
+020 | Secam                                      | 211354 |  184  |
+021 | 30 Years Excess - The Member Presentation  | 211126 |  184  |
+022 | Thir(s)ty                                  | 208403 |  186  | D
+023 | Colour Spectrum                            | 205653 |  184  | !
+024 | Trapped in a Box                           | 205541 |  184  |
+025 | Lost Realms of Murkasada Episode 1         | 205262 |  184  |
+026 | Dutch Blue                                 | 203384 |  164  | D
+027 | Party Animals                              | 203375 |  184  |
+028 | Seaworld                                   | 203081 |  184  |
+029 | None of Us Are Getting Out of This Life... | 200581 |  184  |
+030 | Hardhat Construction Co. +2                | 199239 |  184  |
+031 | Protogeo 100%                              | 198547 |  184  | !
+032 | Vandalism News #71                         | 197870 |  184  | D
+033 | Fantomas                                   | 196684 |  184  |
+034 | Snack                                      | 195618 |  184  |
+035 | Freaky Fish DX V1.1                        | 195586 |  184  |
+036 | Freaky Fish DX                             | 195108 |  184  |
+037 | The Residents                              | 192920 |  184  | D
+038 | DiverSIDty #1                              | 192504 |  184  |
+039 | Fight!                                     | 189818 |  184  | D
+040 | PSI-5 Trading Company +4D                  | 188012 |  164  |
+041 | Limbo Living                               | 187562 |  164  |
+042 | Gerposaurus                                | 187537 |  164  |
+043 | Attitude #20                               | 186926 |  164  |
+044 | Vandalism News #70                         | 183550 |  164  | D
+045 | Out of Contex                              | 182438 |  164  |
+046 | Demolution                                 | 180332 |  146  |
+047 | It's Magic 2 +6HDP [cartridge]             | 180059 |  164  |
+048 | It's Magic 2 +6HDP [cartridge]             | 180008 |  164  |
+049 | It's Magic 2 +6HDP [cartridge]             | 179930 |  164  |
+050 | Endless Forms Most Beautiful 64 V1.1       | 179817 |  164  |
+051 | Endless Forms Most Beautiful 64            | 179794 |  164  |
+052 | NGC 1277 100%                              | 179107 |  164  |
+053 | Vandalism News #69                         | 178594 |  164  | D
+054 | NGC 1277 80%                               | 178035 |  164  | !
+055 | Space Beer                                 | 175656 |  164  |
+056 | Week in Progress                           | 175483 |  146  |
+057 | Beezarro                                   | 175475 |  164  | D
+058 | ZX Art                                     | 174536 |  164  |
+059 | 4M Arena Demo1                             | 173646 |  164  |
+060 | Attitude #19                               | 173486 |  164  |
+061 | Vandalism News #68                         | 171312 |  164  | D
+062 | Pixels 35                                  | 170952 |  164  |
+063 | Hi Five                                    | 170951 |  164  |
+064 | Go Gray                                    | 167234 |  146  |
+065 | Attitude #18                               | 163647 |  146  |
+066 | VF-SSDPCM1 Super Plus                      | 163621 |  159  | 4
+067 | SSDPCM2 V3 - 16khz                         | 162796 |  159  |
+068 | CRX Race [unprotected original]            | 160634 |  146  |
+069 | Vandalism News #67                         | 160588 |  146  | D
+070 | Dreamtime 2K17                             | 158080 |  146  |
+071 | Madonna Music Collection 2017              | 152477 |  146  |
+072 | Vandalism News #66                         | 151569 |  146  | D
+073 | Pixels                                     | 151304 |  146  |
+074 | Fallen Stars                               | 151293 |  146  |
+075 | Prime Time                                 | 151289 |  146  |
+076 | Hoaxagon                                   | 151282 |  146  |
+077 | Vandalism News #65                         | 150629 |  146  | D
+078 | The Social Demo                            | 150284 |  146  |
+079 | Attitude #17                               | 149222 |  146  |
+080 | We Miss You                                | 147974 |  146  |
+081 | We Are Demo                                | 146723 |  146  |
+082 | ABBA Gold - The Collection                 | 146701 |  146  |
+083 | David Bowie Tribute                        | 145646 |  146  |
+084 | Tangled Up                                 | 145635 |  146  |
+085 | From Berlin to Paris and Back              | 145600 |  146  |
+086 | The Mayday Show                            | 145596 |  146  |
+087 | Yaemon's Tunebox 2                         | 144617 |  146  |
+088 | Rock Goes 80's                             | 144428 |  146  |
+089 | 20 Years Onslaught                         | 144034 |  146  |
+090 | Attitude #16                               | 143966 |  146  |
+091 | Zookeeper                                  | 142269 |  146  |
+092 | Ascetic                                    | 141134 |  146  |
+093 | Demo of the Year 2014 [102% final version] | 139705 |  146  |
+094 | Demo of the Year 2014                      | 139568 |  146  |
+095 | Vandalism News #64                         | 138976 |  146  | D
+096 | GoatLight                                  | 137495 |  146  |
+097 | BCC Faces                                  | 136809 |  146  |
+098 | Pagan's Mind                               | 136795 |  146  |
+099 | Magical Wizard                             | 133946 |  146  |
+100 | Frantic 3: Nightmare                       | 133941 |  146  |
+101 | Bee Together                               | 133939 |  146  | R
+102 | RGB                                        | 133937 |  146  |
+103 | Pandas                                     | 133331 |  146  |
+104 | Attitude #15                               | 133118 |  146  |
+105 | Shine Logo Show                            | 132775 |  146  |
+106 | VOA                                        | 132252 |  146  | 4
+107 | Bad Apple 64                               | 131628 |  146  | 4
+108 | Eclectic                                   | 131301 |  146  | 4
+109 | Free Beer!                                 | 129287 |  146  |
+110 | Durch den Monsun                           | 129286 |  146  |
+111 | Serpent                                    | 129098 |  146  |
+112 | Goats Who Stare at Men                     | 129092 |  146  |
+113 | We Are All Connected                       | 129091 |  146  |
+114 | Musik Run/Stop                             | 129090 |  146  | R
+115 | Continuum                                  | 129088 |  146  | RT
+116 | Nordic Scene Review #8                     | 128133 |  146  |
+117 | Attitude #14                               | 121481 |  146  |
+118 | Solaris                                    | 120911 |  146  |
+119 | Wonderland XII                             | 120907 |  146  |
+120 | Frontier                                   | 120458 |  146  |
+121 | Pieces of 8-bit                            | 119543 |  146  | R
+122 | Famous Australians Vol.1                   | 119441 |  146  |
+123 | Sidelined                                  | 118375 |  146  |
+124 | Digital Underground                        | 117360 |  146  |
+125 | Melangerie Mediocre                        | 116206 |  146  | R
+126 | What Is the Matrix                         | 115684 |  146  |
+127 | Too Old to Ror and Rol                     | 115677 |  146  |
+128 | Revolved                                   | 115653 |  146  |
+129 | Demolicious                                | 115649 |  146  |
+130 | Legacy                                     | 113521 |  146  |
+131 | 8bit Passion                               | 112872 |  146  | 4
+132 | Naked Grinder 2                            | 112697 |  146  |
+133 | Trick and Treat                            | 112424 |  146  | T
+134 | Wonderland XI                              | 112423 |  146  |
+135 | Cause of Death                             | 112422 |  146  | D
+136 | Coma Light 13                              | 112378 |  146  | D
+137 | Vicious Sid 2                              | 112365 |  146  |
+138 | Artphosis                                  | 112337 |  146  |
+139 | Protogeo 80%                               | 112330 |  146  | !
+140 | Krawall Deluxe                             | 107788 |  146  |
+141 | Flashbang                                  | 107787 |  146  |
+142 | Algotecher                                 | 105196 |  146  | 4
+143 | Fragment                                   | 105055 |  146  |
+144 | Fifteen Minutes of Lame                    | 105054 |  146  |
+145 | 64 Seconds                                 | 105052 |   58  |
+146 | VQ-Mania                                   | 104219 |  146  | 4
+147 | 2011 - A Press Space Odyssey               | 103742 |  146  |
+148 | Introducing Audio VQ                       | 103099 |  146  | 4
+149 | Apparatus                                  | 102318 |  146  |
+150 | Snolgkos                                   | 101521 |  146  |
+151 | The Beating Heart                          | 101520 |  146  |
+152 | Toxyc Taste                                | 101511 |   58  |
+153 | Arpeggio                                   | 100263 | 58pre |
+154 | High Five                                  |  98732 |  146  |
+155 | Lash                                       |  97772 |  146  | T
+156 | SIDrip Alliance Music Collection 2010      |  96621 |   58  | !
+157 | The Richard Joseph Tribute                 |  94536 |  146  |
+158 | Lifework                                   |  94459 |  146  | T
+159 | Another Beginning                          |  94448 |  146  |
+160 | We Are New                                 |  94445 |  146  |
+161 | NESsivE ATtaCK                             |  94434 |  146  |
+162 | Recollection #3                            |  94424 |  146  | !
+163 | No Way                                     |  94259 | 58pre |
+164 | Black Spark 100%                           |  91494 |  146  |
+165 | Anomaly                                    |  91032 | 58pre |
+166 | Black Spark 90%                            |  90335 |  146  |
+167 | White                                      |  87982 |   58  |
+168 | Patterns                                   |  87980 |   58  |
+169 | Scramble 2010 Preview V2                   |  86061 |  146  |
+170 | Xmas 2009                                  |  85939 |   58  |
+171 | Song of Fall - Broad Edition               |  82096 |   58  |
+172 | Scramble 2010 Preview                      |  81924 | 58pre |
+173 | Faux Visage                                |  81165 |   58  |
+174 | Still Ready                                |  81158 |   58  |
+175 | Cast to See                                |  79054 | 58pre |
+176 | Crepusculo 100%                            |  72756 |   58  |
+177 | Crepusculo                                 |  72556 |   58  |
+178 | Pearls for Pigs                            |  72553 |   58  | 4
+179 | We Are One Family                          |  71406 | 58pre |
+180 | Party Groove                               |  70212 |   58  |
+181 | That Way                                   |  69932 | 58pre |
+182 | Gdzie Jest Ssijlont?                       |  52446 | 58pre |
+183 | Sharp                                      |  50575 |   58  |
+184 | 0ldsk00l 4ever!                            |  45250 | 58pre |
+185 | Oblique                                    |  43583 | 58pre |
+186 | The Wild Bunch                             |  41462 |   58  | !
+187 | Aurora 85%-90%                             |  41457 | 58pre |
+188 | Industrial Terror                          |  38953 | 58pre |
+189 | Trans*Form                                 |  36851 | 58pre |
+190 | Unicorn, the Collectors Edition            |  33556 | 58pre |
+191 | Unicorn                                    |  32438 | 58pre |
+192 | Recollection #1                            |  29897 | 58pre | !
+193 | Psyche                                     |  29844 | 58pre |
+194 | 10/5                                       |  26006 | 58pre |
+195 | LCP Memories                               |  21146 | 58pre |
+196 | The Works                                  |  21122 | 58pre |
+197 | You Can't Stop Us!                         |  20167 | 58pre |
+198 | Sphaeristerium                             |  19417 | 58pre |
+199 | One Million Lightyears from Earth          |  17292 | 58pre |
+200 | Real                                       |  15103 | 58pre |
+201 | Dialogue                                   |  15095 | 58pre |
+
+Production-specific Remarks
+---------------------------
+
+[013] Sonic the Hedgehog V1.1
+  Should work, but not tested, as no longer available for download.
+  Both V1.0 [015] and V1.2 [011] are tested and work.
+
+[023] Colour Spectrum
+  This is a C128 release. The D64 images work, the D71 and D81
+  trigger the use of the burst protocol, which isn't supported.
+
+[031] Protogeo 100%
+  The interactive part at the end of the demo uses unsupported custom
+  drivecode and therefore doesn't work.
+
+[045] Out of Contex
+  The side b diskimage contains a duplicate, illegal directory entry
+  for the file "WKQ", which only affects the sd2iec implementation
+  because of a slight difference in how directory lookup works.
+
+  The image can be easily fixed, e.g. with sed, like so:
+  $ sed -bie 's/\x15\(\x05\x57\)/\x00\1/' ALD_Out_of_Contex_SIDEB.d64
+
+[054] NGC 1277 80%
+  Hangs at some point for unknown reasons. 100% version [052] works.
+
+[139] Protogeo 80%
+  Hangs at some point for unknown reasons. 100% version [031] works
+  for the most part (see remarks above).
+
+[156] SIDrip Alliance Music Collection 2010
+  Uses additional, unsupported custom drivecode and therefore doesn't
+  work.
+
+[162] Recollection #3
+  To make it work, rename the loader PRG (the first directory entry)
+  to something that doesn't start with "< ", like "- RECOLLECTION -".
+
+[186] The Wild Bunch
+  Hangs at some point because it uses unsupported custom drivecode.
+
+[192] Recollection #1
+  Krill's loader is only used for the intro. The diskmag itself uses
+  some different, unsupported loader and therefore doesn't work.

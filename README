@@ -741,6 +741,42 @@ Note: Using sd2iec without an external crystal or similiar precise
   Hypra-Load uses the ATN line for handshake, so it only works if no
   other device is connected to the IEC bus.
 
+  Krill's IRQ Loader
+  ------------------
+  The sd2iec implementation supports loading both from D41/D71/D81
+  images and files extracted to the SD card. Extracting the files
+  in a useable form can be a challenge for some releases, though:
+  Some use directory entries on a non-standard track, payload might
+  be read from files marked as deleted in the directory and the
+  "load next file" functionality of the loader relies on the order
+  of the files in the directory.
+
+  A small number of releases use track/sector addressing to load
+  files; these only work from a D64 image.
+
+  See doc/krills-loader.txt for additional remarks regarding specific
+  releases.
+
+  The loader is captive, but the sd2iec implementation should most
+  of the time be able to detect a host reset or uninstall and exit
+  accordingly.
+
+  As the ATN line is used as a clock line for transfers, no other
+  drives might be active on the bus. Starting with revision r164,
+  the loader tries to silence other devices by installing an "ATN
+  responder". In the sd2iec implementation this activates "Sleep
+  Mode" (see below), which has to be ended manually by holding the
+  disk change button.
+
+  On a C128 host the loader uses the burst protocol if connected to
+  a 1571 or 1581. This is not yet supported by this implementation.
+  (The only known C128 release using this loader is "Colour Spectrum",
+  CSDb Release ID 205653).
+
+  Only productions released on CSDb which credit Krill for their
+  loader were tested. Other productions might use configuration
+  options which are not supported and therefore might not work.
+
 JiffyDOS:
 =========
 The JiffyDOS protocol has very relaxed timing constraints compared to

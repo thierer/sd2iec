@@ -74,6 +74,10 @@ enum {
 
   RXTX_FC3OF_PAL,
   RXTX_FC3OF_NTSC,
+
+  RXTX_KRILL_DATA,
+  RXTX_KRILL_CLOCK,
+  RXTX_KRILL_RESEND,
 };
 
 typedef uint8_t (*fastloader_rx_t)(void);
@@ -100,6 +104,11 @@ static const PROGMEM struct fastloader_rxtx_s fl_rxtx_table[] = {
 #ifdef CONFIG_LOADER_FC3
   [RXTX_FC3OF_PAL]     = { NULL, fc3_oldfreeze_pal_send  },
   [RXTX_FC3OF_NTSC]    = { NULL, fc3_oldfreeze_ntsc_send },
+#endif
+#ifdef CONFIG_LOADER_KRILL
+  [RXTX_KRILL_DATA]    = { krill_get_byte_clk_data, krill_send_byte_atn    },
+  [RXTX_KRILL_RESEND]  = { krill_get_byte_clk_data, krill_send_byte_resend },
+  [RXTX_KRILL_CLOCK]   = { krill_get_byte_data_clk, krill_send_byte_atn    },
 #endif
 };
 
@@ -192,6 +201,53 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
 #ifdef CONFIG_LOADER_HYPRALOAD
   { 0xd2f2, FL_HYPRALOAD,        RXTX_NONE          },
 #endif
+#ifdef CONFIG_LOADER_KRILL
+  /* CRCs of the first respective M-W chunk except where noted */
+  { 0x8227, FL_KRILL_R58,        RXTX_NONE          }, // r58/r146 drvchkme
+  { 0xe300, FL_KRILL_R186,       RXTX_KRILL_CLOCK   }, // second chunk
+  { 0x19a4, FL_KRILL_R184,       RXTX_KRILL_CLOCK   }, // second chunk
+  { 0x741d, FL_KRILL_R184,       RXTX_KRILL_CLOCK   },
+  { 0xf7e4, FL_KRILL_R184,       RXTX_KRILL_CLOCK   },
+  { 0x1eec, FL_KRILL_R164,       RXTX_KRILL_CLOCK   },
+  { 0x4393, FL_KRILL_R164,       RXTX_KRILL_CLOCK   },
+  { 0x6c47, FL_KRILL_R164,       RXTX_KRILL_CLOCK   },
+  { 0xd9f1, FL_KRILL_R164,       RXTX_KRILL_CLOCK   },
+  { 0xa905, FL_KRILL_R159,       RXTX_KRILL_CLOCK   },
+  { 0xe7f6, FL_KRILL_R159,       RXTX_KRILL_CLOCK   },
+  { 0x2028, FL_KRILL_R146,       RXTX_KRILL_DATA    },
+  { 0x2c29, FL_KRILL_R146,       RXTX_KRILL_DATA    },
+  { 0x4eb4, FL_KRILL_R146,       RXTX_KRILL_DATA    },
+  { 0x5668, FL_KRILL_R146,       RXTX_KRILL_DATA    }, // second chunk
+  { 0x6a90, FL_KRILL_R146,       RXTX_KRILL_DATA    },
+  { 0x74aa, FL_KRILL_R146,       RXTX_KRILL_DATA    },
+  { 0x7c5e, FL_KRILL_R146,       RXTX_KRILL_DATA    },
+  { 0x7e28, FL_KRILL_R146,       RXTX_KRILL_DATA    }, // second chunk
+  { 0xa1e7, FL_KRILL_R146,       RXTX_KRILL_DATA    },
+  { 0xa350, FL_KRILL_R146,       RXTX_KRILL_DATA    },
+  { 0xb0e4, FL_KRILL_R146,       RXTX_KRILL_DATA    },
+  { 0xb340, FL_KRILL_R146,       RXTX_KRILL_DATA    },
+  { 0xc1dc, FL_KRILL_R146,       RXTX_KRILL_DATA    },
+  { 0xeb28, FL_KRILL_R146,       RXTX_KRILL_DATA    },
+  { 0xf5a8, FL_KRILL_R146,       RXTX_KRILL_DATA    },
+  { 0xfc9a, FL_KRILL_R146,       RXTX_KRILL_DATA    },
+  { 0x03a5, FL_KRILL_R146,       RXTX_KRILL_RESEND  },
+  { 0xba1f, FL_KRILL_R146,       RXTX_KRILL_RESEND  },
+  { 0xca68, FL_KRILL_R146,       RXTX_KRILL_RESEND  },
+  { 0x2fca, FL_KRILL_R58,        RXTX_KRILL_DATA    },
+  { 0xb4ce, FL_KRILL_R58 ,       RXTX_KRILL_DATA    }, // second chunk
+  { 0xe530, FL_KRILL_R58,        RXTX_KRILL_DATA    },
+  { 0xf7aa, FL_KRILL_R58PRE,     RXTX_KRILL_DATA    },
+  { 0x379d, FL_KRILL_R58PRE,     RXTX_KRILL_DATA    },
+#endif
+#ifdef CONFIG_BUS_SILENCE_REQ
+  /* The loader uses a different method for drive identification */
+  /* when installing the ATN responder. That's why the sd2iec is */
+  /* identified as a 1541 even when a D81 image is mounted.      */
+  /* So only the 1541 code's CRCs are needed.                    */
+  { 0x607d, FL_KRILL_SLEEP,      RXTX_NONE          }, // >= r186
+  { 0x40c3, FL_KRILL_SLEEP,      RXTX_NONE          }, // r184
+  { 0x5088, FL_KRILL_SLEEP,      RXTX_NONE          }, // r164
+#endif
 
   { 0, FL_NONE, 0 }, // end marker
 };
@@ -271,6 +327,49 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
 #ifdef CONFIG_LOADER_HYPRALOAD
   { 0x048b, FL_HYPRALOAD,        load_hypraload, 0 },
 #endif
+#if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_BUS_SILENCE_REQ)
+  { 0x0205, FL_NONE,             drvchkme_krill,   1 }, //  < r192 drvchkme
+  { 0x020a, FL_NONE,             drvchkme_krill,   2 }, // >= r192 drvchkme
+  { 0x0205, FL_KRILL_SLEEP,      bus_sleep_krill,  0 }, //  < r192 ATN responder
+  { 0x020b, FL_NONE,             bus_sleep_krill,  1 }, // >= r192 ATN responder
+#endif
+#ifdef CONFIG_LOADER_KRILL
+  { 0x0300, FL_KRILL_R58,        drvchkme_krill,   0 }, // <= r146 drvchkme
+  { 0x0209, FL_NONE,             load_krill,       0 }, // >= r192 load
+  { 0x0770, FL_KRILL_R186,       load_krill,       0 },
+  { 0x0758, FL_KRILL_R184,       load_krill,       0 },
+  { 0x0770, FL_KRILL_R184,       load_krill,       0 },
+  { 0x07a8, FL_KRILL_R184,       load_krill,       0 },
+  { 0x06d8, FL_KRILL_R164,       load_krill,       0 },
+  { 0x077e, FL_KRILL_R164,       load_krill,       0 },
+  { 0x07aa, FL_KRILL_R164,       load_krill,       0 },
+  { 0x07ac, FL_KRILL_R164,       load_krill,       0 },
+  { 0x07a5, FL_KRILL_R159,       load_krill,       0 },
+  { 0x07b1, FL_KRILL_R159,       load_krill,       0 },
+  { 0x056f, FL_KRILL_R146,       load_krill,       0 },
+  { 0x0570, FL_KRILL_R146,       load_krill,       0 },
+  { 0x0577, FL_KRILL_R146,       load_krill,       0 },
+  { 0x05e9, FL_KRILL_R146,       load_krill,       0 },
+  { 0x05ea, FL_KRILL_R146,       load_krill,       0 },
+  { 0x05ec, FL_KRILL_R146,       load_krill,       0 },
+  { 0x05ee, FL_KRILL_R146,       load_krill,       0 },
+  { 0x05ef, FL_KRILL_R146,       load_krill,       0 },
+  { 0x05fc, FL_KRILL_R146,       load_krill,       0 },
+  { 0x05fe, FL_KRILL_R146,       load_krill,       0 },
+  { 0x0610, FL_KRILL_R146,       load_krill,       0 },
+  { 0x066e, FL_KRILL_R146,       load_krill,       0 },
+  { 0x06a4, FL_KRILL_R146,       load_krill,       0 },
+  { 0x06b6, FL_KRILL_R146,       load_krill,       0 },
+  { 0x05fc, FL_KRILL_R58,        load_krill,       0 },
+  { 0x05fe, FL_KRILL_R58,        load_krill,       0 },
+  { 0x05ff, FL_KRILL_R58,        load_krill,       0 },
+  { 0x0626, FL_KRILL_R58,        load_krill,       0 },
+  { 0x0668, FL_KRILL_R58,        load_krill,       0 },
+  { 0x05da, FL_KRILL_R58PRE,     load_krill,       0 },
+  { 0x05f1, FL_KRILL_R58PRE,     load_krill,       0 },
+  { 0x05f4, FL_KRILL_R58PRE,     load_krill,       0 },
+  { 0x0600, FL_KRILL_R58PRE,     load_krill,       0 },
+#endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker
 };
@@ -299,9 +398,14 @@ static const PROGMEM struct fastloader_capture_s fl_capture_table[] = {
 static const PROGMEM magic_value_t drive_magics[] = {
   /* used by DreamLoad and ULoad Model 3 */
   { 0xfea0, { 0x0d, 0xed }, DRIVE_1541|DRIVE_1571 },
+  /* used by DreamLoad, ULoad Model 3 and Krill's loader */
   { 0xe5c6, { 0x34, 0xb1 }, DRIVE_1541            },
   /* Disable AR6 fastloader; entry no longer needed, as 0 is the default now */
   // { 0xfffe, { 0x00, 0x00 }, 0xff },
+  /* used by Krill's loader */
+  { 0xeaa3, { 0xff, 0x4c }, DRIVE_1541            },
+  { 0xe5c6, { 0x37, 0xb1 }, DRIVE_1571            },
+  { 0xa6e9, { 0x38, 0xb1 }, DRIVE_1581            },
 
   /* end mark */
   { 0, { 0, 0 }, 0 }

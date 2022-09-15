@@ -123,6 +123,9 @@ CONFIG_LOADER_ULTRABOOT=n
 # Enable Hypra-Load fastloader
 CONFIG_LOADER_HYPRALOAD=n
 
+# Enable Krill's loader
+CONFIG_LOADER_KRILL=n
+
 # Enable DolphinDOS parallel speeder
 CONFIG_PARALLEL_DOLPHIN=y
 

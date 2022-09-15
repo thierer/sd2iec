@@ -32,6 +32,7 @@
 #define ustrchr(s,c)         ((uint8_t *)strchr((char *)(s), (c)))
 #define ustrcmp(s1,s2)       (strcmp((char *)(s1), (char *)(s2)))
 #define ustrcmp_P(s1,s2)     (strcmp_P((char *)(s1), (s2)))
+#define ustrncmp_P(s1,s2,n)  (strncmp_P((char *)(s1), (s2), (n)))
 #define ustrcpy(s1,s2)       (strcpy((char *)(s1), (char *)(s2)))
 #define ustrcpy_P(s1,s2)     (strcpy_P((char *)(s1), (s2)))
 #define ustrncpy(s1,s2,n)    (strncpy((char *)(s1), (char *)(s2),(n)))
