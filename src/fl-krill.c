@@ -155,15 +155,15 @@ static bool magic_string_matches(void) {
 }
 
 /* Universal handler for possible drvchkme memexecs */
-/* f == 0: drvchkme of <= r146; detected by M-W, no further checks necessary  */
-/* f == 1: possible drvchkme of <= r186; check command crc                    */
-/* f == 2: possible drvchkme of >= r192; check command for magic string       */
+/* f == 0: drvchkme of r146; detected by M-W, no further checks necessary */
+/* f == 1: possible drvchkme of <= r186; check command crc                */
+/* f == 2: possible drvchkme of >= r192; check command for magic string   */
 bool drvchkme_krill(uint8_t f) {
   uint8_t  i;
   uint16_t crc;
 
   switch (f) {
-  case 0: /* <= r146: M-W drvchkme crc matched */
+  case 0: /* r146: M-W drvchkme crc matched */
     break;
 
   case 1: /* check command length and crc for drvchkme */
@@ -191,7 +191,8 @@ bool drvchkme_krill(uint8_t f) {
   }
 
   custom_magic.address = 0x300;
-  custom_magic.val[0]  = ~0;   /* the first read will have returned 0 */
+  /* the first read will have returned '0' ("00, OK, .." in error_buffer[]) */
+  custom_magic.val[0]  = ~'0';
   custom_magic.val[1]  = 0;
   custom_magic.drives  = 0xff; /* applicable for all drive types */
 

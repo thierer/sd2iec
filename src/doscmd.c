@@ -203,7 +203,7 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
 #endif
 #ifdef CONFIG_LOADER_KRILL
   /* CRCs of the first respective M-W chunk except where noted */
-  { 0x8227, FL_KRILL_R58,        RXTX_NONE          }, // r58/r146 drvchkme
+  { 0x8667, FL_KRILL_R146,       RXTX_NONE          }, // r146 drvchkme
   { 0xe300, FL_KRILL_R186,       RXTX_KRILL_CLOCK   }, // second chunk
   { 0x19a4, FL_KRILL_R184,       RXTX_KRILL_CLOCK   }, // second chunk
   { 0x741d, FL_KRILL_R184,       RXTX_KRILL_CLOCK   },
@@ -334,7 +334,7 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
   { 0x020b, FL_NONE,             bus_sleep_krill,  1 }, // >= r192 ATN responder
 #endif
 #ifdef CONFIG_LOADER_KRILL
-  { 0x0300, FL_KRILL_R58,        drvchkme_krill,   0 }, // <= r146 drvchkme
+  { 0x0300, FL_KRILL_R146,       drvchkme_krill,   0 }, // r146 drvchkme
   { 0x0209, FL_NONE,             load_krill,       0 }, // >= r192 load
   { 0x0770, FL_KRILL_R186,       load_krill,       0 },
   { 0x0758, FL_KRILL_R184,       load_krill,       0 },
@@ -400,8 +400,8 @@ static const PROGMEM magic_value_t drive_magics[] = {
   { 0xfea0, { 0x0d, 0xed }, DRIVE_1541|DRIVE_1571 },
   /* used by DreamLoad, ULoad Model 3 and Krill's loader */
   { 0xe5c6, { 0x34, 0xb1 }, DRIVE_1541            },
-  /* Disable AR6 fastloader; entry no longer needed, as 0 is the default now */
-  // { 0xfffe, { 0x00, 0x00 }, 0xff },
+  /* Disable AR6 fastloader */
+  { 0xfffe, { 0x00, 0x00 }, 0xff                  },
   /* used by Krill's loader */
   { 0xeaa3, { 0xff, 0x4c }, DRIVE_1541            },
   { 0xe5c6, { 0x37, 0xb1 }, DRIVE_1571            },
@@ -1374,11 +1374,6 @@ static void handle_memread(void) {
           break;
         }
         p++;
-      }
-      if (check == 0) {
-        /* use 0 as default */
-        error_buffer[0] = 0;
-        error_buffer[1] = 0;
       }
     }
 

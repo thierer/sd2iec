@@ -441,9 +441,8 @@ Supported commands:
   table of common drive-detection addresses and return data that
   forces most of the supported fast loaders into a compatible mode
   (e.g. 1541 mode for Dreamload and ULoad Model 3, disabled fastloader
-  for Action Replay 6). If the address is not recognized, zero will
-  be returned for the first two bytes and more-or-less random data
-  beyond.
+  for Action Replay 6). If the address is not recognized, more-or-less
+  random data will be returned.
 
   This includes basic support for identifying the drive type based on
   the type of D64 image mounted (1541 for D41, 1571 for D71 and 1581
