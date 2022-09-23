@@ -1303,7 +1303,7 @@ uint8_t d64_mount(path_t *path, uint8_t *name) {
     }
 
     /* Not recognized as neither D41, D71 nor D81 image; last try is DNP */
-    if ((fsize % (256*256L)) != 0) {
+    if ((fsize == 0 || fsize % (256*256L)) != 0 || fsize / (256*256L) > 255) {
       set_error(ERROR_IMAGE_INVALID);
       return 1;
     }
