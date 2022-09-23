@@ -2075,7 +2075,7 @@ uint8_t d64_extend_image(uint8_t part, uint8_t tracks) {
 
 /* Initializes sector contents and resets error info, if applicable. */
 static uint8_t d64_format_track(uint8_t part, buffer_t *buf, uint8_t track) {
-  uint8_t sector;
+  uint16_t sector;
 
   for (sector = 0; sector < sectors_per_track(part, track); sector++) {
     if (image_write(part, sector_offset(part, track, sector), buf->data, 256, 0))
