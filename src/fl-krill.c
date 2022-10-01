@@ -70,9 +70,9 @@ typedef struct {
   uint8_t   dir_track;    /* directory track (255 => default) */
   uint8_t   bam_sector;   /* BAM sector on directory track (0 => default) */
   uint8_t   fn_maxlength; /* Max. filename length (<= 16) */
-  uint8_t   file_count;   /* number of files loaded in the current session */
   uint16_t  file_crc;     /* crc of the current file, used for file quirks */
   uint16_t  backup_len;   /* length of the (simulated) drive memory backup */
+  int       first_file:1; /* flag for first file in session                */
   int       ts_load:1;    /* files are addressed using track and sector    */
 } session_t;
 
@@ -592,7 +592,7 @@ static uint8_t read_filename(session_t *s) {
     /* filenames with a PETSCII code <= 41, but no affected productions   */
     /* are known. Also wouldn't work for valid track and sector ranges of */
     /* productions using D71 or D81 images, but none are known, either.   */
-    if (i == 1 && (s->ts_load || (s->file_count == 0 && is_valid_ts())))
+    if (i == 1 && (s->ts_load || (s->first_file && is_valid_ts())))
       break;
   }
 
@@ -628,7 +628,7 @@ static buffer_t *get_file_buf(session_t *s) {
   } else {
     if (!s->ts_load) {
       /* switch to T/S addressing if first file and valid T/S, else error */
-      if (s->file_count > 0 || !is_valid_ts()) {
+      if (!s->first_file || !is_valid_ts()) {
         free_buffer(buf);
         return NULL;
       }
@@ -647,7 +647,7 @@ static buffer_t *get_file_buf(session_t *s) {
     buf->refill = next_sector;
   }
 
-  s->file_count++;
+  s->first_file = 0;
 
   return buf;
 }
@@ -1110,7 +1110,7 @@ bool load_krill(UNUSED_PARAMETER) {
   if (detected_loader == FL_KRILL_R164)
     fast_get_byte = krill_get_byte_clk_atn;
 
-  session.file_count = 0;
+  session.first_file = 1;
   dir_changed = 1; /* force directory update */
 
   if (detected_loader == FL_KRILL_R159 || detected_loader >= FL_KRILL_R184) {
