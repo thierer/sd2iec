@@ -1085,8 +1085,8 @@ bool load_krill(UNUSED_PARAMETER) {
 
 
   if (detected_loader == FL_NONE && command_length >= 19) {
-    if (ustrncmp_P(command_buffer+5, KRILL_MAGIC, strlen_P(KRILL_MAGIC)))
-      return false; /* magic string didn't match */
+    if (!magic_string_matches())
+      return false;
 
     detected_loader = FL_KRILL_R192;
     fast_get_byte  = krill_get_byte_data_clk;
