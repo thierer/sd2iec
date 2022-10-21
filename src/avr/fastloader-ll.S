@@ -33,16 +33,16 @@
 #include "fastloader.h"
 #include <avr/io.h>
 
-#ifndef F_CPU
-#  error "F_CPU must be defined for delay cycle calculation."
+#ifndef CONFIG_MCU_FREQ
+#  error "CONFIG_MCU_FREQ must be defined for delay cycle calculation."
 #endif
 
 /* Timing offsets for JiffyDos read/write (3.75 us) */
 /* These values are added to the delayloop counter before the first      */
 /* bitpair read/write. They were determined experimentally to center the */
 /* range of working OSCCAL values around the default value.              */
-#define JIFFY_OFFSET_WRITE (375UL*F_CPU/100000000UL)
-#define JIFFY_OFFSET_READ  (375UL*F_CPU/100000000UL)
+#define JIFFY_OFFSET_WRITE (375*CONFIG_MCU_FREQ/100000000)
+#define JIFFY_OFFSET_READ  (375*CONFIG_MCU_FREQ/100000000)
 
         .section .text
 
@@ -216,10 +216,11 @@ delay_7:                        ; 3+4=7 (16 bit PC) / 4+5=9 (22 bit PC)
         ;; conversion from [us]. Can be either positive or negative, but a
         ;; negative value can result in an illegal (ie negative) delay.
         .macro  delay_05us us05:req, offset=0
-        .if ((\us05)*F_CPU%(2*1000000) != 0) || ((\us05)*F_CPU/(2*1000000)+\offset < 0)
-        .error "Invalid delay value and/or F_CPU"
+        .if ((\us05)*CONFIG_MCU_FREQ%(2*1000000)         != 0) || \
+            ((\us05)*CONFIG_MCU_FREQ/(2*1000000)+\offset <  0)
+        .error "Invalid delay value and/or CONFIG_MCU_FREQ"
         .endif
-        delay_cycles (\us05) * F_CPU/(2*1000000) + \offset
+        delay_cycles (\us05) * CONFIG_MCU_FREQ/(2*1000000) + \offset
         .endm
 
         ;; Delay in 1us resolution.
