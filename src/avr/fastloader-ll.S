@@ -437,11 +437,14 @@ jiffy_send:
 
         rcall   jiffy_sendbits  ; 12+4 or 13+5 - [FFD3]
 
-        delay_us 11, -7-RET_OFFSET ; 11 us hold time
+        delay_us 6              ; 6us hold time
 
         ;; Skip sending EOI for LOAD code path
         tst     r20             ; 1
         brne    js_finish       ; 1
+
+        ;; Output EOI marker 11us after the last bitpair
+        delay_us 5, -7-RET_OFFSET
 
         out     _SFR_IO_ADDR(IEC_OUTPUT), r22 ; 1 - output EOI marker [FFDB]
 
