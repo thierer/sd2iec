@@ -25,8 +25,8 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include <arm/NXP/LPC17xx/LPC17xx.h>
 #include "config.h"
+#include "lpc176x.h"
 #include "bitband.h"
 #include "i2c.h"
 

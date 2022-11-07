@@ -24,7 +24,7 @@
 */
 
 #include "config.h"
-#include <arm/NXP/LPC17xx/LPC17xx.h>
+#include "lpc176x.h"
 #include "bitband.h"
 #include "timer.h"
 
@@ -38,13 +38,16 @@ void timer_init(void) {
   BITBAND(LPC_SC->PCONP, PCRIT) = 1;
 
   /* clear RIT mask */
-  LPC_RIT->RIMASK = 0; //xffffffff;
+  LPC_RIT->RIMASK = 0;
 
   /* PCLK = CCLK */
   BITBAND(LPC_SC->PCLKSEL1, 26) = 1;
 
   /* enable SysTick */
-  SysTick_Config(SysTick->CALIB & SysTick_CALIB_TENMS_Msk);
+  SysTick->LOAD = (SysTick->CALIB & 0xffffff) - 1;
+  NVIC_SetPriority(SysTick_IRQn, NVIC_PRIORITY_LOWEST);
+  SysTick->VAL = 0;
+  SysTick->CTRL = SysTick_CTRL_CLKSOURCE | SysTick_CTRL_TICKINT | SysTick_CTRL_ENABLE;
 
   /*** set up IEC timers to count microseconds ***/
 

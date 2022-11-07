@@ -24,7 +24,7 @@
 */
 
 #include "config.h"
-#include <arm/NXP/LPC17xx/LPC17xx.h>
+#include "lpc176x.h"
 #include "bitband.h"
 #include "system.h"
 
