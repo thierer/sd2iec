@@ -27,7 +27,10 @@
 #define ARCH_CONFIG_H
 
 #include <arm/NXP/LPC17xx/LPC17xx.h>
-#include <arm/bits.h>
+#include "bitband.h"
+
+/* AVR compatibility macro */
+#define BV(x) (1<<(x))
 
 /* ----- Common definitions for all LPC17xx hardware variants ------ */
 

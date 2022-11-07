@@ -24,8 +24,8 @@
 */
 
 #include <arm/NXP/LPC17xx/LPC17xx.h>
-#include <arm/bits.h>
 #include "config.h"
+#include "bitband.h"
 #include "spi.h"
 
 #define SSP_TFE 0   // Transmit FIFO empty

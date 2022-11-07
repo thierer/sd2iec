@@ -26,8 +26,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <arm/NXP/LPC17xx/LPC17xx.h>
-#include <arm/bits.h>
 #include "config.h"
+#include "bitband.h"
 #include "i2c.h"
 
 #if I2C_NUMBER == 0

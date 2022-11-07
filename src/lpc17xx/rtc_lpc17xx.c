@@ -24,9 +24,9 @@
 */
 
 #include <arm/NXP/LPC17xx/LPC17xx.h>
-#include <arm/bits.h>
 #include <string.h>
 #include "config.h"
+#include "bitband.h"
 #include "time.h"
 #include "uart.h"
 #include "rtc.h"
