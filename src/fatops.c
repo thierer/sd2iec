@@ -1,5 +1,5 @@
 /* sd2iec - SD/MMC to Commodore serial bus interface/controller
-   Copyright (C) 2007-2017  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2022  Ingo Korb <ingo@akana.de>
    ASCII/PET conversion Copyright (C) 2008 Jim Brain <brain@jbrain.com>
 
    Inspired by MMC2IEC by Lars Pontoppidan et al.
