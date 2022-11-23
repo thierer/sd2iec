@@ -896,7 +896,7 @@ static int8_t nextdirentry(dh_t *dh) {
       return 1;
 
     /* Final directory sector? */
-    if (ops_scratch[0] == 0)
+    if (ops_scratch[0] == 0 || ops_scratch[1] == 0)
       return -1;
 
     dh->dir.d64.track  = ops_scratch[0];
