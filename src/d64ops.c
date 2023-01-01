@@ -1309,7 +1309,8 @@ static int8_t d64_readdir(dh_t *dh, cbmdirent_t *dent) {
   memset(dent, 0, sizeof(cbmdirent_t));
 
   dent->opstype = OPSTYPE_DXX;
-  dent->typeflags = ops_scratch[DIR_OFS_FILE_TYPE] ^ FLAG_SPLAT;
+  dent->typeflags = (ops_scratch[DIR_OFS_FILE_TYPE] ^ FLAG_SPLAT)
+    & ~FLAG_HIDDEN;
 
   if ((dent->typeflags & TYPE_MASK) > TYPE_DIR)
     /* Change invalid types to DEL */
