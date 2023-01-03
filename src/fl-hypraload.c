@@ -29,7 +29,6 @@
 
 */
 
-#include <stdbool.h>
 #include "config.h"
 #include "buffers.h"
 #include "fastloader-ll.h"

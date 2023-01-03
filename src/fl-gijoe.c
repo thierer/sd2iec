@@ -27,7 +27,6 @@
 
 */
 
-#include <stdbool.h>
 #include <string.h>
 #include "config.h"
 #include "atomic.h"

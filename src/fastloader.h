@@ -32,6 +32,8 @@
 
 #ifndef __ASSEMBLER__
 
+#include <stdbool.h>
+
 #define UNUSED_PARAMETER uint8_t __attribute__((unused)) unused__
 
 typedef enum {

@@ -27,7 +27,6 @@
 
 */
 
-#include <stdbool.h>
 #include <string.h>
 #include "config.h"
 #include "buffers.h"
@@ -175,7 +174,7 @@ static bool mmzak_read_sector(uint8_t track, uint8_t sector, buffer_t *buf) {
 
   set_clock(0);
   set_data(1);
-    
+
   return false;
 }
 

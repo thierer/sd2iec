@@ -23,7 +23,6 @@
 
 */
 
-#include <stdbool.h>
 #include "config.h"
 #include <avr/io.h>
 #include <avr/pgmspace.h>

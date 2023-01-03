@@ -30,7 +30,6 @@
 #ifdef __AVR__
 # include <avr/boot.h>
 #endif
-#include <stdbool.h>
 #include <string.h>
 #include "config.h"
 #include "atomic.h"
