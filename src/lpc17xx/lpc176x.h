@@ -634,7 +634,7 @@ typedef enum {
   BusFault_IRQn = -11,
   UsageFault_IRQn = -10,
   SVC_IRQn = -5,
-  PenSV_IRQn = -2,
+  PendSV_IRQn = -2,
   SysTick_IRQn = -1,
   WDT_IRQn = 0,
   TIMER0_IRQn,
