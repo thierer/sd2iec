@@ -1769,7 +1769,7 @@ parallel_write:
         out     _SFR_IO_ADDR(PARALLEL_PPORT), r24  ; enable pullups on 1-bits
         com     r24                                ; invert byte
         out     _SFR_IO_ADDR(PARALLEL_PDDR), r24   ; set 0-bits to output to simulate open collector
-        call    delay1us
+        delay_us 1
         ret
 
         ;; void parallel_set_dir(parallel_dir_t direction)
@@ -1787,8 +1787,7 @@ parallel_set_dir:
 parallel_send_handshake:
         cbi     _SFR_IO_ADDR(PARALLEL_HPORT), PARALLEL_HSK_OUT_BIT ; prepare 0 in PORT register
         sbi     _SFR_IO_ADDR(PARALLEL_HDDR), PARALLEL_HSK_OUT_BIT  ; set pin to output
-        call    delay1us                                           ; delay
-        call    delay1us
+        delay_us 2                                                 ; delay
         cbi     _SFR_IO_ADDR(PARALLEL_HDDR), PARALLEL_HSK_OUT_BIT  ; set pin to input
         sbi     _SFR_IO_ADDR(PARALLEL_HPORT), PARALLEL_HSK_OUT_BIT ; enable pullup
         ret
