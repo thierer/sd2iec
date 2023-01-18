@@ -112,6 +112,7 @@ void uart_trace(void *ptr, uint16_t start, uint16_t len) {
 }
 
 static int ioputc(char c, FILE *stream) {
+  (void)stream;
   if (c == '\n') uart_putc('\r');
   uart_putc(c);
   return 0;

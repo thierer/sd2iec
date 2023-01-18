@@ -107,7 +107,7 @@ void dsrtc_set(struct tm *time) {
   tmp[REG_HOUR]   = int2bcd(time->tm_hour);
   tmp[REG_DOW]    = int2bcd(time->tm_wday+1);
   tmp[REG_DOM]    = int2bcd(time->tm_mday);
-  tmp[REG_MONTH]  = int2bcd(time->tm_mon+1) | 0x80 * (time->tm_year >= 2100);
+  tmp[REG_MONTH]  = int2bcd(time->tm_mon+1) | 0x80 * (time->tm_year >= 200);
   tmp[REG_YEAR]   = int2bcd(time->tm_year % 100);
   i2c_write_registers(RTC_ADDR, REG_SECOND, 7, tmp);
 

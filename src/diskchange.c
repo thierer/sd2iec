@@ -64,6 +64,7 @@ static void confirm_blink(uint8_t type) {
     tick_t targettime;
 
 #ifdef SINGLE_LED
+    (void)type;
     set_dirty_led(1);
 #else
     if (!i || type & 1)

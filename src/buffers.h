@@ -164,12 +164,12 @@ void free_buffer(buffer_t *buffer);
 uint8_t free_multiple_buffers(uint8_t flags);
 
 /* Mark a buffer as sticky */
-static void inline stick_buffer(buffer_t *buf) {
+static inline void stick_buffer(buffer_t *buf) {
   buf->sticky = 1;
 }
 
 /* remove sticky mark */
-static void inline unstick_buffer(buffer_t *buf) {
+static inline void unstick_buffer(buffer_t *buf) {
   buf->sticky = 0;
 }
 

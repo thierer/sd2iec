@@ -135,8 +135,8 @@ void pcf8583_init(void) {
       i2c_read_registers(PCF8583_ADDR, REG_YEAR1, 4, tmp)) {
     uart_puts_P(PSTR("not found"));
   } else {
-    if (tmp[0] == (tmp[2] ^ 0xff) &&
-        tmp[1] == (tmp[3] ^ 0xff)) {
+    if ((tmp[0] ^ tmp[2]) == 0 &&
+        (tmp[1] ^ tmp[3]) == 0) {
       rtc_state = RTC_OK;
       uart_puts_P(PSTR("ok"));
 

@@ -218,6 +218,8 @@ void eefsops_init(void) {
 }
 
 static void eefs_open_read(path_t *path, cbmdirent_t *dent, buffer_t *buf) {
+  (void)path;
+
   eefs_error_t res;
 
   repad_filename(dent->name);
@@ -239,6 +241,9 @@ static void eefs_open_read(path_t *path, cbmdirent_t *dent, buffer_t *buf) {
 
 static void eefs_open_write(path_t *path, cbmdirent_t *dent, uint8_t type,
                             buffer_t *buf, uint8_t append) {
+  (void)path;
+  (void)type;
+
   eefs_error_t res;
 
   repad_filename(dent->name);
@@ -264,10 +269,18 @@ static void eefs_open_write(path_t *path, cbmdirent_t *dent, uint8_t type,
 
 static void eefs_open_rel(path_t *path, cbmdirent_t *dent, buffer_t *buf,
                           uint8_t recordlen, uint8_t mode) {
+  (void)path;
+  (void)dent;
+  (void)buf;
+  (void)recordlen;
+  (void)mode;
+
   set_error(ERROR_SYNTAX_UNABLE);
 }
 
 static uint8_t eefs_delete(path_t *path, cbmdirent_t *dent) {
+  (void)path;
+
   eefs_error_t res;
 
   set_dirty_led(1);
@@ -286,36 +299,58 @@ static uint8_t eefs_delete(path_t *path, cbmdirent_t *dent) {
 }
 
 static uint8_t eefs_disk_label(uint8_t part, uint8_t *label) {
+  (void)part;
+
   // copy with zero-termination
   memcpy_P(label, disk_label, 17);
   return 0;
 }
 
 static uint8_t eefs_dir_label(path_t *path, uint8_t *label) {
+  (void)path;
+
   // copy without zero-termination
   memcpy_P(label, disk_label, 16);
   return 0;
 }
 
 static uint8_t eefs_disk_id(path_t *path, uint8_t *id) {
+  (void)path;
+
   memcpy_P(id, disk_id, 5);
   return 0;
 }
 
 static uint16_t eefs_disk_free(uint8_t part) {
+  (void)part;
+
   // converted to 256-byte-blocks as a rough CBM block approximation
   return eepromfs_free_sectors() / (256 / EEPROMFS_SECTORSIZE);
 }
 
 static void eefs_read_sector(buffer_t *buf, uint8_t part, uint8_t track, uint8_t sector) {
+  (void)buf;
+  (void)part;
+  (void)track;
+  (void)sector;
+
   set_error_ts(ERROR_READ_NOHEADER, track, sector);
 }
 
 static void eefs_write_sector(buffer_t *buf, uint8_t part, uint8_t track, uint8_t sector) {
+  (void)buf;
+  (void)part;
+  (void)track;
+  (void)sector;
+
   set_error_ts(ERROR_READ_NOHEADER, track, sector);
 }
 
 static void eefs_format(uint8_t drv, uint8_t *name, uint8_t *id) {
+  (void)drv;
+  (void)name;
+  (void)id;
+
   eepromfs_format();
 }
 
@@ -359,11 +394,16 @@ static int8_t eefs_readdir(dh_t *dh, cbmdirent_t *dent) {
  * Always returns 0 for success.
  */
 static uint8_t eefs_chdir(path_t *path, cbmdirent_t *dent) {
+  (void)path;
+  (void)dent;
+
   // always ignore
   return 0;
 }
 
 static void eefs_rename(path_t *path, cbmdirent_t *oldname, uint8_t *newname) {
+  (void)path;
+
   eefs_error_t res;
 
   repad_filename(oldname->name);

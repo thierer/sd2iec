@@ -52,6 +52,7 @@ uint8_t active_buffers;
  * It always returns 0 for success.
  */
 uint8_t callback_dummy(buffer_t *buf) {
+  (void)buf;
   return 0;
 }
 

@@ -58,8 +58,8 @@ uint8_t display_found;
 
 void display_send_prefixed(uint8_t cmd, uint8_t prefixbyte, uint8_t len, const uint8_t *buffer) {
   displaybuffer[0] = prefixbyte;
-  memcpy(displaybuffer+1, buffer, min(sizeof(displaybuffer)-1, len));
-  i2c_write_registers(DISPLAY_I2C_ADDR, cmd, min(len+1,sizeof(displaybuffer)), displaybuffer);
+  memcpy(displaybuffer+1, buffer, min(sizeof(displaybuffer)-1, (size_t)len));
+  i2c_write_registers(DISPLAY_I2C_ADDR, cmd, min((size_t)len+1, sizeof(displaybuffer)), displaybuffer);
 }
 
 static void menu_chdir(void) {

@@ -212,6 +212,7 @@ static void deselect_card(void) {
 
 /* check if card in @drv is write protected */
 static uint8_t sd_wrprot(uint8_t drv) {
+  (void)drv;
 #ifdef CONFIG_TWINSD
   if (drv != 0)
     return sdcard2_wp();
@@ -311,6 +312,7 @@ void disk_init(void) __attribute__ ((weak, alias("sd_init")));
  * not write-protected.
  */
 DSTATUS sd_status(BYTE drv) {
+  (void)drv;
 #ifdef CONFIG_TWINSD
   if (drv != 0) {
     if (sdcard2_detect()) {

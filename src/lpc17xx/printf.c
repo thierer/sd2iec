@@ -166,6 +166,7 @@ static int internal_nprintf(void (*output_function)(char c), const char *fmt, va
     switch (*fmt) {
     case 'u':
       flags |= FLAG_UNSIGNED;
+      // fall-through
     case 'd':
       base = 10;
       break;
@@ -179,6 +180,7 @@ static int internal_nprintf(void (*output_function)(char c), const char *fmt, va
       output_function('0');
       output_function('x');
       width -= 2;
+      // fall-through
     case 'x':
       base = 16;
       flags |= FLAG_UNSIGNED;
@@ -265,7 +267,7 @@ int printf(const char *format, ...) {
 
 int snprintf(char *str, size_t size, const char *format, ...) {
   va_list ap;
-  int res;
+  size_t res;
 
   maxlen = size;
   outptr = str;

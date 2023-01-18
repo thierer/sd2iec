@@ -1232,7 +1232,7 @@ static void handle_memread(void) {
 /* helper function for copying to capture buffer, needed twice */
 static void capture_fl_data(uint16_t address, uint8_t length) {
   uint8_t dataofs = capture_address - address;
-  uint8_t bytes   = min(capture_remain, length - dataofs);
+  uint8_t bytes   = min(capture_remain, (uint16_t)length - dataofs);
 
   memcpy(capture_buffer->data + capture_offset,
          command_buffer + 6 + dataofs,

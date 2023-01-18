@@ -73,8 +73,8 @@
 #define uart_puts_p(__s) uart_puts_P(PSTR(__s))
 #define EOI_RECVD       (1<<0)
 #define COMMAND_RECVD   (1<<1)
-#define ATN_POLLED      -3      // 0xfd
-#define TIMEOUT_ABORT   -4      // 0xfc
+#define ATN_POLLED      (uint8_t)-3      // 0xfd
+#define TIMEOUT_ABORT   (uint8_t)-4      // 0xfc
 
 /* ------------------------------------------------------------------------- */
 /*  Global variables                                                         */
@@ -189,7 +189,7 @@ static inline void set_eoi_state(uint8_t x)
     IEEE_DDR_EOI |= _BV(IEEE_PIN_EOI);              // EOI as output
   }
 
-  static void inline ieee_bus_idle (void)
+  static inline void ieee_bus_idle (void)
   {
     ieee_ports_listen();
     set_ndac_state(1);

@@ -267,6 +267,8 @@ void set_error_ts(uint8_t errornum, uint8_t track, uint8_t sector) {
 
 /* Callback for the error channel buffer */
 uint8_t set_ok_message(buffer_t *buf) {
+  (void)buf;
+
   set_error(0);
   return 0;
 }

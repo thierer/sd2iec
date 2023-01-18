@@ -409,6 +409,8 @@ DRESULT disk_ioctl (BYTE drv, BYTE ctrl, void *buff) __attribute__ ((weak, alias
 #endif /*  _USE_IOCTL != 0 */
 
 DRESULT ata_getinfo(BYTE drv, BYTE page, void *buffer) {
+  (void)drv;
+
   diskinfo0_t *di = buffer;
 
   if (page != 0)
