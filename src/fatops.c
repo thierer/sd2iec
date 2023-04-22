@@ -1,5 +1,5 @@
 /* sd2iec - SD/MMC to Commodore serial bus interface/controller
-   Copyright (C) 2007-2017  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2022  Ingo Korb <ingo@akana.de>
    ASCII/PET conversion Copyright (C) 2008 Jim Brain <brain@jbrain.com>
 
    Inspired by MMC2IEC by Lars Pontoppidan et al.
@@ -1590,9 +1590,12 @@ uint8_t image_chdir(path_t *path, cbmdirent_t *dent) {
  * @path   : path of the directory
  * @dirname: name of the directory to be created
  *
- * This function does nothing.
+ * This function only sets an error message.
  */
 void image_mkdir(path_t *path, uint8_t *dirname) {
+  (void)path;
+  (void)dirname;
+
   set_error(ERROR_SYNTAX_UNABLE);
   return;
 }
@@ -1608,11 +1611,11 @@ void image_mkdir(path_t *path, uint8_t *dirname) {
  * byte into buffer. It returns 0 on success, 1 if less than
  * bytes byte could be read and 2 on failure.
  */
-uint8_t image_read(uint8_t part, LONG offset, void *buffer, uint16_t bytes) {
+uint8_t image_read(uint8_t part, DWORD offset, void *buffer, uint16_t bytes) {
   FRESULT res;
   UINT bytesread;
 
-  if (offset != -1) {
+  if (offset != (DWORD)-1) {
     res = f_lseek(&partition[part].imagehandle, offset);
     if (res != FR_OK) {
       parse_error(res,1);
@@ -1644,11 +1647,11 @@ uint8_t image_read(uint8_t part, LONG offset, void *buffer, uint16_t bytes) {
  * byte into buffer. It returns 0 on success, 1 if less than
  * bytes byte could be written and 2 on failure.
  */
-uint8_t image_write(uint8_t part, LONG offset, void *buffer, uint16_t bytes, uint8_t flush) {
+uint8_t image_write(uint8_t part, DWORD offset, void *buffer, uint16_t bytes, uint8_t flush) {
   FRESULT res;
   UINT byteswritten;
 
-  if (offset != -1) {
+  if (offset != (DWORD)-1) {
     res = f_lseek(&partition[part].imagehandle, offset);
     if (res != FR_OK) {
       parse_error(res,0);

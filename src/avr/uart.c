@@ -1,5 +1,5 @@
 /* sd2iec - SD/MMC to Commodore serial bus interface/controller
-   Copyright (C) 2007-2017  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2022  Ingo Korb <ingo@akana.de>
 
    Inspired by MMC2IEC by Lars Pontoppidan et al.
 
@@ -112,6 +112,7 @@ void uart_trace(void *ptr, uint16_t start, uint16_t len) {
 }
 
 static int ioputc(char c, FILE *stream) {
+  (void)stream;
   if (c == '\n') uart_putc('\r');
   uart_putc(c);
   return 0;

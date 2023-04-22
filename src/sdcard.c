@@ -1,5 +1,5 @@
 /* sd2iec - SD/MMC to Commodore serial bus interface/controller
-   Copyright (C) 2007-2017  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2022  Ingo Korb <ingo@akana.de>
 
    Inspired by MMC2IEC by Lars Pontoppidan et al.
 
@@ -212,6 +212,7 @@ static void deselect_card(void) {
 
 /* check if card in @drv is write protected */
 static uint8_t sd_wrprot(uint8_t drv) {
+  (void)drv;
 #ifdef CONFIG_TWINSD
   if (drv != 0)
     return sdcard2_wp();
@@ -311,6 +312,7 @@ void disk_init(void) __attribute__ ((weak, alias("sd_init")));
  * not write-protected.
  */
 DSTATUS sd_status(BYTE drv) {
+  (void)drv;
 #ifdef CONFIG_TWINSD
   if (drv != 0) {
     if (sdcard2_detect()) {

@@ -323,6 +323,8 @@ static void send_bitpair_r58pre(uint8_t *b, uint8_t i) {
 }
 
 static void send_bitpair(uint8_t *b, uint8_t i) {
+  (void)i;
+
   set_clock(*b&1);
   set_data(*b&2);
   *b >>= 2;
@@ -785,6 +787,8 @@ abort:
 }
 
 static uint16_t cc_read_length(session_t *s) {
+  (void)s;
+
   uint8_t  i;
   uint16_t w;
 
@@ -1010,9 +1014,8 @@ static uint8_t cc_fallback(session_t *s) {
 }
 
 static uint8_t custom_code_handler(session_t *s) {
-  int16_t  len;
+  int16_t  i, len;
   uint16_t crc;
-  uint16_t i;
   uint8_t  b;
   const struct cc_handler_s *ptr;
   cc_handler_t handler;

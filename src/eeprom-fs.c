@@ -1,5 +1,5 @@
 /* sd2iec - SD/MMC to Commodore serial bus interface/controller
-   Copyright (C) 2007-2017  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2022  Ingo Korb <ingo@akana.de>
 
    Inspired by MMC2IEC by Lars Pontoppidan et al.
 
@@ -129,7 +129,7 @@ static void write_entry(uint8_t index) {
   /* write just the changed bytes to the EEPROM */
 
   uint8_t *orig = EEPROMFS_CMP_BUFFER;
-  uint8_t i, nonmatch_start;
+  uint8_t i, nonmatch_start = 0;
   bool cur_nonmatching = false;
 
   /* read current entry to minimize writes */

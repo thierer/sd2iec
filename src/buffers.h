@@ -1,5 +1,5 @@
 /* sd2iec - SD/MMC to Commodore serial bus interface/controller
-   Copyright (C) 2007-2017  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2022  Ingo Korb <ingo@akana.de>
 
    Inspired by MMC2IEC by Lars Pontoppidan et al.
 
@@ -164,12 +164,12 @@ void free_buffer(buffer_t *buffer);
 uint8_t free_multiple_buffers(uint8_t flags);
 
 /* Mark a buffer as sticky */
-static void inline stick_buffer(buffer_t *buf) {
+static inline void stick_buffer(buffer_t *buf) {
   buf->sticky = 1;
 }
 
 /* remove sticky mark */
-static void inline unstick_buffer(buffer_t *buf) {
+static inline void unstick_buffer(buffer_t *buf) {
   buf->sticky = 0;
 }
 

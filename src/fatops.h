@@ -1,5 +1,5 @@
 /* sd2iec - SD/MMC to Commodore serial bus interface/controller
-   Copyright (C) 2007-2017  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2022  Ingo Korb <ingo@akana.de>
 
    Inspired by MMC2IEC by Lars Pontoppidan et al.
 
@@ -55,8 +55,8 @@ extern uint8_t file_extension_mode;
 uint8_t image_unmount(uint8_t part);
 uint8_t image_chdir(path_t *path, cbmdirent_t *dent);
 void    image_mkdir(path_t *path, uint8_t *dirname);
-uint8_t image_read(uint8_t part, LONG offset, void *buffer, uint16_t bytes);
-uint8_t image_write(uint8_t part, LONG offset, void *buffer, uint16_t bytes, uint8_t flush);
+uint8_t image_read(uint8_t part, DWORD offset, void *buffer, uint16_t bytes);
+uint8_t image_write(uint8_t part, DWORD offset, void *buffer, uint16_t bytes, uint8_t flush);
 
 typedef enum {
    IMG_UNKNOWN = 0,

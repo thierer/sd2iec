@@ -1,5 +1,5 @@
 /* sd2iec - SD/MMC to Commodore serial bus interface/controller
-   Copyright (C) 2007-2017  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2022  Ingo Korb <ingo@akana.de>
 
    Inspired by MMC2IEC by Lars Pontoppidan et al.
 
@@ -385,6 +385,12 @@ static void m2i_open_write(path_t *path, cbmdirent_t *dent, uint8_t type, buffer
 }
 
 static void m2i_open_rel(path_t *path, cbmdirent_t *dent, buffer_t *buf, uint8_t length, uint8_t mode) {
+  (void)path;
+  (void)dent;
+  (void)buf;
+  (void)length;
+  (void)mode;
+
   set_error(ERROR_SYNTAX_UNABLE);
 }
 
@@ -436,6 +442,10 @@ static void m2i_rename(path_t *path, cbmdirent_t *dent, uint8_t *newname) {
 
 /* Dummy function for format */
 static void format_dummy(path_t *path, uint8_t *name, uint8_t *id) {
+  (void)path;
+  (void)name;
+  (void)id;
+
   set_error(ERROR_SYNTAX_UNKNOWN);
 }
 

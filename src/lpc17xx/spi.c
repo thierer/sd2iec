@@ -1,5 +1,5 @@
 /* sd2iec - SD/MMC to Commodore serial bus interface/controller
-   Copyright (C) 2007-2017  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2022  Ingo Korb <ingo@akana.de>
 
    Inspired by MMC2IEC by Lars Pontoppidan et al.
 
@@ -23,9 +23,9 @@
 
 */
 
-#include <arm/NXP/LPC17xx/LPC17xx.h>
-#include <arm/bits.h>
 #include "config.h"
+#include "lpc176x.h"
+#include "bitband.h"
 #include "spi.h"
 
 #define SSP_TFE 0   // Transmit FIFO empty

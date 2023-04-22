@@ -1,5 +1,5 @@
 /* sd2iec - SD/MMC to Commodore serial bus interface/controller
-   Copyright (C) 2007-2017  Ingo Korb <ingo@akana.de>
+   Copyright (C) 2007-2022  Ingo Korb <ingo@akana.de>
 
    Inspired by MMC2IEC by Lars Pontoppidan et al.
 
@@ -52,6 +52,7 @@ uint8_t active_buffers;
  * It always returns 0 for success.
  */
 uint8_t callback_dummy(buffer_t *buf) {
+  (void)buf;
   return 0;
 }
 
