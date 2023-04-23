@@ -326,11 +326,13 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
 #ifdef CONFIG_LOADER_HYPRALOAD
   { 0x048b, FL_HYPRALOAD,        load_hypraload, 0 },
 #endif
+#if defined(CONFIG_BUS_SILENCE_REQ)
+  { 0x0205, FL_KRILL_SLEEP,      bus_sleep_krill,  0 }, //  < r192 ATN responder
+  { 0x020b, FL_NONE,             bus_sleep_krill,  1 }, // >= r192 ATN responder
+#endif
 #if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_BUS_SILENCE_REQ)
   { 0x0205, FL_NONE,             drvchkme_krill,   1 }, //  < r192 drvchkme
   { 0x020a, FL_NONE,             drvchkme_krill,   2 }, // >= r192 drvchkme
-  { 0x0205, FL_KRILL_SLEEP,      bus_sleep_krill,  0 }, //  < r192 ATN responder
-  { 0x020b, FL_NONE,             bus_sleep_krill,  1 }, // >= r192 ATN responder
 #endif
 #ifdef CONFIG_LOADER_KRILL
   { 0x0300, FL_KRILL_R146,       drvchkme_krill,   0 }, // r146 drvchkme
