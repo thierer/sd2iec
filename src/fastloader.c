@@ -80,6 +80,9 @@ uint8_t check_keys(void) {
 bool bus_sleep(UNUSED_PARAMETER) {
   iec_data.bus_state = BUS_SLEEP;
 
+  /* we don't want the detected ATN-responder to persist */
+  detected_loader = FL_NONE;
+
   return true;
 }
 #endif

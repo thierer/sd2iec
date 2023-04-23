@@ -199,13 +199,9 @@ bool drvchkme_krill(uint8_t f) {
 }
 
 bool bus_sleep_krill(uint8_t check_magic) {
-  if (check_magic) { /* >= r192; M-W crc not matched, check magic string */
-    if (!magic_string_matches())
-      return false;
-  } else {
-    /* we don't want FL_KRILL_SLEEP to persist */
-    detected_loader = FL_NONE;
-  }
+  /* check magic string if M-W crc was not matched (>= r192 only) */
+  if (check_magic && !magic_string_matches())
+    return false;
 
   /* activate bus sleep */
   return bus_sleep(0);
