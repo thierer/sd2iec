@@ -943,8 +943,9 @@ void file_open(uint8_t secondary) {
       /* Error, abort */
       return;
 
-    /* Don't match on DEL or DIR */
+    /* Don't match on DEL, INV(alid) or DIR */
     if ((dent.typeflags & TYPE_MASK) != TYPE_DEL &&
+        (dent.typeflags & TYPE_MASK) != TYPE_INV &&
         (dent.typeflags & TYPE_MASK) != TYPE_DIR)
       break;
 

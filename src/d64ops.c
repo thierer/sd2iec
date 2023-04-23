@@ -1385,10 +1385,10 @@ static int8_t d64_readdir(dh_t *dh, cbmdirent_t *dent) {
   else
     dent->typeflags = (dent->typeflags ^ FLAG_SPLAT) & ~FLAG_HIDDEN;
 
-  if ((dent->typeflags & TYPE_MASK) > TYPE_DIR)
-    /* Change invalid types to DEL */
+  if ((dent->typeflags & EXT_TYPE_MASK) > TYPE_DIR)
+    /* Mark invalid file types (will be displayed as "???") */
     /* FIXME: Should exclude DIR on non-DNP */
-    dent->typeflags &= (uint8_t)~TYPE_MASK;
+    dent->typeflags = (dent->typeflags & (uint8_t)~EXT_TYPE_MASK) | TYPE_INV;
 
   dent->pvt.dxx.dh = dh->dir.d64;
   dent->pvt.dxx.dh.entry -= 1; /* undo increment in nextdirentry */

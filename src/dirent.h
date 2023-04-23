@@ -44,6 +44,9 @@
 #define TYPE_CBM 5
 #define TYPE_DIR 6
 
+/* Internal file type to mark dir entries with invalid file type values */
+#define TYPE_INV 7
+
 /* Internal file types used for the partition directory */
 #define TYPE_NAT 8
 
