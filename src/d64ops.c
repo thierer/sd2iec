@@ -191,14 +191,14 @@ static uint32_t sector_offset(uint8_t part, uint8_t track, const uint8_t sector)
 }
 
 /**
- * sectors_per_track - number of sectors on given track
+ * d64_sectors_per_track - number of sectors on given track
  * @part : partition number
  * @track: Track number
  *
  * This function returns the number of sectors on the given track
  * of a 1541/71/81 disk. Invalid track numbers will return invalid results.
  */
-static uint16_t sectors_per_track(uint8_t part, uint8_t track) {
+uint16_t d64_sectors_per_track(uint8_t part, uint8_t track) {
   switch (partition[part].imagetype & D64_TYPE_MASK) {
   case D64_TYPE_D71:
   default:
@@ -238,7 +238,7 @@ static uint16_t sectors_per_track(uint8_t part, uint8_t track) {
  */
 static uint8_t checked_read(uint8_t part, uint8_t track, uint8_t sector, uint8_t *buf, uint16_t len, uint8_t error) {
   if (track < 1 || track > get_param(part, LAST_TRACK) ||
-      sector >= sectors_per_track(part, track)) {
+      sector >= d64_sectors_per_track(part, track)) {
     set_error_ts(error,track,sector);
     return 2;
   }
@@ -683,7 +683,7 @@ static uint8_t free_sector(uint8_t part, uint8_t track, uint8_t sector) {
     if(move_bam_window(part,track,BAM_FREECOUNT,&trackmap))
       return 1;
 
-    if(trackmap[0] < sectors_per_track(part, track)) {
+    if(trackmap[0] < d64_sectors_per_track(part, track)) {
       trackmap[0]++;
       bam_buffer->mustflush = 1;
     }
@@ -751,7 +751,7 @@ static uint8_t get_first_sector(uint8_t part, uint8_t *track, uint8_t *sector) {
   }
 
   /* Search for the first free sector on this track */
-  for (*sector = 0;*sector < sectors_per_track(part, *track); *sector += 1)
+  for (*sector = 0;*sector < d64_sectors_per_track(part, *track); *sector += 1)
     if (is_free(part, *track, *sector) > 0)
       return 0;
 
@@ -857,8 +857,8 @@ static uint8_t get_next_sector(uint8_t part, uint8_t *track, uint8_t *sector) {
 
   /* Look for a sector at interleave distance */
   *sector += interleave;
-  if (*sector >= sectors_per_track(part, *track)) {
-    *sector -= sectors_per_track(part, *track);
+  if (*sector >= d64_sectors_per_track(part, *track)) {
+    *sector -= d64_sectors_per_track(part, *track);
     if (*sector != 0)
       *sector -= 1;
   }
@@ -867,7 +867,7 @@ static uint8_t get_next_sector(uint8_t part, uint8_t *track, uint8_t *sector) {
   tries = 99;
   while (is_free(part,*track,*sector) <= 0 && tries--) {
     *sector += 1;
-    if (*sector >= sectors_per_track(part, *track))
+    if (*sector >= d64_sectors_per_track(part, *track))
       *sector = 0;
   }
 
@@ -905,7 +905,7 @@ static int8_t nextdirentry(dh_t *dh) {
   }
 
   if (dh->dir.d64.track < 1 || dh->dir.d64.track > get_param(dh->part, LAST_TRACK) ||
-      dh->dir.d64.sector >= sectors_per_track(dh->part, dh->dir.d64.track)) {
+      dh->dir.d64.sector >= d64_sectors_per_track(dh->part, dh->dir.d64.track)) {
     set_error_ts(ERROR_ILLEGAL_TS_LINK,dh->dir.d64.track,dh->dir.d64.sector);
     return 1;
   }
@@ -1192,7 +1192,7 @@ static uint8_t errorcache_read(uint8_t part, uint8_t track) {
   case D64_TYPE_D41:
   case D64_TYPE_D71:
   case D64_TYPE_D81:
-    if (image_read(part, pos, errorcache.errors, sectors_per_track(part, track)) >= 2)
+    if (image_read(part, pos, errorcache.errors, d64_sectors_per_track(part, track)) >= 2)
       return 1;
     break;
 
@@ -1230,7 +1230,7 @@ static uint8_t errorcache_commit(void) {
   track = errorcache.track;
   pos = partition[part].d64data.error_offset + sector_lba(part,track,0);
 
-  if (image_write(part, pos, errorcache.errors, sectors_per_track(part, track), 1))
+  if (image_write(part, pos, errorcache.errors, d64_sectors_per_track(part, track), 1))
     return 1;
 
   errorcache.mustflush = 0;
@@ -1647,7 +1647,7 @@ static void d64_read_sector(buffer_t *buf, uint8_t part, uint8_t track, uint8_t 
 
 static void d64_write_sector(buffer_t *buf, uint8_t part, uint8_t track, uint8_t sector) {
   if (track < 1 || track > get_param(part, LAST_TRACK) ||
-      sector >= sectors_per_track(part, track)) {
+      sector >= d64_sectors_per_track(part, track)) {
     set_error_ts(ERROR_ILLEGAL_TS_COMMAND,track,sector);
   } else
     image_write(part, sector_offset(part,track,sector), buf->data, 256, 1);
@@ -1997,7 +1997,7 @@ uint8_t d64_set_error(uint8_t part, uint8_t track, uint8_t sector, uint8_t error
 
   // Better be safe and check that track and sector are valid
   if (track < 1 || track > get_param(part, LAST_TRACK) ||
-      sector >= sectors_per_track(part, track)) {
+      sector >= d64_sectors_per_track(part, track)) {
     set_error_ts(ERROR_ILLEGAL_TS_COMMAND, track, sector);
     return 1;
   }
@@ -2087,7 +2087,7 @@ uint8_t d64_extend_image(uint8_t part, uint8_t tracks) {
 static uint8_t d64_format_track(uint8_t part, buffer_t *buf, uint8_t track) {
   uint16_t sector;
 
-  for (sector = 0; sector < sectors_per_track(part, track); sector++) {
+  for (sector = 0; sector < d64_sectors_per_track(part, track); sector++) {
     if (image_write(part, sector_offset(part, track, sector), buf->data, 256, 0))
       return 1;
     if (partition[part].imagetype & D64_HAS_ERRORINFO)
@@ -2279,7 +2279,7 @@ static void d64_format(path_t *path, uint8_t *name, uint8_t *id) {
 
   /* Mark all sectors as free */
   for (t=1; t<=get_param(part, LAST_BAM_TRACK); t++) {
-    for (s=0; s<sectors_per_track(part, t); s++)
+    for (s=0; s<d64_sectors_per_track(part, t); s++)
       free_sector(part,t,s);
   }
 
