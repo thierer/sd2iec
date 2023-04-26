@@ -105,9 +105,6 @@ static const PROGMEM ld_variant_t ld_variants[] = {
 
 /* hacks to make specific releases work */
 
-/* resolution in [ms] for block_delay in file_quirks_t */
-#define BDEL_TIME 20
-
 typedef struct {
   uint16_t  crc;         /* crc of the *previous* file */
   uint8_t   block_delay; /* delay between block transfers in ms */
@@ -750,10 +747,8 @@ static uint8_t send_file(session_t *s) {
       set_clock(buf != NULL && detected_loader == FL_KRILL_R164);
       set_data(buf != NULL && detected_loader != FL_KRILL_R164);
 
-      if (buf != NULL) {
-        for (i = 0; i < bdel; i += BDEL_TIME)
-          delay_ms(BDEL_TIME);
-      }
+      if (buf != NULL && bdel != 0)
+        delay_ms(bdel);
     }
 
 abort:

@@ -28,7 +28,16 @@
 
 #include <util/delay.h>
 
-#define delay_ms(x) _delay_ms(x)
+/* use an approximated delay loop if the time isn't constant at compile time */
+static inline __attribute__((always_inline)) void delay_ms(uint16_t delay) {
+  if (__builtin_constant_p(delay)) {
+    _delay_ms(delay);
+  } else {
+    while (delay--)
+      delay_ms(1);
+  }
+}
+
 #define delay_us(x) _delay_us(x)
 
 /* Types for unsigned and signed tick values */
