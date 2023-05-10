@@ -1075,7 +1075,7 @@ bool load_krill(UNUSED_PARAMETER) {
   session_t session;
 
   memset(&session, 0, sizeof(session));
-
+  session.file_crc = 0xffff;
 
   if (detected_loader == FL_NONE && command_length >= 19) {
     if (!magic_string_matches())
