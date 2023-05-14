@@ -74,6 +74,7 @@ enum {
   RXTX_FC3OF_PAL,
   RXTX_FC3OF_NTSC,
 
+  RXTX_KRILL_58PRE,
   RXTX_KRILL_DATA,
   RXTX_KRILL_CLOCK,
   RXTX_KRILL_RESEND,
@@ -105,6 +106,7 @@ static const PROGMEM struct fastloader_rxtx_s fl_rxtx_table[] = {
   [RXTX_FC3OF_NTSC]    = { NULL, fc3_oldfreeze_ntsc_send },
 #endif
 #ifdef CONFIG_LOADER_KRILL
+  [RXTX_KRILL_58PRE]   = { krill_get_byte_clk_data, krill_send_byte_58pre  },
   [RXTX_KRILL_DATA]    = { krill_get_byte_clk_data, krill_send_byte_atn    },
   [RXTX_KRILL_RESEND]  = { krill_get_byte_clk_data, krill_send_byte_resend },
   [RXTX_KRILL_CLOCK]   = { krill_get_byte_data_clk, krill_send_byte_atn    },
@@ -235,8 +237,8 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
   { 0x2fca, FL_KRILL_R58,        RXTX_KRILL_DATA    },
   { 0xb4ce, FL_KRILL_R58 ,       RXTX_KRILL_DATA    }, // second chunk
   { 0xe530, FL_KRILL_R58,        RXTX_KRILL_DATA    },
-  { 0xf7aa, FL_KRILL_R58PRE,     RXTX_KRILL_DATA    },
-  { 0x379d, FL_KRILL_R58PRE,     RXTX_KRILL_DATA    },
+  { 0xf7aa, FL_KRILL_R58PRE,     RXTX_KRILL_58PRE   },
+  { 0x379d, FL_KRILL_R58PRE,     RXTX_KRILL_58PRE   },
 #endif
 #ifdef CONFIG_BUS_SILENCE_REQ
   /* The loader uses a different method for drive identification */

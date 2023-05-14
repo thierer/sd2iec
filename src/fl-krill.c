@@ -104,12 +104,6 @@ static const PROGMEM ld_variant_t ld_variants[] = {
 };
 
 /* hacks to make specific releases work */
-
-typedef struct {
-  uint16_t  crc;         /* crc of the *previous* file */
-  uint8_t   block_delay; /* delay between block transfers in ms */
-} file_quirks_t;
-
 static const PROGMEM file_quirks_t file_quirks[] = {
   { 0x1ba6,  20 }, /* coma light 13   / "SAMPLE"   */
   { 0xe5ac,  80 }, /* coma light 13   / "PICDAT"   */
@@ -155,7 +149,6 @@ static bool magic_string_matches(void) {
 /* f == 1: possible drvchkme of <= r186; check command crc                */
 /* f == 2: possible drvchkme of >= r192; check command for magic string   */
 bool drvchkme_krill(uint8_t f) {
-  uint8_t  i;
   uint16_t crc;
 
   switch (f) {
@@ -166,10 +159,7 @@ bool drvchkme_krill(uint8_t f) {
     if (command_length != 0x1a && command_length != 0x17) /* r159 is 0x17 */
       return false;
 
-    crc = 0xffff;
-
-    for (i = 5; i < command_length; i++)
-      crc = crc16_update(crc, command_buffer[i]);
+    crc = command_crc(5, 0);
 
     if (crc != 0xca5b && crc != 0xf35b) /* drvchkme; r159 is 0xf35b */
       return false;
@@ -204,66 +194,19 @@ bool bus_sleep_krill(uint8_t check_magic) {
   return bus_sleep(0);
 }
 
-static uint8_t wait_atn_low(void) {
-  int16_t to;
-
-  /* botch a ~1s timeout using multiple 16ms timeouts (max. duration on AVR) */
-  for (to = 1000; to > 0; to -= 16) {
-    start_timeout(16000);
-
-    while (!has_timed_out()) {
-      if (!IEC_ATN)
-        return 0;
-    }
-  }
-
-  return 1; /* timed out */
-}
-
-static uint8_t get_byte_1bit(iec_bus_t clk, iec_bus_t data) {
-  uint8_t   tc, i, b = 0;
-  iec_bus_t bus;
-
-  bus = iec_bus_read();
-
-  for (i = 8; i != 0; i--) {
-    tc = 9;
-timeout_loop:
-    start_timeout(10000);
-
-    /* wait for respective clock edge */
-    while ((iec_bus_read() & clk) == (bus & clk)) {
-      if (has_timed_out()) {
-        /* Abort if the clock line hasn't changed for 90ms (9 * 10ms) */
-        if (--tc == 0)
-          return 0;
-
-        goto timeout_loop;
-      }
-    }
-
-    delay_us(2);
-    bus = iec_bus_read();
-
-    b = b >> 1 | (bus & data ? 0 : 0x80);
-  }
-
-  return b;
-}
-
 /* used by <= r146 */
 uint8_t krill_get_byte_clk_data(void) {
-  return get_byte_1bit(IEC_BIT_CLOCK, IEC_BIT_DATA);
+  return clocked_read_byte(IEC_BIT_CLOCK, IEC_BIT_DATA, 90);
 }
 
 /* used by r164 for filenames */
 uint8_t krill_get_byte_clk_atn(void) {
-  return get_byte_1bit(IEC_BIT_CLOCK, IEC_BIT_ATN);
+  return clocked_read_byte(IEC_BIT_CLOCK, IEC_BIT_ATN, 90);
 }
 
 /* used by >r146 (in r164 only used for drivecode install) */
 uint8_t krill_get_byte_data_clk(void) {
-  return get_byte_1bit(IEC_BIT_DATA, IEC_BIT_CLOCK);
+  return clocked_read_byte(IEC_BIT_DATA, IEC_BIT_CLOCK, 90);
 }
 
 /* used by the save plugin for status byte and drive memory backup */
@@ -294,58 +237,17 @@ timeout_loop:
   return 0;
 }
 
-static void send_bitpair_r58pre(uint8_t *b, uint8_t i) {
-  switch (i) {
-    case 4:
-      set_clock(*b&0x80);
-      set_data(*b&0x20);
-      break;
-    case 3:
-      set_clock(*b&0x40);
-      set_data(*b&0x10);
-      break;
-    case 2:
-      set_clock(*b&0x08);
-      set_data(*b&0x02);
-      break;
-    case 1:
-      set_clock(*b&0x04);
-      set_data(*b&0x01);
-      break;
-  }
-}
+/* r58pre bit shuffle table 02134657 */
+static const PROGMEM uint8_t encoding_r58pre[] = {
+  1<<7, 1<<5, 1<<6, 1<<4, 1<<3, 1<<1, 1<<2, 1<<0
+};
 
-static void send_bitpair(uint8_t *b, uint8_t i) {
-  (void)i;
-
-  set_clock(*b&1);
-  set_data(*b&2);
-  *b >>= 2;
+uint8_t krill_send_byte_58pre(uint8_t b) {
+  return clocked_write_byte(~b, encoding_r58pre, 1000);
 }
 
 uint8_t krill_send_byte_atn(uint8_t b) {
-  uint8_t i;
-  void (*send_fn)(uint8_t *, uint8_t);
-
-  if (detected_loader >= FL_KRILL_R58) {
-    send_fn = send_bitpair;
-  } else {
-    b = ~b;
-    send_fn = send_bitpair_r58pre;
-  }
-
-  for (i = 4; i != 0; i--) {
-    if (i&1) { /* wait for ATN low with ~1s timeout */
-      if (wait_atn_low())
-        break; /* timed out */
-    } else {
-      while (!IEC_ATN); /* no timeout needed for ATN low -> high transition */
-    }
-
-    send_fn(&b, i);
-  }
-
-  return IEC_ATN != 0; /* if ATN is not set here, something is wrong */
+  return clocked_write_byte(b, NULL, 1000);
 }
 
 static uint8_t load_drivecode(session_t *s) {
@@ -468,7 +370,7 @@ static uint8_t load_drivecode(session_t *s) {
     }
   }
 
-  return wait_atn_low();
+  return wait_atn_low(1000);
 }
 
 /* set up the directory state after a disk change */
@@ -647,20 +549,11 @@ static buffer_t *get_file_buf(session_t *s) {
 }
 
 static uint8_t get_block_delay(uint16_t crc) {
-  uint16_t c;
-  const file_quirks_t *ptr;
+  const file_quirks_t *fq;
 
-  for (ptr = file_quirks;; ptr++) {
-    c = pgm_read_word(&ptr->crc);
+  fq = get_file_quirks(file_quirks, crc);
 
-    if (c == 0)
-      break;
-
-    if (c == crc)
-      return pgm_read_byte(&ptr->block_delay);
-  }
-
-  return 0;
+  return fq != NULL ? pgm_read_byte(&fq->block_delay) : 0;
 }
 
 static uint8_t send_file(session_t *s) {
@@ -755,7 +648,7 @@ abort:
     if (buf == NULL && detected_loader == FL_KRILL_R58PRE)
       while (IEC_ATN);
 
-    if (to || ((detected_loader > FL_KRILL_R146 || buf == NULL) && wait_atn_low()) || buf == NULL)
+    if (to || ((detected_loader > FL_KRILL_R146 || buf == NULL) && wait_atn_low(1000)) || buf == NULL)
       break;
 
     if (!buf->sendeoi) {

@@ -29,11 +29,14 @@
 
 #include <string.h>
 #include "config.h"
+#include "crc.h"
 #include "diskchange.h"
+#include "doscmd.h"
 #include "fastloader-ll.h"
 #include "iec-bus.h"
 #include "iec.h"
 #include "led.h"
+#include "progmem.h"
 #include "timer.h"
 #include "fastloader.h"
 
@@ -84,6 +87,170 @@ bool bus_sleep(UNUSED_PARAMETER) {
   detected_loader = FL_NONE;
 
   return true;
+}
+#endif
+
+#if defined(CONFIG_BUS_SILENCE_REQ) || defined(CONFIG_LOADER_KRILL)
+/* Calculate crc16 of command_buffer between the specified offsets */
+uint16_t command_crc(const uint8_t start_offset, const uint8_t end_offset) {
+  uint8_t  i;
+  uint16_t crc;
+
+  crc = 0xffff;
+
+  for (i = start_offset; i < command_length-end_offset; i++)
+    crc = crc16_update(crc, command_buffer[i]);
+
+  return crc;
+}
+#endif
+
+#if defined(CONFIG_LOADER_KRILL)
+/**
+ * Wait for ATN low with a variable (but not very precise) timeout.
+ *
+ * @to: if != 0, this is the timeout in [ms]. The minimum timeout is 10ms
+ *      and it is rounded down to next 10ms multiple if > 10ms. If == 0,
+ *      there is no timeout, but this might be easier to achieve with just
+ *      a "while (IEC_ATN);".
+ *
+ * Returns != 0 if timed out, 0 otherwise.
+ */
+uint8_t wait_atn_low(uint16_t to) {
+  /* botch timeout using multiple 10ms timeouts */
+  while (true) {
+    start_timeout(10000); // caution: max. duration on AVR is 16000 == 16ms!
+
+    while (to == 0 || !has_timed_out()) {
+      if (!IEC_ATN)
+        return false;
+    }
+
+    if (to <= 10)
+      return true; // timed out
+
+    to -= 10;
+  }
+}
+
+/**
+ * Write a byte LSB first using CLK and DATA as data lines. ATN is the
+ * clock line and is driven by the host.
+ *
+ * @to:  if != 0, this is a timeout in [ms] applied when waiting for the
+ *       falling ATN edge. The minimum timeout is 10ms and it is rounded
+ *       down to next 10ms multiple if > 10ms (see wait_atn_low()).
+ * @enc: if != NULL, pointer to a bit shuffle table used while sending.
+ *       The table must consist of 8 bitmasks. The resulting byte has a
+ *       bit corresponding to a table index set, if the bit as indicated
+ *       by the bitmask at that index is set in the original byte.
+ *
+ * Returns != 0 if timeout occured, 0 otherwise.
+ */
+uint8_t clocked_write_byte(uint8_t b, const uint8_t *enc, uint16_t to) {
+  uint8_t i, o;
+
+  for (i = 0; i < 8; i +=2 ) {
+    if (enc != NULL) { // shuffle bits if an encoding has been specified
+      if (b & pgm_read_byte(enc+i)) {
+        o = 0x01;
+      } else {
+        o = 0x00;
+      }
+      if (b & pgm_read_byte(enc+i+1)) {
+        o |= 0x02;
+      }
+    } else {
+      o = b;
+      b >>= 2;
+    }
+
+    if (i&2) {
+      if (wait_atn_low(to))
+        return 1; // timeout
+    } else {
+      while (!IEC_ATN);
+    }
+
+    set_clock(o&1);
+    set_data(o&2);
+  }
+
+  return 0;
+}
+
+/**
+ * Read a byte from the "data" line, clocked by the "clk" line.
+ * Data is read on both clock edges, LSB first and with bit values
+ * inverted (bit = 1 if data line low). The transfer starts at the
+ * next transition of the clock line, so the caller has to make
+ * sure it is in the correct state when calling this function.
+ *
+ * @to: if != 0, the transfer is aborted if the clock line does not
+ *      change for the specified time in [ms]. The caller has to
+ *      check for a possible timeout by calling has_timed_out()
+ *      immediately (!) after clocked_read_byte() returned.
+ *
+ * Returns the byte read or 0, if the timeout occured.
+ */
+uint8_t clocked_read_byte(iec_bus_t clk, iec_bus_t data, uint16_t to)  {
+  uint8_t   i, b = 0;
+  uint16_t  tc;
+  iec_bus_t bus;
+
+  bus = iec_bus_read();
+
+  for (i = 8; i != 0; i--) {
+    tc = to;
+timeout_loop:
+    start_timeout(10000);  // caution: max. duration on AVR is 16000 == 16ms!
+
+    /* wait for respective clock edge */
+    while ((iec_bus_read() & clk) == (bus & clk)) {
+      if (tc != 0 && has_timed_out()) {
+        /* Abort if the clock line hasn't changed before the timeout */
+        if (tc <= 10)
+          return 0; // timed out
+
+        tc -= 10;
+
+        goto timeout_loop;
+      }
+    }
+
+    delay_us(2);
+    bus = iec_bus_read();
+
+    b = b >> 1 | (bus & data ? 0 : 0x80);
+  }
+
+  /* This is a hack to make it (a lot) less likely that a caller */
+  /* mistakenly registers an intermediate timeout as real.       */
+  /* TODO: An e.g. stop_timeout() function which both stops the  */
+  /* timer and clears the timeout condition would be better.     */
+  start_timeout(256);
+
+  return b;
+}
+
+/* Search a (loader-specfic) file quirks table for an entry with the given */
+/* crc. Returns the pointer to the entry, if found, or NULL otherwise.     */
+const file_quirks_t *get_file_quirks(const file_quirks_t *fq_table, uint16_t crc) {
+  uint16_t c;
+
+  while (true) {
+    c = pgm_read_word(&fq_table->crc);
+
+    if (c == 0)
+      break;
+
+    if (c == crc)
+      return fq_table;
+
+    fq_table++;
+  }
+
+  return NULL;
 }
 #endif
 

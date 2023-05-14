@@ -78,6 +78,11 @@ typedef enum {
   FL_KRILL_R192,
 } fastloaderid_t;
 
+typedef struct {
+  uint16_t  crc;         // crc of the *previous* file
+  uint8_t   block_delay; // delay between block transfers; unit up to user
+} file_quirks_t;
+
 extern fastloaderid_t detected_loader;
 extern volatile uint8_t fl_track;
 extern volatile uint8_t fl_sector;
@@ -123,6 +128,12 @@ bool save_dolphin(void);
 /* functions that are shared between multiple loaders */
 /* currently located in fastloader.c                  */
 int16_t gijoe_read_byte(void);
+uint8_t clocked_read_byte(iec_bus_t clk, iec_bus_t data, uint16_t to);
+uint8_t clocked_write_byte(uint8_t b, const uint8_t *enc, uint16_t to);
+
+uint16_t command_crc(const uint8_t start_offset, const uint8_t end_offset);
+uint8_t wait_atn_low(uint16_t timeout);
+const file_quirks_t *get_file_quirks(const file_quirks_t *, uint16_t);
 
 # ifdef PARALLEL_ENABLED
 extern volatile uint8_t parallel_rxflag;
