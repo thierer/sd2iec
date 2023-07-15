@@ -419,6 +419,8 @@ static void update_path(session_t *s) {
 }
 
 static uint8_t find_file(session_t *s, cbmdirent_t *dent) {
+  int8_t rc;
+
   if (command_buffer[0] != '*') {
     /* make sure the dir handle and the path are in a usable state */
     if (dir_changed)
@@ -441,7 +443,11 @@ static uint8_t find_file(session_t *s, cbmdirent_t *dent) {
     }
   }
 
-  return next_match(&s->dh, command_buffer, NULL, NULL, FLAG_HIDDEN, dent);
+  do {
+    rc = next_match(&s->dh, command_buffer, NULL, NULL, FLAG_HIDDEN, dent);
+  } while (rc == 0 && dent->opstype == OPSTYPE_DXX && ops_scratch[DIR_OFS_TRACK] == 0);
+
+  return rc;
 }
 
 /* Simple check for possible T/S adressing. Not very */
