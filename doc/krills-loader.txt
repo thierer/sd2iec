@@ -438,7 +438,7 @@ supported.
 
 In r186, the host signals a custom code upload request by setting
 CLK when releasing the request line. In r192 the code upload is just
-sent like the filename. If the "filename" is longer than 16+1 bytes,
+sent like the filename. If the "filename" is longer than 16+2 bytes,
 then it is a code upload.
 
 Before installing the actual custom code, the plugin framework first

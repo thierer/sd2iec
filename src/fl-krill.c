@@ -50,6 +50,9 @@
 /* magic string used in M-E commands of >= r192 */
 #define KRILL_MAGIC PSTR("KRILL")
 
+/* For >= r192 a "filename" longer than 17 bytes indicates custom drivecode. */
+#define R192_NAME_LENGTH (CBM_NAME_LENGTH+1)
+
 /* offsets of the various configuration parameters into the ID string */
 enum {
   ID_REPO_VER = 12,
@@ -474,10 +477,10 @@ static uint8_t next_sector(buffer_t *buf) {
 static uint8_t read_filename(session_t *s) {
   uint8_t i, max_len;
 
-  /* r192 might send more than 16+1 bytes, if */
+  /* r192 might send more than 16+2 bytes, if */
   /* it is in fact a custom drivecode upload. */
   if (detected_loader >= FL_KRILL_R192)
-    max_len = CBM_NAME_LENGTH+2;
+    max_len = R192_NAME_LENGTH+2;
   else
     max_len = s->fn_maxlength;
 
@@ -1039,11 +1042,11 @@ bool load_krill(UNUSED_PARAMETER) {
       if (fn_len == -1) /* timed out */
         goto exit;
 
-      if (fn_len <= CBM_NAME_LENGTH) {
+      if (fn_len <= R192_NAME_LENGTH) {
         if (send_file(&session))
           break;
       } else {
-        /* More than CBM_NAME_LENGTH (16) bytes received. Can only      */
+        /* More than CBM_NAME_LENGTH+1 (17) bytes received. Can only    */
         /* happen with r192 and indicates a custom drivecode upload.    */
         if (cc_fallback(&session))
           break;
