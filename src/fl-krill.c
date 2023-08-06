@@ -576,13 +576,16 @@ static uint8_t send_file(session_t *s) {
   bdel = get_block_delay(s->file_crc);
 
   buf = get_file_buf(s);
-  /* no "file not found" error for "next file" at the end of the directory */
-  if (!buf && !dir_changed && command_buffer[0] == '*')
-    hd[0] = detected_loader > FL_KRILL_R146 ? 0 : 0xfe;
+
+  if (buf != NULL) { /* file found */
+    s->file_crc = 0xffff;
+  } else {
+    /* no "file not found" error for "next file" at the end of the directory */
+    if (!dir_changed && command_buffer[0] == '*')
+      hd[0] = detected_loader > FL_KRILL_R146 ? 0 : 0xfe;
+  }
 
   bi = 0;
-
-  s->file_crc = 0xffff;
 
   while (true) {
     if (buf) {
