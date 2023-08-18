@@ -82,8 +82,7 @@ static inline tick_t getticks(void) {
  * wouldn't care). Gcc is currently neither.
  * (">=0" refers to the time_after_eq macro which wasn't copied)
  */
-#define time_after(a,b)         \
-         ((stick_t)(b) - (stick_t)(a) < 0)
+#define time_after(a,b)         ((stick_t)((b) - (a)) < 0)
 #define time_before(a,b)        time_after(b,a)
 
 
