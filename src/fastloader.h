@@ -76,6 +76,7 @@ typedef enum {
   FL_KRILL_R184,
   FL_KRILL_R186,
   FL_KRILL_R192,
+  FL_BOOZE,
 } fastloaderid_t;
 
 typedef struct {
@@ -119,6 +120,7 @@ bool load_hypraload(uint8_t);
 bool drvchkme_krill(uint8_t);
 bool bus_sleep_krill(uint8_t);
 bool load_krill(uint8_t);
+bool load_booze(uint8_t);
 
 int16_t dolphin_getc(void);
 uint8_t dolphin_putc(uint8_t data, uint8_t with_eoi);

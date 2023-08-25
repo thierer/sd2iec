@@ -126,6 +126,9 @@ CONFIG_LOADER_HYPRALOAD=n
 # Enable Krill's loader
 CONFIG_LOADER_KRILL=n
 
+# Enable BoozeLoader
+CONFIG_LOADER_BOOZE=n
+
 # Enable DolphinDOS parallel speeder
 CONFIG_PARALLEL_DOLPHIN=y
 

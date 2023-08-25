@@ -1,0 +1,209 @@
+BoozeLoader Protocol
+=============================
+& sd2iec Implementation Notes
+
+Documented by Martin Thierer
+
+BoozeLoader is an IRQ-loader written by HCL [*], which is mostly used
+for demos. You can find a list of known productions using it at the
+end of this document.
+
+*) HCL https://csdb.dk/scener/?id=8075
+
+Loader Revisions
+================
+
+The only public release seems to be revision "1.0"
+(https://csdb.dk/release/?id=145208).
+
+The productions crediting HCL use variations of the code. The transfer
+protocols are identical for all versions, they mostly differ in how
+files are addressed and how disk-change and -identification are
+handled.
+
+Byte-Transfer Protocols
+=======================
+
+All protocols use a clock line, which is always driven by the host.
+
+1-Bit Receive Protocol
+----------------------
+
+Used by the host for requesting files and sending commands.
+
+The transfer starts with ATN set by the host. The drive releases DATA
+by setting ATNA, when it's ready.
+
+ATN is the clock line and CLK is the data line.
+
+Bytes are sent LSB-first with the bit values inverted (data line low
+is bit == 1 and vice versa).
+
+Each bit is valid at the falling ATN edges and the drive acknowledges
+each bit by setting ATNA. If this isn't the end of the file chain, the
+host will set ATN again for the next block, otherwise it stays in the
+idle state (all lines released) until the next request.
+
+2-Bit Send Protocol
+-------------------
+
+Used for sending data (file content or disk ids) to the host.
+
+Data is sent in response to a command or file request so ATN is still
+set after the last bit received via the 1-bit receive protocol.
+
+When the data is ready, the drive releases DATA by setting ATNA. The
+host then releases ATN which starts the transfer.
+
+ATN is used as the clock line and CLK & DATA are the data lines.
+
+  c0/d0  |  c1/d1  |  c2/d2  |  c3/d3
+---------|---------|---------|---------
+  b0/b1  |  b2/b3  |  b4/b5  |  b6/b7
+
+Installation
+============
+
+Most loader revisions send some bootstrap code with a M-E command,
+which then reads the actual loader code from (depending on the actual
+version) 2-4 blocks on the directory track [$12 $0f $0c $09] to $300
+in the drive's memory.
+
+Others install the code from the host, using a couple of M-W commands
+instead.
+
+Request Handling
+================
+
+After the drivecode has been installed, the drive enters the request
+loop.
+
+There are three types of requests:
+  - File request
+  - Disk identification / change request
+  - Bus lock
+
+The idle bus state is all lines released. To make a request, the host
+sets ATN. The drive then reads the request byte(s) using the 1-bit
+receive protocol (see above).
+
+File Transfer
+--------------
+
+There are two methods of addressing files. Neither uses the standard
+CBM DOS directory:
+
+1. Directory Sector
+
+  This method is used by most of the known productions and only sends
+  one byte, which is used as an index into a sector on track $12 which
+  contains up to $7f start-track/-sector pairs.
+
+  Which sector is used for the directory differs between loader
+  revisions: Most use sector $09, some $0c and Edge of Disgrace [033]
+  uses $06.
+
+2. Start-Track and -Sector
+
+  In this case the host sends two bytes, the track and the sector of
+  the start of the sector chain.
+
+Regardless how the start sector is found, the sectors are then linked
+using the standard CBM DOS method, where the first two bytes either
+indicate track and sector of the next block, or the end of the sector
+chain (if the first byte is $00) and the number of bytes used in this
+last sector (second byte).
+
+Each block (including the 2 link bytes) is sent using the 2-bit send
+protocol as outlined under "Byte-Transfer Protocols", above. After
+each transfer the host acknowledges the last bit by releasing ATN. For
+the last block of each file, only the actually used bytes as indicated
+by the block length at offset $01 of the sector (but still including
+the link bytes) are sent.
+
+Disk Change
+-----------
+
+The last byte of the BAM sector $12/$00 for disks of multi-disk
+productions contains a disk identifier byte.
+
+How this byte is accessed differs between loader versions:
+
+1. For versions using file index addressing and a dir sector, the
+host sends a request byte with bit 7 set, where the lower 7 bits are
+the expected id of the next disk. The drive then keeps checking the
+id byte of the current disk until the requested id is found. It then
+sets ATNA (releases DATA) and waits for the next request.
+
+2. Versions using track/sector addressing send a zero for the first
+byte (which would be the track number) as a request to identify the
+current disk. In this case no second byte (which would otherwise be
+the sector number) is sent by the host. The drive then reads sector
+$12/$00 and sends the disk id using the standard protocol normally
+used for sector transfers.
+
+The host keeps sending this identification request until the response
+matches the expected result. It then continues doing normal requests.
+
+Bus Lock
+--------
+
+In some loader revisions, the value 0xff locks the bus until a L/H/L/H
+sequence is detected on ATN, where each phase is 18us. The drive
+ignores all other changes on the bus lines which makes it possible for
+the host to modify $dd00 without having to mask the IEC line bits.
+
+Known Productions using this Loader (as of August 2023)
+=======================================================
+
+Note: The table below is compiled from releases on CSDb crediting
+      HCL for loader or code, plus a few others found during testing.
+      It might not be complete and productions not listed have not
+      been tested and therefore might not work with the sd2iec
+      implementation.
+
+Reference:
+  DS = directory sector (on track $12; t/s addressing, if none)
+
+Ref | Title                                             |  CSDb  | DS 
+----|---------------------------------------------------|--------|----
+000 | Kinetics                                          | 232961 |  9 
+001 | Uncle Petscii Presents Good King Wenceslas        | 226967 |  9 
+002 | 30 Years                                          | 219292 |  9 
+003 | FrostFlakes                                       | 211023 |  9 
+004 | Uncle Petscii's Droids of Star Wars               | 205538 |  9 
+005 | Uncle PETSCII's Christmas Show                    | 198323 |  9 
+006 | Diagonality                                       | 192925 |  9 
+007 | Remains                                           | 187524 |  9 
+008 | The Elder Scrollers                               | 179123 |  9 
+009 | Drinking Buddies                                  | 170930 |  9 
+010 | Soft Machine                                      | 165916 |  9 
+011 | Black Celebration                                 | 162817 |  9 
+012 | Neon                                              | 153521 |  9 
+013 | Monumentum                                        | 151258 |  9 
+014 | Classics                                          | 149157 |  9 
+015 | Northern Star                                     | 144097 |  9 
+016 | Demo with Bugs                                    | 143451 |  9 
+017 | Drinking Leroy                                    | 139585 | 12 
+018 | Nasty 2                                           | 138962 |  9 
+019 | Timeline                                          | 137488 | 12 
+020 | Uncensored                                        | 133934 |  9 
+021 | Bitter Swede Symphony                             | 121610 |  9 
+022 | Time Machine                                      | 116340 |  9 
+023 | Time Machine [party version]                      | 115655 |  9 
+024 | Attitude #13                                      | 111011 |    
+025 | Zeros & Ones                                      | 102116 |    
+026 | 1991                                              | 101506 | 12 
+027 | Attitude #12                                      | 101359 |    
+028 | Attitude #11                                      |  96330 |    
+029 | Mekanix                                           |  94438 |    
+030 | Attitude #10                                      |  88462 |    
+031 | Intro Collection                                  |  84570 |    
+032 | Andropolis                                        |  81157 |    
+033 | Edge of Disgrace                                  |  72550 |  6 
+034 | Party Pig                                         |  50831 |    
+035 | Let's Scroll It!                                  |  41460 |    
+036 | Smart Girls Hate Booze                            |  19418 |    
+037 | Tsunami                                           |  17913 |    
+038 | Hammarkullen                                      |  13876 |    
+039 | Cycle                                             |  11959 |    

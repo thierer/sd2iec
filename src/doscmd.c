@@ -249,6 +249,10 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
   { 0x40c3, FL_KRILL_SLEEP,      RXTX_NONE          }, // r184
   { 0x5088, FL_KRILL_SLEEP,      RXTX_NONE          }, // r164
 #endif
+#ifdef CONFIG_LOADER_BOOZE
+  { 0x0c48, FL_BOOZE,            RXTX_NONE          },
+  { 0x5f66, FL_BOOZE,            RXTX_NONE          },
+#endif
 
   { 0, FL_NONE, 0 }, // end marker
 };
@@ -372,6 +376,14 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
   { 0x05f1, FL_KRILL_R58PRE,     load_krill,       0 },
   { 0x05f4, FL_KRILL_R58PRE,     load_krill,       0 },
   { 0x0600, FL_KRILL_R58PRE,     load_krill,       0 },
+#endif
+#ifdef CONFIG_LOADER_BOOZE
+  { 0x0373, FL_BOOZE,            load_booze,     0 },
+  { 0x04b8, FL_BOOZE,            load_booze,     0 },
+  { 0x020b, FL_NONE,             load_booze,     0 },
+  { 0x020d, FL_NONE,             load_booze,     0 },
+  { 0x020f, FL_NONE,             load_booze,     0 },
+  { 0x0211, FL_NONE,             load_booze,     0 },
 #endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker
