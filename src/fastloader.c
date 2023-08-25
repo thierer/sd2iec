@@ -90,7 +90,7 @@ bool bus_sleep(UNUSED_PARAMETER) {
 }
 #endif
 
-#if defined(CONFIG_BUS_SILENCE_REQ) || defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_BOOZE)
+#if defined(CONFIG_BUS_SILENCE_REQ) || defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_BOOZE) || defined(CONFIG_LOADER_SPINDLE)
 /* Calculate crc16 of command_buffer between the specified offsets */
 uint16_t command_crc(const uint8_t start_offset, const uint8_t end_offset) {
   uint8_t  i;
@@ -105,7 +105,7 @@ uint16_t command_crc(const uint8_t start_offset, const uint8_t end_offset) {
 }
 #endif
 
-#if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_BOOZE)
+#if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_BOOZE) || defined(CONFIG_LOADER_SPINDLE)
 /**
  * Wait for ATN low with a variable (but not very precise) timeout.
  *
@@ -236,7 +236,7 @@ timeout_loop:
 }
 #endif
 
-#if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_BOOZE)
+#if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_BOOZE) || defined(CONFIG_LOADER_SPINDLE)
 /* Search a (loader-specfic) file quirks table for an entry with the given */
 /* crc. Returns the pointer to the entry, if found, or NULL otherwise.     */
 const file_quirks_t *get_file_quirks(const file_quirks_t *fq_table, uint16_t crc) {

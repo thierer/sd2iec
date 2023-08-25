@@ -241,13 +241,14 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
   { 0x379d, FL_KRILL_R58PRE,     RXTX_KRILL_58PRE   },
 #endif
 #ifdef CONFIG_BUS_SILENCE_REQ
-  /* The loader uses a different method for drive identification */
-  /* when installing the ATN responder. That's why the sd2iec is */
-  /* identified as a 1541 even when a D81 image is mounted.      */
-  /* So only the 1541 code's CRCs are needed.                    */
+  /* Krill's loader revisions without ID-string (< r190) use a different */
+  /* method for drive identification when installing an ATN responder.   */
+  /* That's why the sd2iec is identified as a 1541 even when a D81 image */
+  /* is mounted. So only the 1541 code's CRCs are needed.                */
   { 0x607d, FL_KRILL_SLEEP,      RXTX_NONE          }, // >= r186
   { 0x40c3, FL_KRILL_SLEEP,      RXTX_NONE          }, // r184
   { 0x5088, FL_KRILL_SLEEP,      RXTX_NONE          }, // r164
+  { 0x1fdc, FL_SPINDLE_SLEEP,    RXTX_NONE          },
 #endif
 #ifdef CONFIG_LOADER_BOOZE
   { 0x0c48, FL_BOOZE,            RXTX_NONE          },
@@ -335,6 +336,7 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
 #if defined(CONFIG_BUS_SILENCE_REQ)
   { 0x0205, FL_KRILL_SLEEP,      bus_sleep_krill,  0 }, //  < r192 ATN responder
   { 0x020b, FL_NONE,             bus_sleep_krill,  1 }, // >= r192 ATN responder
+  { 0x0403, FL_SPINDLE_SLEEP,    bus_sleep,        0 },
 #endif
 #if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_BUS_SILENCE_REQ)
   { 0x0205, FL_NONE,             drvchkme_krill,   1 }, //  < r192 drvchkme
@@ -384,6 +386,9 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
   { 0x020d, FL_NONE,             load_booze,     0 },
   { 0x020f, FL_NONE,             load_booze,     0 },
   { 0x0211, FL_NONE,             load_booze,     0 },
+#endif
+#ifdef CONFIG_LOADER_SPINDLE
+  { 0x0205, FL_NONE,             load_spindle,   0 },
 #endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker

@@ -1,0 +1,526 @@
+Spindle Loader Protocol
+=============================
+& sd2iec Implementation Notes
+
+Documented by Martin Thierer
+
+Spindle is a loader written by lft [*], which is mostly used for
+demos. You can find a list of known productions using it at the end of
+this document.
+
+*) lft https://csdb.dk/scener/?id=16473
+
+Loader Revisions
+================
+
+The following revisions have been released on CSDb:
+
+1.0     https://csdb.dk/release/?id=118725
+2.0     https://csdb.dk/release/?id=139503
+2.1     https://csdb.dk/release/?id=139611
+2.2     https://csdb.dk/release/?id=147882
+2.3     https://csdb.dk/release/?id=149811
+3.0     https://csdb.dk/release/?id=205568
+3.1     https://csdb.dk/release/?id=214051 same drivecode as 3.0
+
+Revisions 1.0 and 2.0 don't seem to be used by any production, so they
+have neither been tested nor are documented here. You can find a list
+of the productions which have been tested, which also includes the
+loader revision they use, at the end of this document.
+
+Byte-Transfer Protocols
+=======================
+
+1-bit Receive Protocol
+----------------------
+
+Used by the 3.x revisions to receive the index into the async sector
+job table in case of an asynchronous command (see "Async Requests",
+below). (As the 2.x revisions don't have random access for jobs,
+there is no need to receive data from the host).
+
+ATN is used as the clock line and CLK is the data line.
+
+The 7-bit (!) value is sent MSB-first with the bit values inverted
+(data line low is bit == 1 and vice versa).
+
+The byte transfer starts with clock (ATN) set by the host. The drive
+releases DATA when it's ready to receive.
+
+Data is valid after the positive clock edge. The drive acknowledges
+that it read the bit by setting DATA and releases it after the host
+set ATN again.
+
+2-bit Send Protocol
+-------------------
+
+The protocol used to send all data to the host. It is identical for
+all revisions, but 2.x revisions use a different byte encoding than
+3.x. Unit lengths (see the 3.x sections of "Stream Format" and
+"Communication Protocol", below) are not encoded, but the block
+checksums of 2.x are.
+
+ATN is used as the clock line and CLK & DATA are the data lines. The
+transfer starts with a positive clock edge.
+
+                  |  c0/d0  |  c1/d1  |  c2/d2  |  c3/d3
+------------------|---------|---------|---------|---------
+2.x               | !b3/!b1 | !b2/!b0 | !b6/!b4 | !b7/!b5
+3.x unit length   |  b0/b1  |  b2/b3  |  b4/b5  |  b6/b7
+3.x payload bytes | !b3/!b1 | !b2/!b0 | !b4/!b5 | !b6/b7
+
+Installation
+============
+
+All loader revisions install the drivecode by sending a small M-E
+command with some extra code which then loads the drivecode from
+sectors $11, $0c, $0b and $02 on track 18. No code is transferred
+from the host using M-W commands.
+
+ATN Responder
+-------------
+
+If the loader detects additional drives on the bus, the 3.x revisions
+install an "ATN responder" on the other drives, which monitors the
+ATN IN signal and sets ATNA accordingly, to minimize the effect on the
+DATA line. (Earlier revisions just won't work if other devices are
+present).
+
+If used as a passive device on the bus, the sd2iec firmware also
+detects this and enters "sleep mode", which is indicated by the static
+error LED and which can be deactivated by a long press of the disk
+change button.
+
+Stream Format
+=============
+
+The Loader doesn't use the CBM DOS directory or the standard sector
+format with the 2 first bytes linking to the next sector at all, but
+instead just loads and transfers a pre-defined chain of file-like
+bundles of sectors which is encoded in and controlled by "commands"
+consisting of 3 bytes each (MSBs left):
+
+   [0]        [1]       [2]
+XXX0 1234  5678 9ABC  DEFG HIJK
+
+"X" are flags; their significance differs between revisions and is
+documented below. "0" though "K" indicate if the corresponding sector
+of the current track should be read ("0" => sector 0, "K" => sector
+20).
+
+For the 2.x revisions, processing of the chain is fixed, the host can
+only control the speed at which it accepts data. 3.x enables the host
+to randomly access some (pre-selected) bundles (called "jobs").
+
+Init Sector
+-----------
+
+The initial command for each disk is read from sector $12/$11.
+
+Command processing always starts on track 1 and continues through the
+tracks in strictly increasing order. The next commands are extracted
+from the bytestream as it is read from disk. How the commands are
+encoded into the bytestream differs between revisions.
+
+In addition to the initial command, the init sector also contains a
+3 byte id for the current disk and for the 2.x revisions also the
+expected id for the next disk, if applicable (see below).
+
+2.x revisions
+-------------
+
+For most sectors, all 256 bytes of a sector are used for payload. The
+drive calculates a checksum (xor sum of all values in the sector). If
+the checksum has bit 7 set, this indicates that the checksum is also
+the first byte of the next command. In this case the other two
+command-bytes are 1. the byte at offset $00 of the sector and 2. the
+xor'ed values of the bytes at offsets $00 and $01:
+
+  next_cmd[$00] = checksum
+  next_cmd[$01] = sector[$00]
+  next_cmd[$02] = sector[$00] ^ sector[$01]
+
+The sectors requested by a command are read from the current track in
+random order, so the next command is also encountered at a random time
+when processing a command. As it doesn't come into effect before all
+sectors of the current command have been read and transferred, it has
+to be stored.
+
+As bit 7 of the first command byte is always 1 (because that's what
+identifies the checksum as a command), only bits 6 and 5 are used as
+flags:
+
+  - Bit 7              - always set
+  - Bit 6 "eof1"       - command starts a new bundle
+  - Bit 5 "next track" - advance to next track (but skipping track 18)
+
+Because one command only addresses sectors on a single track, a file
+spanning multiple tracks will have one or more commands embedded that
+indicate which sectors to read from the next track. These commands
+will have bit 5 ("next track") set and the last command of each file
+will have bit 6 ("eof1") set.
+
+If none of the sector flags are set in a command, this indicates a
+"special command", which can be either a drive reset (if flag bit 5 is
+set) or a "disk flip" (if flag bit 5 is not set).
+
+When a disk flip command is encountered, the drive keeps checking the
+3-byte "side id" at offset $f7 of the current disk's init sector
+$12/$11 until it matches the expected "next side id" (which was stored
+at offset $fa of the previous disk's init sector).
+
+In the 2.3 loader revision, the "next side id" is stored in reverse
+order in respect to the "side id".
+
+3.x revisions
+-------------
+
+In the 3.x revisions, each sector has a maximum payload of only 255
+bytes (instead of the 256 in 2.x). The byte at offset $00 of each
+sector is always a combination of 2 flag bits (bits 7 and 6) and the
+sector number (bits 4 to 0). (The sector number is not relevant for
+the protocol, the loader just uses it as a convenient way to know
+which sector it just read, so it can be removed from its internal list
+of sectors to read from the current track for the active command).
+
+- Bit 7 "full" sector
+  If set, all the bytes $01..$ff are payload. If not set, the sector
+  consists of a number of smaller "units" which are sent separately.
+- Bit 6 "continuation record"
+  If set, the sector contains a "continuation record" (see below).
+  A sector with a continuation record can never be a "full" sector.
+
+A "continuation record" (CR) always includes a command similar to the
+ones known from the 2.x revisions, but can additionally contain a
+number of "postponed units". These are chunks of data with a length
+between 2 and 4 bytes each, which (like the next command) don't come
+into effect until all sectors of the current command have been
+processed. The loader uses a 96-byte buffer to store both the next
+command and the postponed units. As the command is 3 bytes, this
+leaves 93 bytes for postponed units (including the length bytes and a
+trailing zero byte).
+
+In all cases ("full" sector or not, with or without CR) all unit's
+data in the sector is stored in reverse order. (For a better
+understanding of the sector layout, see the example, below).
+
+The units in a "not full" sector (either with or without a CR) are
+"preceded" by a byte indicating the length of the unit. A length of
+zero marks the end of the unit chain.
+
+In a "not full" sector without a CR, the unit chain starts at offset
+$ff with the length byte of the first unit. (For "full" sectors the
+length is implicitly 255 bytes, so a length byte is not needed and not
+present).
+
+If the sector contains a CR (bit 6 of byte at offset $00 is set), it's
+a bit more complicated: The command is stored at offsets $fd to $ff,
+so the unit chain starts at offset $fc. All units at the start of the
+chain with a length of 4 or shorter are "postponed units". As
+mentioned above, the postponed units have to be stored until the
+current command has been fully processed, but regular units are sent
+immediately.
+
+Commands have the same format as the 2.x revisions, but the flag bits
+have a different meaning:
+
+- Bit 7 "new job"   - command starts a new job
+- Bit 6 "new track" - advance to next track (but skipping track 18)
+- Bit 5 "ondemand"  - loads and executes code from sector on track 18
+
+Commands with the "ondemand" flag set are used for disk flip and reset
+handling, similar to what the "special command" does in 2.x. They are
+like a regular command, but with only one sector flag set. This sector
+is always read from track 18 (regardless of the current track) and the
+code in this sector is executed and so in the end controls what
+happens.
+
+So far, this is only used for disk flip, but it could also be used
+for custom drivecode upload or similar purposes. Right now, all known
+productions use the same sector for the disk flip command ($05), but
+as the sector is indicated by the command's sector flags, it could in
+theory be any sector, because the functionality is entirely controlled
+by the code in the sector.
+
+In the case of the flip sector, the code waits for a disk to be loaded
+into the drive, where the side id at offset $f9 of the init sector
+matches the id stored at offset $01 of the flip sector. After the
+correct disk has been identified, the code transfers control to this
+new disk's init sector which then proceeds with interpreting the data
+stream of this new disk as outlined under "Stream Format", above.
+
+A similar process is used for async requests (see below), except that
+the sector used on track 18 is fixed ($06 for all known productions)
+as it isn't started by an actual command read from disk, but a host
+request.
+
+3.x Example
+-----------
+
+Example data from a sector with a CR (Still Rising [009], sector
+$01/$0a):
+
+  00  4a 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+      ^^
+  10  00 00 00 00 00 00 00 00  00 00 00 00 7e 7f 59 93
+                                        ^^
+  [...]
+  f0  f7 ce fd e2 bf 93 da 66  c5 02 71 b2 02 8a 28 cc
+                        ^^ -- -PP--- ---PP--- ---CR---
+
+This is the CR for the disk's second job, embedded in the first job
+(which is controlled by the initial command read from $12/$11 on the
+disk). The first job read 13 sectors from track $01, so the current
+track is still $01. This command reads the remaining sectors.
+
+[$00] $40 -> not "full" & continuation record | sector $0a
+[$fd] command $8a $28 $cc -> 1000 1010  0010 1000  1100 1100
+                             ^ "new job", sectors 1,3,7,9,13,14,17,18
+[$fc] postponed unit, length $02 [$b2 $71]
+[$f9] postponed unit, length $02 [$c5 $66]
+[$f6] regular unit, length $da ($f5 ... $1c) [$93 $bf ... $7f $7e]
+[$1b] (= $f6-$01-$da) next unit length == $00 -> end of unit chain
+      (bytes at $01 ... $1a are not used)
+
+The next command is embedded in sector 17, which looks like this:
+
+  00  51 00 39 90 9e 34 76 b2  19 96 c6 a0 0f e6 d1 dc
+      ^^ ^^
+  [...]
+  f0  05 34 76 bb 15 98 c6 2a  05 f7 2f 6e 02 5f ff ff
+                                  ^^ ---PP--- ---CR---
+
+[$00] $40 -> not "full" & continuation record | sector $11
+[$fd] command $5f $ff $ff -> 0101 1111  1111 1111  1111 1111
+                              ^ "next track", all sector flags set
+[$fc] postponed unit, length $02 [$6e $2f]
+[$f9] regular unit, length $f7 ($f8 ... $02) [$05 $2a ... $90 $39]
+[$01] (= $f9-$01-$f7) next unit length == $00 -> end of unit chain
+
+This command comes into effect when all sectors plus the two postponed
+units from sector $01/$0a have been processed and instructs the loader
+to step to the next track (in this case track $02) and then read and
+process all sectors on that track. The next CR is then found in sector
+$02/$05, and so on. (The job spans multiple tracks, including all of
+track $05. Its final CR, which contains the first command for the next
+job, is then found in sector $05/$08).
+
+Communication Protocols
+=======================
+
+As the control flow is embedded in the on-disk data, there is no real
+request handling like with other loaders. The drive just keeps sending
+the bundles/jobs in the pre-encoded order whenever the host signals
+it's ready for more data. The only exception are the "async requests"
+of the 3.x revisions (see below).
+
+2.x revisions
+-------------
+
+Between block transfers, the 2.x revisions set CLK and DATA to
+indicate both the state between bundles ("eof1") and when the drive is
+ready to transfer the next bundle (called "eof2" after an "eof1"). The
+actual lines used differ between loader revisions:
+
+       |  eof1 | ready |
+       |       | /eof2 |
+-------|-------|-------|
+   2.1 |   CLK |  DATA |
+>= 2.2 |  DATA |  CLK  |
+
+In the >= 2.2 revisions the host acknowledges eof1 by setting ATN and
+releases it again as acknowledgement for eof2.
+
+The 2.1 revision doesn't acknowledge eof1 but only eof2 by setting ATN
+for 21us.
+
+Either way, before the start of the transfer ATN is in the released
+state, the "ready" line is set by the drive and the "eof1" line is
+(still) set if this is the first transfer of a new bundle, otherwise
+it is released, too.
+
+The host then sets ATN and releases it again. The positive edge is the
+start signal.
+
+Both the payload data and the checksum are transferred using the 2-bit
+transfer protocol. The transfer always includes all 256 bytes of the
+current sector, even if it contains a command.
+
+After the checksum has been sent, the drive waits for the host to
+release ATN (the clock line).
+
+If the host detected a checksum mismatch, it sets CLK and DATA for
+18us when releasing ATN. In this case, the drive will not immediately
+resend the same sector, but just not remove it from its list of
+requested sectors and transfer it again later.
+
+After the acknowledge check, the drive will set the eof1 line, if this
+was the last block of the bundle. It will then fetch either the next
+block of the current bundle or the first block of the next bundle
+(except if the end of the current disk was reached in which case the
+next command requests either a new disk or a drive reset).
+
+3.x revisions
+-------------
+
+Data is sent in variable length units. The maximum unit length is 255
+bytes in case of a "full" sector (see the 3.x section of "Stream
+Format", above).
+
+In the idle state, the host has ATN set, the drive keeps DATA set
+("busy") and CLK released.
+
+When the drive is ready to send the next unit, it releases DATA. (When
+sending postponed units, it first waits for the host to set CLK).
+
+Data is transferred using the 2-bit send protocol. The protocol is
+similar to the 2.x revisions, but 1. no checksum is present and 2. as
+the units have variable length, each unit is preceded by a byte
+indicating its length.
+
+When the host does not set DATA when it releases ATN for the first
+bitpair of the first byte, this signals an "async request". In this
+case the transfer is aborted, the drive reads the "async sector" and
+transfers control to the code in that sector (see "Async Requests",
+below).
+
+Otherwise, after the transfer of a unit is complete (immediately after
+the host acknowledged the last bitpair by releasing ATN), the host
+sets CLK and DATA to signal status:
+
+- CLK ("chain") is set if either the unit was a postponed unit of
+  length 2, or the host released CLK when it released ATN at the start
+  of the transfer.
+- DATA ("more") is set unless this was the last unit of the job, i.e.
+  all (both regular and postponed) units have been transferred. (If
+  the CR sector didn't include any postponed units, a 3-byte dummy
+  unit is sent instead).
+
+The host acknowledges the status by setting ATN. After that, the drive
+sets DATA ("busy") again, releases CLK and either immediately sends
+the next unit (if there are multiple regular units in the current
+sector or while sending postponed units) otherwise it continues
+processing either the current command or the next command, if there
+are no more sectors left for the current command.
+
+Async Requests
+--------------
+
+If the host doesn't set DATA when releasing ATN in the handshake at
+the start of a unit transfer, this signals an async command request.
+The drive aborts the transfer of the unit it was about to send, reads
+the "async sector" ($12/$06) and executes the code in this sector.
+
+The code reads a 7-bit job index from the host using the 1-bit receive
+protocol, which is then used as an index into a table with (half-)
+tracks and sectors also stored in the async sector. (The table does
+not necessarily contain entries for all jobs on the disk, so the index
+into the table might not match the job's index in the order as found
+on the disk).
+
+The table is located at offsets $01 to $40 (sectors) and $41 to $80
+(half-tracks) in the async sector. The entries are stored in reverse
+order, so the entry for index $00 is found at offsets $80 and $40,
+respectively.
+
+Note that the sector referenced by the table entry isn't the first
+sector of the requested job, but the CR sector with the job's first
+command. (In the special case of the disk's first job, the referenced
+sector would be the init sector, because that's the sector where the
+first job's command is found).
+
+Any units in this sector (both regular and postponed) are ignored
+(because they belong to the previous job). Instead, a dummy unit is
+sent and the new command found in the CR is then processed as normal.
+
+Known Productions using this Loader (as of August 2023)
+=======================================================
+
+Note: The table below is compiled from releases on CSDb crediting
+      lft for the loader, plus a few others found during testing.
+      It might not be complete and productions not listed have not
+      been tested and therefore might not work with the sd2iec
+      implementation.
+
+Reference:
+  dc = loader revision supporting custom drive code installation
+       (not supported by the sd2iec implementation)
+  !  = See specific comment at end of table
+  4  = 40 Track diskimage
+
+Ref | Title                                      |  CSDb  |  Rev  | N
+----|--------------------------------------------|--------|-------|---
+000 | III. Commodore Reunion Miskolc 2023 Spr... | 233572 |  3.x  |
+001 | Automata                                   | 233571 |  3.x  |
+002 | Operation Eindhoven                        | 232982 |  2.3  |
+003 | Hiraeth                                    | 232972 |  3.x  |
+004 | Mojo                                       | 232966 |  3.x  | 4
+005 | Mu Mu Land                                 | 229889 |  3.x  |
+006 | Sweet                                      | 226084 |  3.x  |
+007 | Sweet                                      | 225987 |  3.x  |
+008 | Skybox                                     | 225094 |  3.x  | 4
+009 | Still Rising                               | 225071 |  3.x  |
+010 | Trapped Love                               | 223106 |  3.x  |
+011 | Cocktail To Go                             | 221881 |  3.x  |
+012 | Graphics Scrollection 2                    | 220754 |  3.x  |
+013 | Graphics Scrollection                      | 219540 |  3.x  |
+014 | The World Is Not Enough - We Need More ... | 219289 |  3.x  |
+015 | Amanita (80%)                              | 218357 | 2.3dc | !
+016 | Sprite Bukkake                             | 214847 |  3.x  |
+017 | 15 Years of Scene Spirit                   | 214552 |  3.x  |
+018 | Sit Tibi Terra Levis                       | 212673 |  3.x  |
+019 | Brudbilder                                 | 207966 |  3.x  |
+020 | ASOA 2021                                  | 206623 |  3.x  |
+021 | Revolutions Delivered                      | 205537 |  3.x  |
+022 | Bromance                                   | 205526 |  2.3  |
+023 | REUTools V1.2                              | 198460 |  2.3  |
+024 | REUTools 1.1                               | 198061 |  2.3  |
+025 | Bonzilloscope                              | 197869 |  2.3  |
+026 | REUTools 1.0                               | 196880 |  2.3  |
+027 | CSDb Hardware-Guru Charts 2020             | 195681 |  2.3  |
+028 | Scene of the Living Dead                   | 194420 |  2.3  |
+029 | Expand                                     | 192886 |  2.3  |
+030 | D50                                        | 191668 |  2.3  |
+031 | Breakdance                                 | 188018 |  2.3  |
+032 | Kyfnkacxkn                                 | 188016 |  2.3  |
+033 | ASOA 2019                                  | 180604 |  2.3  |
+034 | SIGGRAPH Asia 2019 Invitro                 | 180193 |  2.3  |
+035 | Atwoods Summer Open-Air 2019 Invitro       | 179608 |  2.3  |
+036 | The Dive                                   | 179128 |  2.3  |
+037 | Snakepit                                   | 175490 |  2.3  |
+038 | Stan Lee Tribute                           | 172635 |  2.3  |
+039 | Unboxed [6581 edition]                     | 171145 |  2.3  |
+040 | Black Hole                                 | 170956 |  2.3  |
+041 | C64, Hear 64                               | 170934 |  2.3  |
+042 | Unboxed                                    | 170921 |  2.3  |
+043 | X Marks the Spot                           | 170919 |  2.3  |
+044 | Cashflow [party version]                   | 170873 |  2.3  |
+045 | Cashflow [german]                          | 170831 |  2.3  |
+046 | Cashflow                                   | 170830 |  2.3  |
+047 | Total Final                                | 168381 |  2.3  |
+048 | Delirious 11                               | 165911 |  2.3  |
+049 | Psychedelic Delicacy                       | 162549 |  2.3  |
+050 | Zoo 2017 Invitation                        | 160502 |  2.3  |
+051 | Broken                                     | 157842 |  2.3  |
+052 | ReDiscovered                               | 156898 |  2.3  |
+053 | ES1RA                                      | 156896 | 2.3dc | !
+054 | Lollipop                                   | 153954 |  2.1  |
+055 | Vega                                       | 153953 |  2.3  |
+056 | Total                                      | 151303 |  2.3  |
+057 | Lunatico                                   | 151273 |  2.3  |
+058 | The Phoenix Code                           | 151255 |  2.3  |
+059 | Nothing but PETSCII                        | 149156 |  2.2  |
+060 | Aerial Core                                | 142349 |  2.1  |
+061 | Forever Lost                               | 141022 |  2.1  |
+062 | Rocketry                                   | 140558 |  2.1  |
+
+Production-specific Remarks
+---------------------------
+
+[015] Amanita (80%)
+  Hangs at some point on the second disk as it uses unsupported custom
+  drivecode.
+
+[053] ES1RA
+  Hangs early into the first disk as it uses unsupported custom
+  drivecode.

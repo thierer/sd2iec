@@ -20,7 +20,7 @@
         - New fastloader: Hypra-Load
         - create D64 images in the FAT FS with N: if no image is mounted
         - Krill's IRQ loader
-        - BoozeLoader
+        - Demo loaders: BoozeLoader, Spindle
 
 2012-02-26 - release 0.10.3
         - Bugfix: Un-break I2C display communication

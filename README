@@ -783,6 +783,16 @@ Note: Using sd2iec without an external crystal or similiar precise
   directory and therefore only works from the original D64 images, not
   from the FAT filesytem.
 
+  Spindle
+  -------
+
+  The loader only works from the original D64 images, not from the FAT
+  filesytem.
+
+  Like Krill's Loader, Spindle >= 3.0 includes an ATN responder, which
+  activates "Sleep Mode" in a sd2iec present on the bus as a passive
+  device.
+
 JiffyDOS:
 =========
 The JiffyDOS protocol has very relaxed timing constraints compared to

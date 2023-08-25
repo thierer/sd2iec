@@ -129,6 +129,9 @@ CONFIG_LOADER_KRILL=n
 # Enable BoozeLoader
 CONFIG_LOADER_BOOZE=n
 
+# Enable Spindle loader
+CONFIG_LOADER_SPINDLE=n
+
 # Enable DolphinDOS parallel speeder
 CONFIG_PARALLEL_DOLPHIN=y
 
