@@ -105,7 +105,7 @@ uint16_t command_crc(const uint8_t start_offset, const uint8_t end_offset) {
 }
 #endif
 
-#if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_BOOZE) || defined(CONFIG_LOADER_SPINDLE)
+#if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_BOOZE) || defined(CONFIG_LOADER_SPINDLE) || defined(CONFIG_LOADER_BITFIRE)
 /**
  * Wait for ATN low with a variable (but not very precise) timeout.
  *
@@ -236,7 +236,7 @@ timeout_loop:
 }
 #endif
 
-#if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_BOOZE) || defined(CONFIG_LOADER_SPINDLE)
+#if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_BOOZE) || defined(CONFIG_LOADER_SPINDLE) || defined(CONFIG_LOADER_BITFIRE)
 /* Search a (loader-specfic) file quirks table for an entry with the given */
 /* crc. Returns the pointer to the entry, if found, or NULL otherwise.     */
 const file_quirks_t *get_file_quirks(const file_quirks_t *fq_table, uint16_t crc) {

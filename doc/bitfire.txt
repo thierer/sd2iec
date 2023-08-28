@@ -1,0 +1,388 @@
+Bitfire Loader Protocol
+=============================
+& sd2iec Implementation Notes
+
+Documented by Martin Thierer
+
+Bitfire is an IRQ-loader written by Bitbreaker [*], which is mostly
+used for demos. You can find a list of known productions using it at
+the end of this document.
+
+*) Bitbreaker https://csdb.dk/scener/?id=1678
+
+Loader Revisions
+================
+
+Various revisions have been publicly released, but not all seem to
+be actually used by any production. Some productions use pre-release
+versions of 0.7 with significant differences to both 0.6 and 0.7.
+
+0.1     https://csdb.dk/release/?id=133975
+0.2     https://csdb.dk/release/?id=134613
+0.3     https://csdb.dk/release/?id=138322
+0.4     https://csdb.dk/release/?id=141245
+0.5     https://csdb.dk/release/?id=145333 protocol matches 0.4
+0.6     https://csdb.dk/release/?id=146211
+0.7     no release on CSDb, only tagged in git
+1.0     https://csdb.dk/release/?id=201237
+1.1     https://csdb.dk/release/?id=214232
+
+git     https://github.com/bboxy/bitfire.git (only >= 0.6)
+
+Note: Parts of this document refer to a version "1.2". Right now, no
+      such version exists, neither as an official release or tagged in
+      git. It's the loader used by Next Level [007] and Deep Space 64
+      [002]/[005], which contains changes incompatible with 1.1. They
+      might or might not represent what goes into a future, official
+      release, whatever its version will be called.
+
+Byte-Transfer Protocols
+=======================
+
+All protocols use a clock line, which is always driven by the host.
+
+1-Bit Receive Protocol
+----------------------
+
+Used for both drivecode download and commands. Most loader revisions
+use DATA as clock line and CLK for the data.
+
+The byte transfer starts on a negative edge of the respective clock
+line. Bytes are sent LSB-first and for some loader revisions with the
+bit values inverted (data line low is bit == 1 and vice versa).
+
+The drivecode download always uses CLK for data and the data is never
+inverted.
+
+            | Clock  |  Data  | inv
+------------|--------|--------|-----
+  <= 0.5    |  DATA  |  CLK   |
+    0.6     |  DATA  |  CLK   |  x
+    0.7     |  CLK   |  DATA  |  x
+    1.0     |  DATA  |  CLK   |  x
+    1.1     |  DATA  |  CLK   |
+    1.2     |  CLK   |  DATA  |
+------------|--------|--------|-----
+dc download |  DATA  |  CLK   |
+
+The host acknowledges each bit with a clock edge. After 8 bits the
+clock line is in the same state as in the beginning of the byte
+transfer.
+
+2-Bit Send Protocol
+-------------------
+
+Used during file transfers for sending both the payload and the
+metadata bytes. This protocol is identical for all loader revisions.
+
+ATN is used as the clock line and CLK & DATA are the data lines. The
+transfer starts on a negative clock edge and ends on a positive edge.
+
+  c0/d0  |  c1/d1  |  c2/d2  |  c3/d3
+---------|---------|---------|---------
+  b0/b1  |  b2/b3  |  b4/b5  |  b6/b7
+
+Installation
+============
+
+All revisions transfer an installer stub using M-W commands. It is
+started using a M-E command without any additional payload and
+downloads the rest of the drivecode from the host.
+
+Drivecode Download
+------------------
+
+The drive sets either CLK (<= 0.4) or DATA (> 0.4) when it's ready to
+receive. The host then starts the transfer with a short ATN low pulse.
+
+The bytes are transferred using the 1-bit receive protocol (see "Byte-
+Transfer Protocols", above). Note this always uses DATA as clock line
+and sends the data bit non-inverted, even for loader revisions which
+use a slightly different protocol to transmit commands.
+
+Revisions < 0.6 set ATN between bytes and the first bit is valid with
+the positive ATN edge. Later versions just use the clock line (DATA).
+
+Revisions > 0.6 set ATN at the end of the drivecode transfer.
+
+ATN Responder
+-------------
+
+If the loader detects additional drives on the bus, revisions < 1.0
+show a warning and refuse to start until this is corrected.
+
+Later revisions install an "ATN responder" on the other drives, which
+monitors the ATN IN signal and sets ATNA accordingly, to minimize the
+effect on the DATA line.
+
+If used as a passive device on the bus, the sd2iec firmware also
+detects this and enters "sleep mode", which is indicated by the static
+error LED and which can be deactivated by a long press of the disk
+change button.
+
+Directory Layout
+================
+
+All revisions can handle random file requests, for which a custom
+directory is used (so bitfire "files" are not referenced from the CBM
+DOS directory).
+
+The first directory sector is always $12/$12, extending to sectors $11
+and $10, if necessary.
+
+The directory sector layout differs between 0.x and 1.x revisions.
+Each file entry is 6 bytes for the 0.x versions and 4 bytes for the
+1.x versions, as these don't store the individual start sectors for
+each file (see "Sector Chains", below). All versions can handle a
+maximum of 126 files, which would use 3 sectors in 0.x and 2 sectors
+in 1.x revisions (42*3 == 63*2 == 126).
+
+          |   $00 .. $fb file entries  | $fc $fd $fe $ff |
+  --------|----------------------------|-----------------|
+  0.x     | [ TR ST AL AH LL LH ] * 42 |              ID |
+  1.0/1.1 | [       AL AH LL LH ] * 63 |  FT  FS  FO  ID |
+
+          | $00 $01 $02 $03 |   $04.. $ff file entries   |
+  --------|-----------------|----------------------------|
+  1.2     |  FT  FS  FO  ID | [       AL AH LL LH ] * 63 |
+
+  TR/ST    file start sector (0.x only)
+  AL/AH    file load address low/high (-$100 for 1.2)
+  LL/LH    file length-1 (!) low/high
+  FT/FS/FO first (!) entry's track, sector- and byte-offset (1.x only)
+  ID       disk id
+
+Note: In revision 1.2 the load address stored in the directory entry
+      is the actual load address - $100.
+
+Sector Chains
+=============
+
+The individual sectors of each file are not linked using the first
+two bytes of each sector (like in CBM DOS) but instead all 256 bytes
+are used for payload data and the next sector is found using the
+following algorithm:
+
+  next_sector = current_sector + sector_interleave
+
+  if next_sector >= number_of_sectors_on_current_track:
+    next_sector = (next_sector % sector_interleave) + 1
+
+    if next_sector == sector_interleave: // done with track
+      next_sector = 0
+      track = track + 1 // +2 if track == $11 (skip directory track)
+
+All known productions use an interleave of 4 sectors.
+
+The files on the disk are stored contiguous, so a block might contain
+data of (at least) two files.
+
+1.x revisions don't store the start sector for every file, but only
+for the first entry of each directory sector (see "Directory Layout",
+above). For random access, the start sector and the start offset in
+this sector (see "File Transfer", below) have to be calculated by
+iterating over the preceding entries in that directory sector and
+adding up the file sizes. (This isn't necessary for sequential access,
+because the start position is still known as the byte following the
+previous file's last byte).
+
+Request Handling
+================
+
+After initialization, the drive enters the job loop and waits for
+one-byte commands from the host.
+
+Which bus line is set by the host to start the request differs between
+loader versions: 0.1 sets ATN, the other versions the same line which
+is used as clock line for the 1-bit receive protocol (DATA for 0.2 to
+0.6, 1.0 and 1.1, CLK otherwise).
+
+The command byte is transferred using the 1-bit receive protocol (see
+"Byte-Transfer Protocols", above).
+
+The command normally indicates the (zero-based) index of the requested
+file. As all versions support a maximum of 126 files, valid values are
+$00 to $7d, plus some special commands:
+
+  $80  custom drivecode upload (not supported on sd2iec)
+  $ef  next file (index of previous file + 1 or 0 if first request)
+  $fx  disk id; wait for disk with this id to be inserted
+  $ff  drive reset (quits job loop)
+
+After the command was received, the drive sets DATA to indicate that
+it's busy.
+
+File Transfer
+-------------
+
+Every block is preceded by a few bytes of metadata ("preamble"), which
+differs between the various loader revisions.
+
+For older revisions, the file's load address is only sent for the
+first block, but 1.0 and later instead send each block's start
+address. This is necessary, because these revisions always only
+transfer the relevant portion of the file's first block (remember,
+file data is stored contiguous), so the low byte of the subsequent
+blocks' load address differs from the file's load address.
+
+              | file's first block  | subsequent blocks |
+  ------------|---------------------|-------------------|
+      0.1     |     AH AL    BI LN  |        BI    LN   |
+    0.2/0.3   |  00 AH AL    BH LN  |  00    BH    LN   |
+    0.4/0.5   |  BD AH AL    BH LN  |  BD    BH    LN   |
+   0.6/0.7pre |  BD AL AH    BH LN  |  BD    BH    LN   |
+      0.7     |  BD AL AH BR BH LN  |  00 BR BH    LN   |
+      1.x     |  00 BR AH AL    LN  |  80 BR BH BL LN   |
+
+  AL/AH   file's load address low/high.
+  BL/BH   current block's load address low/high.
+  BI      zero-based block index in file.
+  BR      "barrier"; high byte of the highest contiguous block's
+          end address (+1 for 0.7)
+  BD      delta of number of contiguous blocks so far ($ff for first)
+          shifted left by 2 bits so that CLK and DATA are always set
+          in the first bitpair.
+  LN      length of current block in bytes.
+
+The barrier byte is needed for the decruncher when sending blocks out
+of order, like the loader does. As the sd2iec implementation sends all
+blocks in order, it is always set to the current block's load address
+high byte (which also seems to work just fine for 0.7).
+
+As a special case, some productions using pre-release versions of 0.7
+were built with the BITFIRE_DEBUG flag set. These additionally send
+the current file's index as the second byte of the first block's
+header (between BD and AL).
+
+Bus Lock
+--------
+
+If the host sets ATN in a loader revision that supports it (>= 0.7
+pre-releases), the drive ignores all activity on the other bus lines
+until ATN is released again. This makes it possible for the host to
+modify $dd00 without confusing the drive.
+
+Disk Change
+-----------
+
+If the host requests a disk change (command value $f0 to $fe), the
+drive keeps reading the first directory sector ($12/$12) and checks
+the byte at either sector offset $ff (<= 1.1) or $03 (1.2) for the
+requested disk id.
+
+For loader versions <= 0.3 there is an extra handshake, where the
+drive sets CLK after the correct disk has been identified and the host
+acknowledges with either one (<= 0.2) or two (0.3) short ATN low
+pulses.
+
+Known Productions using this Loader (as of August 2023)
+=======================================================
+
+Note: The table below is compiled from releases on CSDb crediting
+      Bitbreaker for the loader, plus a few others found during
+      testing. It might not be complete and productions not listed
+      have not been tested and therefore might not work with the
+      sd2iec implementation.
+
+Reference:
+  pr = 0.7 pre-release version
+  db = 0.7 pre-release version built with BITFIRE_DEBUG
+  !  = See specific comment at end of table
+  4  = 40 Track diskimage
+
+Ref | Title                                      |  CSDb  |  Rev  | N
+----|--------------------------------------------|--------|-------|---
+000 | The Space is Broken                        | 234768 | 0.7db |
+001 | The Scroll of Antonius                     | 234200 | 0.7db |
+002 | Deep Space 64 (final)                      | 233840 |  1.2  |
+003 | Looking for Atlantis                       | 233693 | 0.7db |
+004 | That Thing I Hate About Myself             | 233555 | 0.7db |
+005 | Deep Space 64                              | 232987 |  1.2  |
+006 | Wonderland XIV                             | 232980 |  1.1  | 4
+007 | Next Level                                 | 232976 |  1.2  |
+008 | Multiverse                                 | 232973 |  1.1  |
+009 | Hues                                       | 232960 | 0.7db |
+010 | Cinquanta                                  | 231055 |  0.7  |
+011 | Cinque                                     | 226347 |  0.7  |
+012 | Formula Petscii                            | 225762 |  1.1  |
+013 | Vandalism News #73 Headlines               | 225024 |  1.1  |
+014 | Logo Graphics Compo 2022 Results           | 224154 |  1.1  |
+015 | PöSö                                       | 220371 |  1.1  |
+016 | Cowboy's Dream                             | 218369 |  1.1  |
+017 | Vinyl Tribute #2                           | 212342 |  1.0  |
+018 | Unity                                      | 203390 |  0.7  |
+019 | Thirty                                     | 200575 |  0.7  |
+020 | XMAS 2020                                  | 198281 |  0.6  |
+021 | !dead                                      | 197878 |  0.7  |
+022 | 2600                                       | 197187 | 0.7db |
+023 | SID Chip Club                              | 193111 |  0.7  |
+024 | Stacked                                    | 187977 | 0.7pr |
+025 | ExAc20 Aftershow                           | 187559 |  0.7  |
+026 | In a Hurry                                 | 187525 | 0.7pr |
+027 | The Last Truckstop 3                       | 180321 | 0.7db | 4
+028 | Two Sided                                  | 180320 | 0.7pr |
+029 | Thera                                      | 179130 | 0.7pr |
+030 | 1337 Karate                                | 177033 |  0.7  | !
+031 | The 21st                                   | 177032 |  0.7  |
+032 | Rivalry                                    | 177023 | 0.7db | 4
+033 | Monomania                                  | 175657 | 0.7db |
+034 | Christmas18                                | 173069 |  0.6  |
+035 | C=Bit 18                                   | 170950 |  0.7  |
+036 | Old Men in Used Cars                       | 170944 |  0.6  |
+037 | Xcusemo                                    | 170933 |  0.7  |
+038 | The Star Wars Demo                         | 170922 |  0.6  | 4
+039 | Jump                                       | 167225 |  0.7  |
+040 | Fopcycle                                   | 166968 | 0.7db |
+041 | @                                          | 166967 | 0.7pr |
+042 | Manorexic                                  | 166742 | 0.7db |
+043 | Call The Hidden                            | 165914 | 0.7pr |
+044 | We Come in Peace                           | 163427 | 0.7db | 4
+045 | Krush Groovin'                             | 162872 |  0.6  | 4
+046 | Honey                                      | 162542 | 0.7pr |
+047 | Pain In The Asm                            | 161582 | 0.7db |
+048 | Stoned Dragon                              | 161136 |  0.7  |
+049 | Feliz Navidad                              | 161022 | 0.7db |
+050 | Private Parts                              | 160050 |  0.7  |
+051 | 40                                         | 158951 | 0.7pr |
+052 | Quad Core 100%                             | 158909 |  0.6  |
+053 | Quad Core                                  | 158773 |  0.6  |
+054 | Single Core                                | 158768 |  0.6  |
+055 | Beats                                      | 158642 | 0.7pr |
+056 | K9 V Orange Main Sequence                  | 158641 | 0.7db |
+057 | Modern Love Classics                       | 157489 | 0.7pr |
+058 | Reluge 101%                                | 156960 | 0.7pr |
+059 | SSDPCM1-Super                              | 156958 |  0.7  | 4
+060 | Reluge                                     | 155521 | 0.7pr |
+061 | The Shores of Reflection                   | 153526 |  0.6  |
+062 | The Last Hope                              | 153523 | 0.7pr |
+063 | Datastorm Leftovers                        | 153112 | 0.7db |
+064 | Frodigi 8                                  | 152997 | 0.7pr |
+065 | Mazinger Z Sing-Along                      | 152996 | 0.7pr | 4
+066 | Algo Dreams                                | 151630 |  0.6  |
+067 | Ammonite                                   | 151281 |  0.6  |
+068 | Area 64                                    | 151276 | 0.7db |
+069 | Wonderland XIII                            | 151275 |  0.6  |
+070 | Concert                                    | 151274 | 0.7pr |
+071 | Incoherent Nightmare                       | 151257 | 0.7pr |
+072 | 25 Years Atlantis                          | 151253 | 0.7db |
+073 | 25 Years                                   | 151250 | 0.7pr |
+074 | 20+1 Years                                 | 149770 |  0.6  |
+075 | We/Shades                                  | 149205 |  0.6  |
+076 | Watch My Balls in Action!                  | 146727 |  0.6  |
+077 | 50 Bytes of Sylvia                         | 144862 |  0.4  |
+078 | Sample Blaster                             | 143938 |  0.4  | 4
+079 | Comaland 100%                              | 139278 |  0.3  |
+080 | Fantasmolytic                              | 139263 |  0.3  |
+081 | P0 Snake [sales version 64k] +3PD          | 139055 |  0.3  |
+082 | P0 Snake [sales version 64k] +3PD          | 139000 |  0.3  |
+083 | Frodigi 5                                  | 135265 |  0.3  | 4
+084 | Strip-a-Minute                             | 135099 |  0.3  | 4
+085 | Comaland                                   | 133940 |  0.1  |
+086 | Oxy Rock                                   | 132062 |  0.1  |
+
+Production-specific Remarks
+---------------------------
+
+[030] 1337 Karate
+  Doesn't load beyond the game selection menu because it uses
+  unsupported custom drivecode.

@@ -82,6 +82,17 @@ typedef enum {
   FL_SPINDLE_22,
   FL_SPINDLE_23,
   FL_SPINDLE_3,
+  FL_BITFIRE_SLEEP,
+  FL_BITFIRE_01,
+  FL_BITFIRE_03,
+  FL_BITFIRE_04,
+  FL_BITFIRE_06,
+  FL_BITFIRE_07PRE, // 0.7 without barrier byte in header
+  FL_BITFIRE_07DBG, // 0.7 without barrier byte and compiled with BITFIRE_DEBUG
+  FL_BITFIRE_07,
+  FL_BITFIRE_10,
+  FL_BITFIRE_11,
+  FL_BITFIRE_12,
 } fastloaderid_t;
 
 typedef struct {
@@ -127,6 +138,7 @@ bool bus_sleep_krill(uint8_t);
 bool load_krill(uint8_t);
 bool load_booze(uint8_t);
 bool load_spindle(uint8_t);
+bool load_bitfire(uint8_t);
 
 int16_t dolphin_getc(void);
 uint8_t dolphin_putc(uint8_t data, uint8_t with_eoi);

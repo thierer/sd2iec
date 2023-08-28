@@ -776,22 +776,22 @@ Note: Using sd2iec without an external crystal or similiar precise
   loader were tested. Other productions might use configuration
   options which are not supported and therefore might not work.
 
-  BoozeLoader
-  -----------
+  Demo loaders: Bitfire, BoozeLoader, Spindle
+  -------------------------------------------
 
-  The loader uses sector addressing in combination with a non-standard
-  directory and therefore only works from the original D64 images, not
-  from the FAT filesytem.
+  All these loaders use sector addressing and non-standard directories
+  and therefore only work from the original D64 images, not from the
+  FAT filesytem.
 
-  Spindle
-  -------
+  Like Krill's Loader, Bitfire >= 1.0 and Spindle >= 3.0 include an
+  ATN responder which activates "Sleep Mode" in a sd2iec present on
+  the bus as a passive device.
 
-  The loader only works from the original D64 images, not from the FAT
-  filesytem.
-
-  Like Krill's Loader, Spindle >= 3.0 includes an ATN responder, which
-  activates "Sleep Mode" in a sd2iec present on the bus as a passive
-  device.
+  With a few exceptions, only productions released on CSDb which
+  credit the respective author for the loader were tested. Others
+  might not work. For a list of known productions using these loaders
+  and known issues, see the tables at the end of the respective
+  documents in the "doc" directory of this repository.
 
 JiffyDOS:
 =========

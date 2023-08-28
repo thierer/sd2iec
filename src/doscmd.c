@@ -78,6 +78,11 @@ enum {
   RXTX_KRILL_DATA,
   RXTX_KRILL_CLOCK,
   RXTX_KRILL_RESEND,
+
+  RXTX_BITFIRE_DATA,
+  RXTX_BITFIRE_IDATA,
+  RXTX_BITFIRE_CLOCK,
+  RXTX_BITFIRE_ICLK,
 };
 
 typedef uint8_t (*fastloader_rx_t)(void);
@@ -110,6 +115,12 @@ static const PROGMEM struct fastloader_rxtx_s fl_rxtx_table[] = {
   [RXTX_KRILL_DATA]    = { krill_get_byte_clk_data, krill_send_byte_atn    },
   [RXTX_KRILL_RESEND]  = { krill_get_byte_clk_data, krill_send_byte_resend },
   [RXTX_KRILL_CLOCK]   = { krill_get_byte_data_clk, krill_send_byte_atn    },
+#endif
+#ifdef CONFIG_LOADER_BITFIRE
+  [RXTX_BITFIRE_DATA]  = { bitfire_get_byte_clk_data,     NULL             },
+  [RXTX_BITFIRE_IDATA] = { bitfire_get_byte_clk_data_inv, NULL             },
+  [RXTX_BITFIRE_CLOCK] = { bitfire_get_byte_data_clk,     NULL             },
+  [RXTX_BITFIRE_ICLK]  = { bitfire_get_byte_data_clk_inv, NULL             },
 #endif
 };
 
@@ -249,10 +260,29 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
   { 0x40c3, FL_KRILL_SLEEP,      RXTX_NONE          }, // r184
   { 0x5088, FL_KRILL_SLEEP,      RXTX_NONE          }, // r164
   { 0x1fdc, FL_SPINDLE_SLEEP,    RXTX_NONE          },
+  { 0x955d, FL_BITFIRE_SLEEP,    RXTX_NONE          },
 #endif
 #ifdef CONFIG_LOADER_BOOZE
   { 0x0c48, FL_BOOZE,            RXTX_NONE          },
   { 0x5f66, FL_BOOZE,            RXTX_NONE          },
+#endif
+#ifdef CONFIG_LOADER_BITFIRE
+  { 0x7cd6, FL_BITFIRE_01,       RXTX_BITFIRE_CLOCK },
+  { 0xf1ec, FL_BITFIRE_01,       RXTX_BITFIRE_CLOCK },
+  { 0x2b10, FL_BITFIRE_03,       RXTX_BITFIRE_CLOCK },
+  { 0xb0f4, FL_BITFIRE_04,       RXTX_BITFIRE_CLOCK },
+  { 0xaf44, FL_BITFIRE_06,       RXTX_BITFIRE_ICLK  },
+  { 0x1f43, FL_BITFIRE_07PRE,    RXTX_BITFIRE_IDATA },
+  { 0xb2dd, FL_BITFIRE_07PRE,    RXTX_BITFIRE_IDATA },
+  { 0x809f, FL_BITFIRE_07DBG,    RXTX_BITFIRE_IDATA },
+  { 0x3046, FL_BITFIRE_07,       RXTX_BITFIRE_IDATA },
+  { 0xb8e6, FL_BITFIRE_07,       RXTX_BITFIRE_IDATA },
+  { 0xc83a, FL_BITFIRE_10,       RXTX_BITFIRE_ICLK  },
+  { 0x0453, FL_BITFIRE_11,       RXTX_BITFIRE_CLOCK },
+  { 0x7c59, FL_BITFIRE_11,       RXTX_BITFIRE_CLOCK },
+  { 0xa45a, FL_BITFIRE_11,       RXTX_BITFIRE_CLOCK },
+  { 0x1c3d, FL_BITFIRE_11,       RXTX_BITFIRE_CLOCK },
+  { 0x8d3a, FL_BITFIRE_12,       RXTX_BITFIRE_DATA  },
 #endif
 
   { 0, FL_NONE, 0 }, // end marker
@@ -337,6 +367,7 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
   { 0x0205, FL_KRILL_SLEEP,      bus_sleep_krill,  0 }, //  < r192 ATN responder
   { 0x020b, FL_NONE,             bus_sleep_krill,  1 }, // >= r192 ATN responder
   { 0x0403, FL_SPINDLE_SLEEP,    bus_sleep,        0 },
+  { 0x0205, FL_BITFIRE_SLEEP,    bus_sleep,        0 },
 #endif
 #if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_BUS_SILENCE_REQ)
   { 0x0205, FL_NONE,             drvchkme_krill,   1 }, //  < r192 drvchkme
@@ -389,6 +420,18 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
 #endif
 #ifdef CONFIG_LOADER_SPINDLE
   { 0x0205, FL_NONE,             load_spindle,   0 },
+#endif
+#ifdef CONFIG_LOADER_BITFIRE
+  { 0x0700, FL_BITFIRE_01,       load_bitfire,   0 },
+  { 0x0700, FL_BITFIRE_03,       load_bitfire,   1 },
+  { 0x0700, FL_BITFIRE_04,       load_bitfire,   2 },
+  { 0x0700, FL_BITFIRE_06,       load_bitfire,   3 },
+  { 0x0700, FL_BITFIRE_07PRE,    load_bitfire,   3 },
+  { 0x0700, FL_BITFIRE_07DBG,    load_bitfire,   4 },
+  { 0x0700, FL_BITFIRE_07,       load_bitfire,   5 },
+  { 0x0700, FL_BITFIRE_10,       load_bitfire,   6 },
+  { 0x0700, FL_BITFIRE_11,       load_bitfire,   6 },
+  { 0x0700, FL_BITFIRE_12,       load_bitfire,   6 },
 #endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker
