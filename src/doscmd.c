@@ -433,6 +433,9 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
   { 0x0700, FL_BITFIRE_11,       load_bitfire,   6 },
   { 0x0700, FL_BITFIRE_12,       load_bitfire,   6 },
 #endif
+#ifdef CONFIG_LOADER_SPARKLE
+  { 0x0205, FL_NONE,             load_sparkle,   0 },
+#endif
 
   { 0, FL_NONE, NULL, 0 }, // end marker
 };

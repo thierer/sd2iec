@@ -1,0 +1,425 @@
+Sparkle Loader Protocol
+=============================
+& sd2iec Implementation Notes
+
+Documented by Martin Thierer
+
+Sparkle is a loader written by Sparta [*], which is mostly used for
+demos. You can find a list of known productions using it at the end of
+this document.
+
+*) Sparta https://csdb.dk/scener/?id=29482
+
+Loader Revisions
+================
+
+Various revisions have been publicly released, but only revisions
+1.0 and >= 1.5 seem to be actually used by any production.
+
+1.0 is only used by OMG Got Balls! [047] and that doesn't even seem to
+really use the code released as 1.0, but some pre-release version.
+
+1.0     https://csdb.dk/release/?id=183006
+1.1     https://csdb.dk/release/?id=184245
+1.2     https://csdb.dk/release/?id=185310
+1.3     https://csdb.dk/release/?id=188991
+1.4     https://csdb.dk/release/?id=190660
+1.5     https://csdb.dk/release/?id=195711
+2.0     https://csdb.dk/release/?id=203868
+2.1     https://csdb.dk/release/?id=217506
+2.2     https://csdb.dk/release/?id=218961
+
+git     https://github.com/spartaomg/Sparkle.git
+        https://github.com/spartaomg/Sparkle2.git
+
+The 1.x revisions only load and transfer a number of predefined files
+(called "bundles") in fixed order. All 256 bytes of a sector are used
+for payload, no link bytes, like in the standard CBM format, are used.
+Instead, the transfer always starts with sector $01/$00 and the next
+sectors are calculated using a fixed algorithm (see "Sector Chains",
+below).
+
+Starting with 2.0, random access for up to 128 bundles is possible,
+using a custom directory which lists the start sector of each bundle.
+These revisions also support a basic save functionality (only one file
+and limited to one track including the save plugin code, which uses 2
+sectors).
+
+Byte-Transfer Protocols
+=======================
+
+1-Bit Receive Protocol
+----------------------
+
+Used to transfer the bundle number for random loads and the payload
+for the 2.x revision's highscore saver.
+
+CLK is used as the clock line and ATN is the data line.
+
+Bytes are sent MSB-first with the bit values inverted (data line low
+is bit == 1 and vice versa).
+
+The byte transfer starts at a positive CLK edge.
+
+2-Bit Send Protocol
+-------------------
+
+Used for the payload during bundle transfer. This protocol is
+identical for all loader revisions.
+
+ATN is used as the clock line and CLK & DATA are the data lines. The
+transfer starts on a negative clock edge and ends on a positive edge.
+
+  c0/d0  |  c1/d1  |  c2/d2  |  c3/d3
+---------|---------|---------|---------
+  b0/b1  |  b2/b3  |  b4/b5  |  b6/b7
+
+Installation
+============
+
+None of the loader versions transfer any code using M-W commands, but
+instead all drivecode is read directly from sectors on track 18 by
+some bootstrap code, which is sent as additional payload in a M-E
+command:
+
+    | 0x300 | 0x400 | 0x500 | 0x600 | 0x700
+----|-------|-------|-------|-------|-------
+1.x |  $02  |  $06  |  $0a  |  $0e  |  $12
+2.x |  $0b  |  $0c  |  $0d  |  $10* |  $0f
+
+*) sector data is encoded (see "Byte Encoding & Sector Layout",
+   below).
+
+Disk Layout
+===========
+
+The Loader doesn't use the CBM DOS directory or the standard sector
+format with the 2 first bytes linking to the next sector at all, but
+in general just sends a predefined list of sectors, starting at sector
+$01/$00.
+
+Bundle data is stored contiguous, so one sector might hold data for
+more than one bundle. The number of sectors in the next bundle is
+stored either at offset $01 (most loader revisions) or offset $ff
+(only 1.0) of this boundary sector (sector $00 for the first bundle).
+
+The 2.x revisions support random requests using up to 2 directory
+sectors ($11 & $12) on track 18, with 4 bytes per entry, for a
+maximum of 128 entries (as the sector walk algorithm doesn't care
+about files, there could be more files, but then only the 128 included
+in the directory could be randomly accessed). Each directory entry
+points to the boundary sector of the file (see "Random Access",
+below).
+
+Byte Encoding & Sector Layout
+-----------------------------
+
+The 2.x revisions prepare the data for transfer during GCR-decoding.
+Bits are shuffled/inverted and bytes are stored in reverse order (byte
+$00 at offset $00, byte $01 at offset $ff ... byte $ff at offset $01).
+
+These transformations are automatically undone during transfer to the
+host, but this also affects data read from the disk which isn't
+transferred, but only used in the drive itself, namely:
+
+ - the parameters in the BAM sector (see "Loader Parameters", below),
+ - the directory sectors (see "Random Access", below),
+ - sector $12/$11, which contains part of the drivecode,
+ - the drivecode for the highscore saver, if present.
+
+That's why this data is stored on the disk pre-encoded, so it will be
+automatically decoded during GCR-processing.
+
+As the sd2iec firmware reads the plain, encoded data from the disk
+images, the parameter values and the directory sectors have to be
+decoded before use.
+
+The byte encoding and sector layout differs between loader revisions
+(MSB left):
+
+    | encoding | eor | sector layout
+----|----------|-----|---------------
+1.x | 76543210 | $00 | plain
+2.0 | 46570213 | $ff | reversed
+2.1 | 76540213 | $7f | reversed
+
+As a special case, the 2.1 pre-release revision used by Padawan's
+Awakening [038] uses the 2.1 byte encoding, but an eor value of $ff.
+
+Sector Chains
+-------------
+
+Data is read starting at sector $01/$00, then the next sectors in the
+chain are calculated using the following recipe:
+
+  if unused_sectors_on_current_track > 0:
+    next_sector = current_sector + interleave_for_current_track
+
+    if next_sector >= number_of_sectors_on_current_track: // overflow
+      next_sector = next_sector - number_of_sectors_on_current_track
+
+      if track < 18 and next_sector > 0:
+        next_sector = next_sector - 1
+
+    while next_sector was already used:
+      next_sector = next_sector + 1
+      // potential overflow handled as above
+
+  else: // no more unused sectors; advance track
+    track = track + 1
+    if track == 18:
+      track = track + 1             // skip directory track
+      next_sector = next_sector + 2 // and add extra interleave
+
+    // special config options only used in very few loader revisions
+    if sector_0_on_track_change:
+      next_sector = 0
+    else if sector_skew:
+      next_sector = next_sector - skew_offset
+      if track == 19:
+        next_sector = next_sector - 8
+      if next_sector < 0:
+        next_sector = next_sector + number_of_sectors_on_current_track
+
+- Sector skew is only used in Median [032]/[035] (both with an offset
+  value of 2).
+- The sector is set to 0 after every track change only in Padawan's
+  Awakening [038].
+
+Loader Parameters
+-----------------
+
+Various loader parameters are stored at the end of the BAM sector
+$12/$00 at offsets >= $f1. The exact position and which parameters
+are actually present depend on the loader revision:
+
+       f0 f1 f2 f3 f4 f5 f6 f7 f8 f9 fa fb fc fd fe ff
+  1.x                          I0    I1 I2    NX BC ID
+  2.0     P2 P1 P0 SV             I0    I1 I2 I3 NX ID
+  2.1                    P2 P1 P0 SV I0 NX I1 I2 I3 ID
+
+  ID  current disk id
+  NX  next disk id
+  BC  number of bundles on this disk (only 1.x)
+  SV  flag for highscore saver; if == 2 saver present on this disk
+  Ix  interleave for the 4 speedzones (I0 1-17 ... I3 >= 31)
+  Px  production id bytes 0-2
+
+The interleave is stored as the negative (2s-complement) value. Only
+revisions >= 1.3 actually have configurable interleave values, earlier
+versions use a fixed interleave of [4 3 3 3].
+
+Note that the parameter values of the 2.x revisions are stored on disk
+pre-encoded (see "Byte Encoding & Sector Layout", above).
+
+Random Access
+-------------
+
+Only the 2.x revisions have a directory and therefore can randomly
+access bundles. The 1.x versions all just load in a fixed sequence
+starting from sector $01/$00 until all bundles (as indicated by the
+"bundle count" parameter; see "Loader Parameters", above) have been
+sent.
+
+The directory is located in sector $11 and $12 on track 18. Each entry
+is 4 bytes, for a maximum of 128 entries:
+
+  $00 Track
+  $01 Sector          first used sector on track
+  $02 Sector Counter  remaining sectors on track
+  $03 Buffer Pointer  sent to the host for random access bundles
+
+Note that the entry's "sector" value isn't necessarily the first
+sector of the bundle! If the "sector counter" is less than the number
+of sectors on the track, the difference is the number of sectors on
+the track which have already been used, so the real first sector of
+the bundle has to be calculated by iterating that number of sectors
+starting from the sector in the directory entry.
+
+For example, on the first disk of E2IRA [025] the directory entry for
+the second bundle is [$04 $01 $0e $3a]. So the bundle starts on track
+$04, the first sector used on that track after the track change from
+track $03 was $01 and as track $04 has $15 sectors, $15-$0e = $07
+sectors were already used (exclusively) for data of the first bundle
+(the first sector of the new bundle usually also includes the last
+bytes of the previous bundle).
+
+E2IRA uses an interleave of 4 sectors for tracks 1-17, so performing
+the sector iteration as outlined above for 7 sectors, we find that
+sectors $01, $01+$04= $05, $05+$04= $09, $09+$04= $0d, $0d+$04= $11,
+$11+$04= $15-$15 (overflow) = $00, $00+$04= $04 were already used and
+so the first sector with data of the second bundle is $04+$04= $08.
+
+Request Handling
+================
+
+1.0
+---
+
+The Host sets ATN when it's ready to receive, the drive sets CLK and
+ATNA (releasing DATA) when it's ready to send. Data is transferred
+using the 2-bit send protocol, starting at the positive ATN (clock)
+edge.
+
+Other 1.x
+---------
+
+ATN is always set between transfers. The host releases CLK when it's
+ready to receive, the drive sets DATA while busy and sets CLK when
+ready to send.
+
+2.x
+---
+
+ATN is always set between transfers. While busy, the host also sets
+CLK and DATA, while the drive has ATNA set and both CLK and DATA
+released.
+
+When the host is ready to make the next request, it keeps ATN set and
+either
+
+- releases both CLK and DATA for a sequential load (DATA is released
+  because the drive has ATNA set) or
+- only releases DATA and keeps CLK set for a random access request.
+
+In case of a random request, the host sends one byte using the 1-bit
+receive protocol. A value <= $7f indicates a request for the
+respective bundle, $ff a drive reset and any other value a disk change
+(see below) to the disk with the id matching the "next id" parameter
+of the current disk (see "Loader Parameters", above).
+
+Bundles $7e and $7f are special if the disk has the "saver" parameter
+flag set: $7f is the save file itself, which is just addressed as a
+regular bundle, so it doesn't need special handling. $7e is the bundle
+with the saver code, which will trigger the save mode on the drive
+after its first block has been transferred (see "Highscore Saver",
+below).
+
+Note that some 2.0 pre-release loader revisions (know productions
+using them are Memento Mori [045] and all known reMETA releases) send
+the bundle/command byte inverted.
+
+File Transfer
+-------------
+
+When the drive is ready to send, it sets CLK and clears ATNA (which
+will set DATA, as ATN is still set). The transfer then uses the 2-bit
+send protocol starting at the next positive ATN edge, like all other
+revisions.
+
+2.x loader revisions modify the data of each bundle's first block
+before it is transferred:
+
+- The byte at offset $01 (bundle length) is set to $00.
+- For randomly accessed bundles only, the byte at offset $00 is set to
+  0 and the byte at offset $ff is set to the "buffer pointer" value of
+  the requested bundle's directory entry (see "Random Access", above).
+
+Disk Change
+-----------
+
+When the 1.x revisions transferred all bundles as indicated by the
+"bundle count" parameter value (see "Loader Parameters", above) it
+initiates a disk change waiting for the "next id" if it is not zero.
+
+In the 2.x revisions there are two ways to initiate the disk change
+handling:
+
+- Bundle length of the current bundle is 0. This either triggers a
+  disk change to the disk with the "next id" or a drive reset, if bit
+  7 of "next id" is set (equivalent to "next id" zero for 1.x).
+- A request for a bundle with bit 7 set triggers a disk change to disk
+  id calculated by clearing bit 7 of the received bundle number
+  (exception is bundle number $ff, which also triggers a drive reset).
+
+Highscore Saver
+---------------
+
+If the "saver" parameter flag (see "Loader Parameter", above) of the
+current disk indicates that the highscore saver is present, the bundle
+numbers $7e and $7f refer to the saver code and save file data
+bundles, respectively.
+
+The highscore saver can only handle one file and it has to fit on the
+last used track together with the saver code bundle, which consists
+of two blocks: The first block is the host code, the second block is
+the drive code.
+
+The data file can be accessed like any other bundle. A request for
+the code bundle is special, only the host code from first block is
+sent to the host, the drive code is only read into the sector buffer
+and the saver mode then activated by executing the code from there.
+
+This mode uses a similar request loop like for bundle requests, except
+that the byte sent is just a flag which indicates if a data block
+follows (!= 0) or a zero as the end marker, after all data was
+transferred.
+
+The payload for each block is transferred using the 1-bit receive
+protocol and written to the sectors found using the standard iteration
+algorithm (see "Sector Chains", above).
+
+Known Productions using this Loader (as of August 2023)
+=======================================================
+
+Note: The table below is compiled from releases on CSDb crediting
+      Sparta for the loader. It might not be complete and productions
+      not listed have not been tested and therefore might not work
+      with the sd2iec implementation.
+
+Reference:
+  pr  = 2.0 pre-release still using the non-reversed sector layout
+  Enc = Byte-encoding (see "Byte Encoding & Sector Layout", above)
+  S   = Uses highscore saver
+  4   = 40 Track diskimage
+
+Ref | Title                              |  CSDb  |  Rev  |  Enc  | N
+----|------------------------------------|--------|-------|-------|---
+000 | reMETA #16                         | 233824 | 2.0pr |  2.0  |
+001 | Bright Side Dark Side              | 233786 |  2.1  |  2.1  |
+002 | reMETA #15                         | 233198 | 2.0pr |  2.0  |
+003 | Event Zero Trailer                 | 232983 |  2.1  |  2.1  |
+004 | No Bounds                          | 232957 |  2.1  |  2.1  |
+005 | reMETA #14                         | 231492 | 2.0pr |  2.0  |
+006 | Rest In Peace HIC                  | 229857 |  2.1  |  2.1  |
+007 | Propaganda #33                     | 228879 |  2.1  |  2.1  | S
+008 | Sweet Sixteen                      | 228540 |  1.5  |       |
+009 | Do Pretzels Dream?                 | 226669 |  2.0  |  2.0  |
+010 | Purple                             | 226025 |  2.1  |  2.1  |
+011 | Sabre Wulf Remastered Preview (... | 225069 |  2.0  |  2.1  | 4
+012 | FatZooMania                        | 225045 |  1.5  |       |
+013 | All Hallows' Eve                   | 225023 |  2.1  |  2.1  |
+014 | reMETA #13                         | 222246 | 2.0pr |  2.0  |
+015 | F20                                | 221934 |  2.1  |  2.1  |
+016 | Best on CRT                        | 221932 |  2.1  |  2.1  |
+017 | 30+                                | 221141 |  2.1  |  2.1  |
+018 | Propaganda #32                     | 220069 |  2.1  |  2.1  | S4
+019 | reMETA #12                         | 219454 | 2.0pr |  2.0  |
+020 | Starfleet Academy                  | 219301 |  2.1  |  2.1  |
+021 | Sidelined 2                        | 219299 |  2.1  |  2.1  |
+022 | XXX+I                              | 219297 |  2.1  |  2.1  |
+023 | reMETA #11                         | 218433 | 2.0pr |  2.0  |
+024 | I Adore My 64=                     | 218362 |  2.1  |  2.1  |
+025 | E2IRA                              | 218343 |  2.1  |  2.1  |
+026 | Munchkin 64                        | 217475 |  2.1  |  2.1  | S
+027 | Propaganda #31                     | 216359 |  2.1  |  2.1  | S
+028 | Partypopper                        | 216277 |  1.5  |       |
+029 | The C64 Grand Tour Challenge Mu... | 215035 |  2.1  |  2.1  |
+030 | Sprite Spirit                      | 214861 |  2.1  |  2.1  |
+031 | The C64 Grand Tour Challenge Mu... | 213591 |  2.1  |  2.1  |
+032 | Median (Final)                     | 212308 |  2.0  |  2.1  |
+033 | Propaganda #30                     | 211249 |  2.0  |  2.1  | S4
+034 | reMETA #10                         | 209216 | 2.0pr |  2.0  |
+035 | Median                             | 208412 |  2.0  |  2.1  |
+036 | XXX                                | 207188 |  2.0  |  2.0  |
+037 | reMETA #9                          | 205624 | 2.0pr |  2.0  |
+038 | Padawans' Awakening                | 205525 |  2.0  | 2.1ff |
+039 | Balls Might Touch                  | 203383 |  1.5  |       |
+040 | Fjortis!                           | 202474 |  1.5  |       |
+041 | We Love to Party                   | 202472 |  2.0  |  2.0  |
+042 | Christmas Megademo                 | 198283 |  2.0  |  2.0  |
+043 | reMETA #8                          | 196409 | 2.0pr |  2.0  |
+044 | Gamertro                           | 195843 |  1.5  |       |
+045 | Memento Mori                       | 195841 | 2.0pr |  2.0  |
+046 | 5 Shades of Grey                   | 192912 |  1.5  |       |
+047 | OMG Got Balls!                     | 175653 |  1.0  |       |

@@ -135,6 +135,9 @@ CONFIG_LOADER_SPINDLE=n
 # Enable Bitfire loader
 CONFIG_LOADER_BITFIRE=n
 
+# Enable Sparkle loader
+CONFIG_LOADER_SPARKLE=n
+
 # Enable DolphinDOS parallel speeder
 CONFIG_PARALLEL_DOLPHIN=y
 

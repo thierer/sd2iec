@@ -90,7 +90,7 @@ bool bus_sleep(UNUSED_PARAMETER) {
 }
 #endif
 
-#if defined(CONFIG_BUS_SILENCE_REQ) || defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_BOOZE) || defined(CONFIG_LOADER_SPINDLE)
+#if defined(CONFIG_BUS_SILENCE_REQ) || defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_BOOZE) || defined(CONFIG_LOADER_SPINDLE) || defined(CONFIG_LOADER_SPARKLE)
 /* Calculate crc16 of command_buffer between the specified offsets */
 uint16_t command_crc(const uint8_t start_offset, const uint8_t end_offset) {
   uint8_t  i;
@@ -105,7 +105,7 @@ uint16_t command_crc(const uint8_t start_offset, const uint8_t end_offset) {
 }
 #endif
 
-#if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_BOOZE) || defined(CONFIG_LOADER_SPINDLE) || defined(CONFIG_LOADER_BITFIRE)
+#if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_BOOZE) || defined(CONFIG_LOADER_SPINDLE) || defined(CONFIG_LOADER_BITFIRE) || defined(CONFIG_LOADER_SPARKLE)
 /**
  * Wait for ATN low with a variable (but not very precise) timeout.
  *
@@ -180,7 +180,7 @@ uint8_t clocked_write_byte(uint8_t b, const uint8_t *enc, uint16_t to) {
 }
 #endif
 
-#if defined(CONFIG_LOADER_KRILL)
+#if defined(CONFIG_LOADER_KRILL) || defined(CONFIG_LOADER_SPARKLE)
 /**
  * Read a byte from the "data" line, clocked by the "clk" line.
  * Data is read on both clock edges, LSB first and with bit values
