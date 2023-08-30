@@ -763,18 +763,19 @@ Note: Using sd2iec without an external crystal or similiar precise
   As the ATN line is used as a clock line for transfers, no other
   drives might be active on the bus. Starting with revision r164,
   the loader tries to silence other devices by installing an "ATN
-  responder". In the sd2iec implementation this activates "Sleep
-  Mode" (see below), which has to be ended manually by holding the
-  disk change button.
+  responder". If the sd2iec is used as a passive device on the bus,
+  this activates "Sleep Mode" (see below), which has to be ended
+  manually by holding the disk change button.
 
-  On a C128 host the loader uses the burst protocol if connected to
-  a 1571 or 1581. This is not yet supported by this implementation.
+  On a C128 host the loader uses the fast serial protocol if connected
+  to a 1571 or 1581. This is not yet supported by this implementation.
   (The only known C128 release using this loader is "Colour Spectrum",
   CSDb Release ID 205653).
 
-  Only productions released on CSDb which credit Krill for their
-  loader were tested. Other productions might use configuration
-  options which are not supported and therefore might not work.
+  With a few exceptions, only productions released on CSDb which
+  credit Krill for their loader were tested. Other productions might
+  use configuration options which are not supported and therefore
+  might not work.
 
   Demo loaders: Bitfire, BoozeLoader, Sparkle, Spindle
   ----------------------------------------------------
