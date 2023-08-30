@@ -108,11 +108,16 @@ static const PROGMEM ld_variant_t ld_variants[] = {
 
 /* hacks to make specific releases work */
 static const PROGMEM file_quirks_t file_quirks[] = {
-  { 0x1ba6,  20 }, /* coma light 13   / "SAMPLE"   */
-  { 0xe5ac,  80 }, /* coma light 13   / "PICDAT"   */
-  { 0xfe43,  80 }, /* protogeo 100%   / 13th file  */
-  { 0x7f19, 120 }, /* pearls for pigs / "03"       */
-  { 0x8e1e,  20 }, /* cause of death  / "PLOTBALL" */
+  { 0x1ba6,  20 }, /* coma light 13   / "SAMPLE"               */
+  { 0xe5ac,  80 }, /* coma light 13   / "PICDAT"               */
+  { 0xfe43,  80 }, /* protogeo 100%   / 13th file              */
+  { 0x7f19, 120 }, /* pearls for pigs / "03"                   */
+  { 0x8e1e,  20 }, /* cause of death  / "PLOTBALL"             */
+  { 0xe3cb,  80 }, /* the wild bunch  / "02"                   */
+  { 0xcea3, 100 }, /* out of contex   / "FREE NAME KEK3"       */
+  { 0x449f, 160 }, /* flashbang       / "0002"                 */
+  { 0x279d,  20 }, /* vicious sid 2   / "LOADER" for "CREDITS" */
+  { 0x3493,  20 }, /* vicious sid 2   / "LOADER" for "GREETS1" */
 
   { 0, 0 } // end marker
 };
