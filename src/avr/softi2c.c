@@ -26,10 +26,13 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include "config.h"
+#include "uart.h"
 #include "i2c.h"
 
 #define SOFTI2C_SDA _BV(SOFTI2C_BIT_SDA)
 #define SOFTI2C_SCL _BV(SOFTI2C_BIT_SCL)
+
+static uint8_t i2c_ready = 0;
 
 static void set_scl(uint8_t x) {
   if (x) {
@@ -124,8 +127,11 @@ static uint8_t i2c_recv_byte(uint8_t sendack) {
   return value;
 }
 
-/* Returns 1 if there was no ACK to the address */
+/* Returns 1 if there was no ACK to the address or i2c isn't available */
 uint8_t i2c_write_register(uint8_t address, uint8_t reg, uint8_t val) {
+  if (!i2c_ready)
+    return 1;
+
   start_condition();
   if (i2c_send_byte(address)) {
     stop_condition();
@@ -137,9 +143,12 @@ uint8_t i2c_write_register(uint8_t address, uint8_t reg, uint8_t val) {
   return 0;
 }
 
-/* Returns 1 if there was no ACK to the address */
+/* Returns 1 if there was no ACK to the address or i2c isn't available */
 uint8_t i2c_write_registers(uint8_t address, uint8_t startreg, uint8_t count, const void *data) {
   uint8_t i;
+
+  if (!i2c_ready)
+    return 1;
 
   start_condition();
   if (i2c_send_byte(address)) {
@@ -153,9 +162,13 @@ uint8_t i2c_write_registers(uint8_t address, uint8_t startreg, uint8_t count, co
   return 0;
 }
 
-/* Returns -1 if there was no ACK to the address, register contents otherwise */
+/* Returns -1 if there was no ACK to the address or */
+/* i2c isn't available, register contents otherwise */
 int16_t i2c_read_register(uint8_t address, uint8_t reg) {
   uint8_t val;
+
+  if (!i2c_ready)
+    return -1;
 
   start_condition();
   if (i2c_send_byte(address)) {
@@ -173,9 +186,12 @@ int16_t i2c_read_register(uint8_t address, uint8_t reg) {
   return val;
 }
 
-/* Returns 1 if there was no ACK to the address */
+/* Returns 1 if there was no ACK to the address or i2c isn't available */
 uint8_t i2c_read_registers(uint8_t address, uint8_t startreg, uint8_t count, void *data) {
   uint8_t i;
+
+  if (!i2c_ready)
+    return 1;
 
   start_condition();
   if (i2c_send_byte(address)) {
@@ -200,6 +216,16 @@ void i2c_init(void) {
   SOFTI2C_DDR  &= (uint8_t)~(SOFTI2C_SCL|SOFTI2C_SDA);
   SOFTI2C_PORT &= (uint8_t)~(SOFTI2C_SCL|SOFTI2C_SDA);
 
+  _delay_us(5);
+  /* if either SDA or SCL are not high now, something is wrong */
+  if ((SOFTI2C_PIN & (SOFTI2C_SDA|SOFTI2C_SCL)) != (SOFTI2C_SDA|SOFTI2C_SCL)) {
+    uart_puts_P(PSTR("i2c disabled\r\n"));
+    i2c_ready = 0;
+    return;
+  }
+
   set_sda(1);
   set_scl(1);
+
+  i2c_ready = 1;
 }
