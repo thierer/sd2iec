@@ -647,13 +647,14 @@ bool load_sparkle(UNUSED_PARAMETER) {
         delay_us(2);
 
         if (!IEC_CLOCK) {
-          /* host didn't release CLK -> random load */
-          set_clock(1);
-          set_data(0);
+          ATOMIC_BLOCK( ATOMIC_FORCEON ) {
+            /* host didn't release CLK -> random load */
+            set_data(0);
 
-          bundle = clocked_read_byte(IEC_BIT_CLOCK, IEC_BIT_ATN, 90);
-          if (has_timed_out())
-            goto exit;
+            bundle = clocked_read_byte(IEC_BIT_CLOCK, IEC_BIT_ATN, 90);
+            if (has_timed_out())
+              goto exit;
+          }
 
           set_data(1);
 
