@@ -134,37 +134,55 @@ static uint8_t get_block_delay(uint16_t crc) {
   return fq != NULL ? pgm_read_byte(&fq->block_delay) : 0;
 }
 
-/* Can't use clocked_read_byte(), as we need to be able to   */
-/* read the first bit immediately, without waiting for a     */
-/* clock edge. Also it's convenient to handle bus lock here. */
+/* Can't use clocked_read_byte(), as we need to be able to    */
+/* read the first bit immediately after the request line has  */
+/* been set (which except for 0.1 is really just the first    */
+/* clock edge). Also it's convenient to handle bus lock here. */
 static uint8_t get_byte_1bit(iec_bus_t clk, iec_bus_t data) {
-  uint8_t tc, i, b = 0;
+  uint8_t tc, i, b;
+
+  /* wait for host request while checking for abort and diskchange */
+  while ((iec_bus_read() & (clk|IEC_BIT_ATN)) == (clk|IEC_BIT_ATN)) {
+    if (check_keys())
+      return RESET_CMD; // will cause the main loop to exit
+  }
 
 bus_locked:
   while (!IEC_ATN);
 
-  for (i = 8; i != 0; i--) {
-    tc = 9;
-timeout_loop:
-    start_timeout(10000);
+  ATOMIC_BLOCK( ATOMIC_FORCEON ) {
+    i = 8;
+    b = 0;
 
-    /* wait for respective clock edge */
-    while (((iec_bus_read() & clk) != 0) != (i&1)) {
-      if (!IEC_ATN)
-        goto bus_locked;
+    while (true) {
+      tc = 9;
+  timeout_loop:
+      start_timeout(10000);
 
-      if (has_timed_out()) {
-        /* Abort if the clock line hasn't changed for 90ms (9 * 10ms) */
-        if (--tc == 0)
-          return 0;
+      /* wait for expected clock state */
+      while (!!((iec_bus_read() & clk)) != (i&1)) {
+        if (!IEC_ATN)
+          goto bus_locked;
 
-        goto timeout_loop;
+        if (has_timed_out()) {
+          /* Abort if the clock line hasn't changed for 90ms (9 * 10ms) */
+          if (--tc == 0)
+            return 0;
+
+          goto timeout_loop;
+        }
       }
+
+      delay_us(1);
+
+      if (iec_bus_read() & data)
+        b |= 0x80;
+
+      if (--i == 0)
+        break;
+
+      b = b >> 1;
     }
-
-    delay_us(2);
-
-    b = b >> 1 | (iec_bus_read() & data ? 0x80 : 0);
   }
 
   /* try to prevent invalid timeouts, see comment in clocked_read_byte() */
@@ -522,7 +540,6 @@ static uint8_t turn_disk(session_t *s, uint8_t disk_id) {
 
 bool load_bitfire(uint8_t proto) {
   session_t session;
-  iec_bus_t req_line;
   uint8_t   cmd;
 
   memset(&session, 0, sizeof(session));
@@ -544,30 +561,10 @@ bool load_bitfire(uint8_t proto) {
   /* wait for >= 0.7 to release ATN */
   while (!IEC_ATN);
 
-  if (detected_loader != FL_BITFIRE_01) {
-    if (fast_get_byte == bitfire_get_byte_data_clk ||
-        fast_get_byte == bitfire_get_byte_data_clk_inv) {
-      /* 0.2 to 0.6, 1.0, 1.1 */
-      req_line = IEC_BIT_DATA;
-    } else {
-      /* 0.7 including pre-releases and 1.2 */
-      req_line = IEC_BIT_CLOCK;
-    }
-  } else {
-    /* 0.1 */
-    req_line = IEC_BIT_ATN;
-  }
-
   while (true) {
     set_clock(1);
     set_data(1);
     delay_us(2);
-
-    /* wait for host request while checking for abort and diskchange */
-    while (iec_bus_read() & req_line) {
-      if (check_keys()) /* exit loop on long key press */
-        goto exit;
-    }
 
     cmd = fast_get_byte();
     if (has_timed_out())
