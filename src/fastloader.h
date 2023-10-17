@@ -113,6 +113,7 @@ extern uint8_t (*fast_get_byte)(void);
 uint8_t check_keys(void);
 bool bus_sleep(uint8_t);
 
+# ifdef CONFIG_HAVE_IEC
 /* per-loader functions, located in separate fl-*.c files */
 bool load_turbodisk(uint8_t);
 bool load_fc3(uint8_t freezed);
@@ -159,6 +160,7 @@ uint8_t clocked_write_byte(uint8_t b, const uint8_t *enc, uint16_t to);
 uint16_t command_crc(const uint8_t start_offset, const uint8_t end_offset);
 uint8_t wait_atn_low(uint16_t timeout);
 const file_quirks_t *get_file_quirks(const file_quirks_t *, uint16_t);
+# endif // CONFIG_HAVE_IEC
 
 # ifdef PARALLEL_ENABLED
 extern volatile uint8_t parallel_rxflag;

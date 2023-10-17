@@ -80,9 +80,9 @@
 /*  Global variables                                                         */
 /* ------------------------------------------------------------------------- */
 
-uint8_t detected_loader = FL_NONE;      /* Workaround serial fastloader */
-uint8_t device_address;                 /* Current device address */
-static tick_t timeout;                  /* timeout on getticks()=timeout */
+fastloaderid_t detected_loader = FL_NONE; /* Workaround serial fastloader */
+uint8_t device_address;                   /* Current device address */
+static tick_t timeout;                    /* timeout on getticks()=timeout */
 
 /**
  * struct ieeeflags_t - Bitfield of various flags, mostly IEEE-related

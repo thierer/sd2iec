@@ -94,6 +94,7 @@ struct fastloader_rxtx_s {
   fastloader_tx_t txfunc;
 };
 
+#ifdef CONFIG_HAVE_IEC
 static const PROGMEM struct fastloader_rxtx_s fl_rxtx_table[] = {
 #ifdef CONFIG_LOADER_GEOS
   [RXTX_GEOS_1MHZ]     = { geos_get_byte_1mhz,     geos_send_byte_1mhz     },
@@ -123,6 +124,7 @@ static const PROGMEM struct fastloader_rxtx_s fl_rxtx_table[] = {
   [RXTX_BITFIRE_ICLK]  = { bitfire_get_byte_data_clk_inv, NULL             },
 #endif
 };
+#endif // CONFIG_HAVE_IEC
 
 struct fastloader_crc_s {
   uint16_t crc;
