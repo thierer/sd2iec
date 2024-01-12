@@ -295,24 +295,39 @@ static void iterate_sector(session_t *s) {
   }
 }
 
+/* Looks up the entry specified by the index into the current dir sector  */
+/* and populates either the v0 or the v1 part of dir_entry_t, depending   */
+/* on the loader revision. First t/s and the byte offset for v1 revisions */
+/* are then found by a separate call to iterate_file(), if necessary.     */
+static void get_dir_entry(uint8_t *dir_buf, uint8_t i, dir_entry_t *e) {
+  switch (detected_loader) {
+    case FL_BITFIRE_12PR2:
+      e->v1.addr   = dir_buf[0x04+0*0x3f+i] | dir_buf[0x04+1*0x3f+i] << 8;
+      e->v1.length = dir_buf[0x04+2*0x3f+i] | dir_buf[0x04+3*0x3f+i] << 8;
+      break;
+    case FL_BITFIRE_12PR1:
+      i++; // first entry starts at byte offset 4
+      /* falls through */
+    case FL_BITFIRE_10:
+    case FL_BITFIRE_11:
+      memcpy(&e->v1, dir_buf + i*sizeof(e->v1), sizeof(e->v1));
+      break;
+    default: // 0.x
+      memcpy(&e->v0, dir_buf + i*sizeof(e->v0), sizeof(e->v0));
+  }
+}
+
 /* 1.x directory sectors only hold the start-position (track, logical   */
 /* sector and byte-offset into this sector) of the sector's first file. */
 /* Every time a random file is requested, its start position has to be  */
 /* calculated by iterating over the lengths of the preceding entries.   */
 static void iterate_file(session_t *s, uint8_t file) {
-  dir_entry_v1_t *e;
   uint8_t  i;
   uint16_t l;
 
   /* init values start at offset 0x00 (1.2) or 0xfc (1.0/1.1) */
   /* dir entries start at offset 0x04 (1.2) or 0x00 (1.0/1.1) */
-  e = (dir_entry_v1_t *)s->dir_buf->data;
-  if (detected_loader >= FL_BITFIRE_12) {
-    i = 0x00;
-    e++;
-  } else {
-    i = 0xfc;
-  }
+  i = detected_loader >= FL_BITFIRE_12PR1 ? 0x00 : 0xfc;
 
   s->track  = s->dir_buf->data[i];
   s->offset = s->dir_buf->data[i+2];
@@ -326,17 +341,29 @@ static void iterate_file(session_t *s, uint8_t file) {
 
   /* ... and further iterate to the *requested* file's */
   /* start sector and byte-offset from there.          */
-  for (i = 0; i < file; i++, e++) {
-    for (l = e->length + s->offset + 1; l >= 256; l -= 256)
+  for (i = 0; i < file; i++) {
+    switch (detected_loader) {
+      case FL_BITFIRE_12PR2:
+        l = s->dir_buf->data[0x04+2*0x3f+i] | s->dir_buf->data[0x04+3*0x3f+i] << 8;
+        break;
+      case FL_BITFIRE_12PR1:
+        l = ((dir_entry_v1_t *)&s->dir_buf->data[0x04+i*sizeof(dir_entry_v1_t)])->length;
+        break;
+      default: // 1.0 / 1.1
+        l = ((dir_entry_v1_t *)&s->dir_buf->data[0x00+i*sizeof(dir_entry_v1_t)])->length;
+        break;
+    }
+
+    for (l += s->offset + 1; l >= 256; l -= 256)
       iterate_sector(s);
 
-    s->offset = l;
+    s->offset = (uint8_t)l;
   }
 }
 
 static uint8_t load_file(session_t *s, uint8_t file) {
   buffer_t    *buf;
-  dir_entry_t *dir_entry;
+  dir_entry_t dir_entry;
   uint8_t     bi, i, hlen, bdel;
   uint16_t    addr, blen, flen;
   hdr_field_t hf;
@@ -358,29 +385,23 @@ static uint8_t load_file(session_t *s, uint8_t file) {
   if (i == 0xff)
     return 1;
 
-  if (detected_loader >= FL_BITFIRE_10) {
-    dir_entry = (dir_entry_t *)(s->dir_buf->data + i*sizeof(dir_entry->v1));
+  get_dir_entry(s->dir_buf->data, i, &dir_entry);
 
-    if (detected_loader == FL_BITFIRE_12) {
-      addr = 0x100; // load adress needs an 0x100 offset
-      /* adjust dir entry pointer; the first dir entry starts at offset 4 */
-      dir_entry = (dir_entry_t *)((uint8_t *)dir_entry + 4);
-    } else {
-      addr = 0;
-    }
-    addr += dir_entry->v1.addr;
-    flen  = dir_entry->v1.length + 1;
+  if (detected_loader >= FL_BITFIRE_10) {
+    addr = dir_entry.v1.addr;
+    if (detected_loader >= FL_BITFIRE_12PR1)
+      addr += 0x100; // load adress needs an 0x100 offset
+    flen = dir_entry.v1.length + 1;
 
     /* calculate track/sector/offset if either the first or a random file */
     if (file != s->next_file || s->next_file == 0)
       iterate_file(s, i);
   } else { /* pre 1.0 dir layout */
-    dir_entry = (dir_entry_t *)(s->dir_buf->data + i*sizeof(dir_entry->v0));
-    s->track  = dir_entry->v0.track;
-    s->sector = dir_entry->v0.sector;
+    s->track  = dir_entry.v0.track;
+    s->sector = dir_entry.v0.sector;
     s->offset = 0;
-    addr      = dir_entry->v0.addr;
-    flen      = dir_entry->v0.length + 1;
+    addr      = dir_entry.v0.addr;
+    flen      = dir_entry.v0.length + 1;
   }
 
   buf = alloc_buffer();
@@ -514,7 +535,7 @@ static uint8_t turn_disk(session_t *s, uint8_t disk_id) {
   uint8_t offs;
 
   /* disk id is located at offset 0x03 oder 0xff, depending on the revision */
-  offs = detected_loader >= FL_BITFIRE_12 ? 0x03 : 0xff;
+  offs = detected_loader >= FL_BITFIRE_12PR1 ? 0x03 : 0xff;
 
   while (true) {
     /* load_dir() resets dir_changed */

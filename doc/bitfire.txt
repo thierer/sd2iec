@@ -29,12 +29,13 @@ versions of 0.7 with significant differences to both 0.6 and 0.7.
 
 git     https://github.com/bboxy/bitfire.git (only >= 0.6)
 
-Note: Parts of this document refer to a version "1.2". Right now, no
-      such version exists, neither as an official release or tagged in
-      git. It's the loader used by Next Level [007] and Deep Space 64
-      [002]/[005], which contains changes incompatible with 1.1. They
-      might or might not represent what goes into a future, official
-      release, whatever its version will be called.
+Note: Parts of this document mention pre-releases of a version "1.2".
+      Right now, no such version exists, neither as an official
+      release or tagged in git. They refer to the loaders used by Next
+      Level [017], Deep Space 64 [012]/[015] and Ooops [000], which
+      contain changes incompatible with 1.1 (and to some extend each
+      other). They might or might not represent what goes into a
+      future, official release, whatever its version will be called.
 
 Byte-Transfer Protocols
 =======================
@@ -142,9 +143,13 @@ in 1.x revisions (42*3 == 63*2 == 126).
   0.x     | [ TR ST AL AH LL LH ] * 42 |              ID |
   1.0/1.1 | [       AL AH LL LH ] * 63 |  FT  FS  FO  ID |
 
-          | $00 $01 $02 $03 |   $04.. $ff file entries   |
+          | $00 $01 $02 $03 |   $04 .. $ff file entries  |
   --------|-----------------|----------------------------|
-  1.2     |  FT  FS  FO  ID | [       AL AH LL LH ] * 63 |
+  1.2pre1 |  FT  FS  FO  ID | [       AL AH LL LH ] * 63 |
+
+          | $00 $01 $02 $03 |   $04 .. $ff file entries  |
+  --------|-----------------|----------------------------|
+  1.2pre2 |  FT  FS  FO  ID |   AL*63 AH*63 LL*63 LH*63  |
 
   TR/ST    file start sector (0.x only)
   AL/AH    file load address low/high (-$100 for 1.2)
@@ -275,8 +280,8 @@ drive sets CLK after the correct disk has been identified and the host
 acknowledges with either one (<= 0.2) or two (0.3) short ATN low
 pulses.
 
-Known Productions using this Loader (as of August 2023)
-=======================================================
+Known Productions using this Loader (as of January 2024)
+========================================================
 
 Note: The table below is compiled from releases on CSDb crediting
       Bitbreaker for the loader, plus a few others found during
@@ -285,104 +290,114 @@ Note: The table below is compiled from releases on CSDb crediting
       sd2iec implementation.
 
 Reference:
-  pr = 0.7 pre-release version
+  pr = 0.7/1.2 pre-release versions
   db = 0.7 pre-release version built with BITFIRE_DEBUG
   !  = See specific comment at end of table
   4  = 40 Track diskimage
 
 Ref | Title                                      |  CSDb  |  Rev  | N
 ----|--------------------------------------------|--------|-------|---
-000 | The Space is Broken                        | 234768 | 0.7db |
-001 | The Scroll of Antonius                     | 234200 | 0.7db |
-002 | Deep Space 64 (final)                      | 233840 |  1.2  |
-003 | Looking for Atlantis                       | 233693 | 0.7db |
-004 | That Thing I Hate About Myself             | 233555 | 0.7db |
-005 | Deep Space 64                              | 232987 |  1.2  |
-006 | Wonderland XIV                             | 232980 |  1.1  | 4
-007 | Next Level                                 | 232976 |  1.2  |
-008 | Multiverse                                 | 232973 |  1.1  |
-009 | Hues                                       | 232960 | 0.7db |
-010 | Cinquanta                                  | 231055 |  0.7  |
-011 | Cinque                                     | 226347 |  0.7  |
-012 | Formula Petscii                            | 225762 |  1.1  |
-013 | Vandalism News #73 Headlines               | 225024 |  1.1  |
-014 | Logo Graphics Compo 2022 Results           | 224154 |  1.1  |
-015 | PöSö                                       | 220371 |  1.1  |
-016 | Cowboy's Dream                             | 218369 |  1.1  |
-017 | Vinyl Tribute #2                           | 212342 |  1.0  |
-018 | Unity                                      | 203390 |  0.7  |
-019 | Thirty                                     | 200575 |  0.7  |
-020 | XMAS 2020                                  | 198281 |  0.6  |
-021 | !dead                                      | 197878 |  0.7  |
-022 | 2600                                       | 197187 | 0.7db |
-023 | SID Chip Club                              | 193111 |  0.7  |
-024 | Stacked                                    | 187977 | 0.7pr |
-025 | ExAc20 Aftershow                           | 187559 |  0.7  |
-026 | In a Hurry                                 | 187525 | 0.7pr |
-027 | The Last Truckstop 3                       | 180321 | 0.7db | 4
-028 | Two Sided                                  | 180320 | 0.7pr |
-029 | Thera                                      | 179130 | 0.7pr |
-030 | 1337 Karate                                | 177033 |  0.7  | !
-031 | The 21st                                   | 177032 |  0.7  |
-032 | Rivalry                                    | 177023 | 0.7db | 4
-033 | Monomania                                  | 175657 | 0.7db |
-034 | Christmas18                                | 173069 |  0.6  |
-035 | C=Bit 18                                   | 170950 |  0.7  |
-036 | Old Men in Used Cars                       | 170944 |  0.6  |
-037 | Xcusemo                                    | 170933 |  0.7  |
-038 | The Star Wars Demo                         | 170922 |  0.6  | 4
-039 | Jump                                       | 167225 |  0.7  |
-040 | Fopcycle                                   | 166968 | 0.7db |
-041 | @                                          | 166967 | 0.7pr |
-042 | Manorexic                                  | 166742 | 0.7db |
-043 | Call The Hidden                            | 165914 | 0.7pr |
-044 | We Come in Peace                           | 163427 | 0.7db | 4
-045 | Krush Groovin'                             | 162872 |  0.6  | 4
-046 | Honey                                      | 162542 | 0.7pr |
-047 | Pain In The Asm                            | 161582 | 0.7db |
-048 | Stoned Dragon                              | 161136 |  0.7  |
-049 | Feliz Navidad                              | 161022 | 0.7db |
-050 | Private Parts                              | 160050 |  0.7  |
-051 | 40                                         | 158951 | 0.7pr |
-052 | Quad Core 100%                             | 158909 |  0.6  |
-053 | Quad Core                                  | 158773 |  0.6  |
-054 | Single Core                                | 158768 |  0.6  |
-055 | Beats                                      | 158642 | 0.7pr |
-056 | K9 V Orange Main Sequence                  | 158641 | 0.7db |
-057 | Modern Love Classics                       | 157489 | 0.7pr |
-058 | Reluge 101%                                | 156960 | 0.7pr |
-059 | SSDPCM1-Super                              | 156958 |  0.7  | 4
-060 | Reluge                                     | 155521 | 0.7pr |
-061 | The Shores of Reflection                   | 153526 |  0.6  |
-062 | The Last Hope                              | 153523 | 0.7pr |
-063 | Datastorm Leftovers                        | 153112 | 0.7db |
-064 | Frodigi 8                                  | 152997 | 0.7pr |
-065 | Mazinger Z Sing-Along                      | 152996 | 0.7pr | 4
-066 | Algo Dreams                                | 151630 |  0.6  |
-067 | Ammonite                                   | 151281 |  0.6  |
-068 | Area 64                                    | 151276 | 0.7db |
-069 | Wonderland XIII                            | 151275 |  0.6  |
-070 | Concert                                    | 151274 | 0.7pr |
-071 | Incoherent Nightmare                       | 151257 | 0.7pr |
-072 | 25 Years Atlantis                          | 151253 | 0.7db |
-073 | 25 Years                                   | 151250 | 0.7pr |
-074 | 20+1 Years                                 | 149770 |  0.6  |
-075 | We/Shades                                  | 149205 |  0.6  |
-076 | Watch My Balls in Action!                  | 146727 |  0.6  |
-077 | 50 Bytes of Sylvia                         | 144862 |  0.4  |
-078 | Sample Blaster                             | 143938 |  0.4  | 4
-079 | Comaland 100%                              | 139278 |  0.3  |
-080 | Fantasmolytic                              | 139263 |  0.3  |
-081 | P0 Snake [sales version 64k] +3PD          | 139055 |  0.3  |
-082 | P0 Snake [sales version 64k] +3PD          | 139000 |  0.3  |
-083 | Frodigi 5                                  | 135265 |  0.3  | 4
-084 | Strip-a-Minute                             | 135099 |  0.3  | 4
-085 | Comaland                                   | 133940 |  0.1  |
-086 | Oxy Rock                                   | 132062 |  0.1  |
+000 | Ooops                                      | 238431 | 1.2pr |
+001 | Fairlight Wishes a Merry Christmas 2023    | 237931 | 0.7db |
+002 | No Sprites                                 | 237745 | 0.7db |
+003 | Tribute to Vangelis                        | 237162 |  1.1  |
+004 | Eyes                                       | 237153 | 0.7db |
+005 | Sir Epsilon                                | 237012 | 0.7db |
+006 | The Emergent Behavior of Hydrogen Oxide... | 236999 | 0.7db |
+007 | Plastic Fantastic                          | 236986 |  1.1  |
+008 | Danko 50+                                  | 235849 | 0.7db |
+009 | Danko 50                                   | 235613 | 0.7db |
+010 | The Space is Broken                        | 234768 | 0.7db |
+011 | The Scroll of Antonius                     | 234200 | 0.7db |
+012 | Deep Space 64 (final)                      | 233840 | 1.2pr |
+013 | Looking for Atlantis                       | 233693 | 0.7db |
+014 | That Thing I Hate About Myself             | 233555 | 0.7db |
+015 | Deep Space 64                              | 232987 | 1.2pr |
+016 | Wonderland XIV                             | 232980 |  1.1  | 4
+017 | Next Level                                 | 232976 | 1.2pr |
+018 | Multiverse                                 | 232973 |  1.1  |
+019 | Hues                                       | 232960 | 0.7db |
+020 | Cinquanta                                  | 231055 |  0.7  |
+021 | Cinque                                     | 226347 |  0.7  |
+022 | Formula Petscii                            | 225762 |  1.1  |
+023 | Vandalism News #73 Headlines               | 225024 |  1.1  |
+024 | Logo Graphics Compo 2022 Results           | 224154 |  1.1  |
+025 | PöSö                                       | 220371 |  1.1  |
+026 | Cowboy's Dream                             | 218369 |  1.1  |
+027 | Vinyl Tribute #2                           | 212342 |  1.0  |
+028 | Unity                                      | 203390 |  0.7  |
+029 | Thirty                                     | 200575 |  0.7  |
+030 | XMAS 2020                                  | 198281 |  0.6  |
+031 | !dead                                      | 197878 |  0.7  |
+032 | 2600                                       | 197187 | 0.7db |
+033 | SID Chip Club                              | 193111 |  0.7  |
+034 | Stacked                                    | 187977 | 0.7pr |
+035 | ExAc20 Aftershow                           | 187559 |  0.7  |
+036 | In a Hurry                                 | 187525 | 0.7pr |
+037 | The Last Truckstop 3                       | 180321 | 0.7db | 4
+038 | Two Sided                                  | 180320 | 0.7pr |
+039 | Thera                                      | 179130 | 0.7pr |
+040 | 1337 Karate                                | 177033 |  0.7  | !
+041 | The 21st                                   | 177032 |  0.7  |
+042 | Rivalry                                    | 177023 | 0.7db | 4
+043 | Monomania                                  | 175657 | 0.7db |
+044 | Christmas18                                | 173069 |  0.6  |
+045 | C=Bit 18                                   | 170950 |  0.7  |
+046 | Old Men in Used Cars                       | 170944 |  0.6  |
+047 | Xcusemo                                    | 170933 |  0.7  |
+048 | The Star Wars Demo                         | 170922 |  0.6  | 4
+049 | Jump                                       | 167225 |  0.7  |
+050 | Fopcycle                                   | 166968 | 0.7db |
+051 | @                                          | 166967 | 0.7pr |
+052 | Manorexic                                  | 166742 | 0.7db |
+053 | Call The Hidden                            | 165914 | 0.7pr |
+054 | We Come in Peace                           | 163427 | 0.7db | 4
+055 | Krush Groovin'                             | 162872 |  0.6  | 4
+056 | Honey                                      | 162542 | 0.7pr |
+057 | Pain In The Asm                            | 161582 | 0.7db |
+058 | Stoned Dragon                              | 161136 |  0.7  |
+059 | Feliz Navidad                              | 161022 | 0.7db |
+060 | Private Parts                              | 160050 |  0.7  |
+061 | 40                                         | 158951 | 0.7pr |
+062 | Quad Core 100%                             | 158909 |  0.6  |
+063 | Quad Core                                  | 158773 |  0.6  |
+064 | Single Core                                | 158768 |  0.6  |
+065 | Beats                                      | 158642 | 0.7pr |
+066 | K9 V Orange Main Sequence                  | 158641 | 0.7db |
+067 | Modern Love Classics                       | 157489 | 0.7pr |
+068 | Reluge 101%                                | 156960 | 0.7pr |
+069 | SSDPCM1-Super                              | 156958 |  0.7  | 4
+070 | Reluge                                     | 155521 | 0.7pr |
+071 | The Shores of Reflection                   | 153526 |  0.6  |
+072 | The Last Hope                              | 153523 | 0.7pr |
+073 | Datastorm Leftovers                        | 153112 | 0.7db |
+074 | Frodigi 8                                  | 152997 | 0.7pr |
+075 | Mazinger Z Sing-Along                      | 152996 | 0.7pr | 4
+076 | Algo Dreams                                | 151630 |  0.6  |
+077 | Ammonite                                   | 151281 |  0.6  |
+078 | Area 64                                    | 151276 | 0.7db |
+079 | Wonderland XIII                            | 151275 |  0.6  |
+080 | Concert                                    | 151274 | 0.7pr |
+081 | Incoherent Nightmare                       | 151257 | 0.7pr |
+082 | 25 Years Atlantis                          | 151253 | 0.7db |
+083 | 25 Years                                   | 151250 | 0.7pr |
+084 | 20+1 Years                                 | 149770 |  0.6  |
+085 | We/Shades                                  | 149205 |  0.6  |
+086 | Watch My Balls in Action!                  | 146727 |  0.6  |
+087 | 50 Bytes of Sylvia                         | 144862 |  0.4  |
+088 | Sample Blaster                             | 143938 |  0.4  | 4
+089 | Comaland 100%                              | 139278 |  0.3  |
+090 | Fantasmolytic                              | 139263 |  0.3  |
+091 | P0 Snake [sales version 64k] +3PD          | 139055 |  0.3  |
+092 | P0 Snake [sales version 64k] +3PD          | 139000 |  0.3  |
+093 | Frodigi 5                                  | 135265 |  0.3  | 4
+094 | Strip-a-Minute                             | 135099 |  0.3  | 4
+095 | Comaland                                   | 133940 |  0.1  |
+096 | Oxy Rock                                   | 132062 |  0.1  |
 
 Production-specific Remarks
 ---------------------------
 
-[030] 1337 Karate
+[040] 1337 Karate
   Doesn't load beyond the game selection menu because it uses
   unsupported custom drivecode.
