@@ -767,11 +767,6 @@ Note: Using sd2iec without an external crystal or similiar precise
   this activates "Sleep Mode" (see below), which has to be ended
   manually by holding the disk change button.
 
-  On a C128 host the loader uses the fast serial protocol if connected
-  to a 1571 or 1581. This is not yet supported by this implementation.
-  (The only known C128 release using this loader is "Colour Spectrum",
-  CSDb Release ID 205653).
-
   With a few exceptions, only productions released on CSDb which
   credit Krill for their loader were tested. Other productions might
   use configuration options which are not supported and therefore
