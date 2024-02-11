@@ -141,14 +141,34 @@ static uint8_t get_block_delay(uint16_t crc) {
 static uint8_t get_byte_1bit(iec_bus_t clk, iec_bus_t data) {
   uint8_t tc, i, b;
 
+start:
   /* wait for host request while checking for abort and diskchange */
   while ((iec_bus_read() & (clk|IEC_BIT_ATN)) == (clk|IEC_BIT_ATN)) {
     if (check_keys())
       return RESET_CMD; // will cause the main loop to exit
   }
 
+  if (!IEC_ATN) {
 bus_locked:
-  while (!IEC_ATN);
+    tc = 250; // timeout counter for host reset / bus lock detection
+
+atn_timeout_loop:
+    start_timeout(10000);
+
+    while (!IEC_ATN) {
+      if (tc != 0 && has_timed_out()) {
+        if (--tc > 0)
+          goto atn_timeout_loop;
+      }
+    }
+
+    /* If ATN was low for over 2.5s assume it was bus lock and start over */
+    if (tc == 0)
+      goto start;
+
+    /* ... otherwise enter the receive loop. (Which */
+    /* will time out after 90ms if it was a reset). */
+  }
 
   ATOMIC_BLOCK( ATOMIC_FORCEON ) {
     i = 8;
