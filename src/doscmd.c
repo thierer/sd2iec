@@ -285,7 +285,7 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
   { 0xa45a, FL_BITFIRE_11,       RXTX_BITFIRE_CLOCK },
   { 0x1c3d, FL_BITFIRE_11,       RXTX_BITFIRE_CLOCK },
   { 0x8d3a, FL_BITFIRE_12PR1,    RXTX_BITFIRE_DATA  },
-  { 0x42bb, FL_BITFIRE_12PR2,    RXTX_BITFIRE_DATA  },
+  { 0x4521, FL_BITFIRE_12PR2,    RXTX_BITFIRE_DATA  },
 #endif
 
   { 0, FL_NONE, 0 }, // end marker
