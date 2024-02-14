@@ -320,6 +320,9 @@ static void iterate_sector(session_t *s) {
 /* on the loader revision. First t/s and the byte offset for v1 revisions */
 /* are then found by a separate call to iterate_file(), if necessary.     */
 static void get_dir_entry(uint8_t *dir_buf, uint8_t i, dir_entry_t *e) {
+  /* unconditionally initialize v0 part to make gcc happy */
+  memcpy(&e->v0, dir_buf + i*sizeof(e->v0), sizeof(e->v0));
+
   switch (detected_loader) {
     case FL_BITFIRE_12PR2:
       e->v1.addr   = dir_buf[0x04+0*0x3f+i] | dir_buf[0x04+1*0x3f+i] << 8;
@@ -332,8 +335,8 @@ static void get_dir_entry(uint8_t *dir_buf, uint8_t i, dir_entry_t *e) {
     case FL_BITFIRE_11:
       memcpy(&e->v1, dir_buf + i*sizeof(e->v1), sizeof(e->v1));
       break;
-    default: // 0.x
-      memcpy(&e->v0, dir_buf + i*sizeof(e->v0), sizeof(e->v0));
+    default: // 0.x; already handled above
+      break;
   }
 }
 
