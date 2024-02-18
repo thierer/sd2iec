@@ -142,10 +142,12 @@ void softrtc_set(struct tm *time) {
   ATOMIC_BLOCK( ATOMIC_FORCEON ) {
     rtc = t;
   }
+
+  rtc_state = RTC_OK;
 }
 void set_rtc(struct tm *time) __attribute__ ((weak, alias("softrtc_set")));
 
 void softrtc_init(void) {
-  rtc_state = RTC_OK;
+  rtc_state = RTC_INVALID; // invalid until set
 }
 void rtc_init(void) __attribute__ ((weak, alias("softrtc_init")));

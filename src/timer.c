@@ -105,7 +105,8 @@ SYSTEM_TICK_HANDLER {
   }
 
   /* send tick to the software RTC emulation */
-  softrtc_tick();
+  if (rtc_state == RTC_OK)
+    softrtc_tick();
 
 #ifdef CONFIG_REMOTE_DISPLAY
   /* Check if the display wants to be queried */
