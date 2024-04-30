@@ -1355,7 +1355,7 @@ static void handle_memexec(void) {
 static void handle_memread(void) {
   FRESULT res;
   uint16_t address, check;
-  uint8_t drive_type;
+  uint8_t drive_type, bytes;
   magic_value_t *p;
 
   if (command_length < 5)
@@ -1364,6 +1364,11 @@ static void handle_memread(void) {
   /* Read 1 Byte if no explicit length was provided */
   if (command_length == 5)
     command_buffer[5] = 1;
+
+  /* Clamp maximum read length to buffer size - 1 */
+  bytes = command_buffer[5];
+  if (bytes >= sizeof(error_buffer))
+    bytes = sizeof(error_buffer) - 1;
 
   address = command_buffer[3] + (command_buffer[4]<<8);
 
@@ -1401,11 +1406,6 @@ static void handle_memread(void) {
     res = f_lseek(&romfile, address);
     if (res != FR_OK)
       goto use_internal;
-
-    /* Clamp maximum read length to buffer size */
-    uint8_t bytes = command_buffer[5];
-    if (bytes > sizeof(error_buffer))
-      bytes = sizeof(error_buffer);
 
     UINT bytesread;
     res = f_read(&romfile, error_buffer, bytes, &bytesread);
@@ -1451,11 +1451,10 @@ static void handle_memread(void) {
     custom_magic.drives = 0;
   }
 
-  /* possibly the host wants to read more bytes than error_buffer size */
-  /* we ignore this knowing that we return nonsense in this case       */
   buffers[ERRORBUFFER_IDX].data     = error_buffer;
   buffers[ERRORBUFFER_IDX].position = 0;
-  buffers[ERRORBUFFER_IDX].lastused = command_buffer[5]-1;
+  buffers[ERRORBUFFER_IDX].lastused = bytes;
+  error_buffer[bytes] = 13;
 }
 
 /* --- M-W --- */
