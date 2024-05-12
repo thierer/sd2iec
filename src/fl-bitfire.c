@@ -68,7 +68,10 @@ typedef union {
   dir_entry_v1_t v1;
 } dir_entry_t;
 
-/* all known productions use an interleave of 4 sectors */
+/* Nearly all known productions use an interleave of 4 sectors for all   */
+/* tracks, except the pre-release loader revision used by 13:37, which   */
+/* only uses interleave 4 on tracks <= 17 and 3 for all other tracks.    */
+/* For now this exception is handled in iterate_file()/iterate_sector(). */
 #define INTERLEAVE      4
 
 #define LOAD_NEXT_CMD   0xef
@@ -111,6 +114,7 @@ static const PROGMEM hdr_field_t hdr_fields[][MAX_HDR_LEN] = {
 typedef struct {
   buffer_t      *dir_buf;
   uint8_t       dir_sector;     // loaded dir sector
+  uint8_t       interleave;     // sector interleave on current track
   uint8_t       next_file;      // file index for "load next"
   uint8_t       track, sector;
   uint8_t       offset;         // byte offset from dir entry, if applicable
@@ -303,14 +307,17 @@ static uint8_t update_dir(session_t *s, uint8_t file) {
 
 /* Iterate one sector. Advances track if end of current track was reached. */
 static void iterate_sector(session_t *s) {
-  s->sector += INTERLEAVE;
+  s->sector += s->interleave;
   if (s->sector >= d64_sectors_per_track(current_part, s->track)) {
-    while (s->sector >= INTERLEAVE) // avoid division for modulo op
-      s->sector -= INTERLEAVE;
+    while (s->sector >= s->interleave) // avoid division for modulo op
+      s->sector -= s->interleave;
     s->sector++;
-    if (s->sector == INTERLEAVE) { // track done
+    if (s->sector == s->interleave) { // track done
       s->sector = 0;
       while (++s->track == INIT_TRACK); // advance track but skip dir track
+      s->interleave = INTERLEAVE;
+      if (detected_loader >= FL_BITFIRE_12PR3)
+        s->interleave = s->track > 17 ? 3 : INTERLEAVE;
     }
   }
 }
@@ -324,6 +331,7 @@ static void get_dir_entry(uint8_t *dir_buf, uint8_t i, dir_entry_t *e) {
   memcpy(&e->v0, dir_buf + i*sizeof(e->v0), sizeof(e->v0));
 
   switch (detected_loader) {
+    case FL_BITFIRE_12PR3:
     case FL_BITFIRE_12PR2:
       e->v1.addr   = dir_buf[0x04+0*0x3f+i] | dir_buf[0x04+1*0x3f+i] << 8;
       e->v1.length = dir_buf[0x04+2*0x3f+i] | dir_buf[0x04+3*0x3f+i] << 8;
@@ -354,6 +362,8 @@ static void iterate_file(session_t *s, uint8_t file) {
 
   s->track  = s->dir_buf->data[i];
   s->offset = s->dir_buf->data[i+2];
+  if (detected_loader >= FL_BITFIRE_12PR3)
+    s->interleave = s->track > 17 ? 3 : INTERLEAVE;
 
   /* find the *first* file's start sector by iterating */
   /* the specified number of sectors from sector 0...  */
@@ -366,6 +376,7 @@ static void iterate_file(session_t *s, uint8_t file) {
   /* start sector and byte-offset from there.          */
   for (i = 0; i < file; i++) {
     switch (detected_loader) {
+      case FL_BITFIRE_12PR3:
       case FL_BITFIRE_12PR2:
         l = s->dir_buf->data[0x04+2*0x3f+i] | s->dir_buf->data[0x04+3*0x3f+i] << 8;
         break;
@@ -589,6 +600,7 @@ bool load_bitfire(uint8_t proto) {
   memset(&session, 0, sizeof(session));
   session.file_crc = 0xffff;
   session.hdr_layout = &hdr_fields[proto];
+  session.interleave = INTERLEAVE;
 
   session.dir_buf = alloc_system_buffer();
   if (session.dir_buf == NULL)
