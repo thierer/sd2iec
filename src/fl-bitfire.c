@@ -315,7 +315,6 @@ static void iterate_sector(session_t *s) {
     if (s->sector == s->interleave) { // track done
       s->sector = 0;
       while (++s->track == INIT_TRACK); // advance track but skip dir track
-      s->interleave = INTERLEAVE;
       if (detected_loader >= FL_BITFIRE_12PR3)
         s->interleave = s->track > 17 ? 3 : INTERLEAVE;
     }
