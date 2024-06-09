@@ -91,6 +91,14 @@ static bool mount_line(void) {
   bool seen_nonwhite = false;
   bool is_comment = false;
   uint8_t olderror = current_error;
+
+  if (swaplist.fsize == 0) {
+    /* force error if swaplist file is empty */
+    set_error(ERROR_FILE_NOT_FOUND);
+    current_error = olderror;
+    return false;
+  }
+
   current_error = ERROR_OK;
 
   /* Kill all buffers */
