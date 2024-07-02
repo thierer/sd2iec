@@ -963,10 +963,6 @@ destruction of pre-existing AUTOSWAP.LST files and to allow sd2iec to
 recognize newly-added disk images in the directory without manually
 removing the generated swap list.
 
-Please note that using the swap-list auto generation feature will
-currently leave an empty AUTOSWAP.GEN file on the card if no disk
-images were found. This may be fixed in the future.
-
 Using a swap list
 -----------------
 Navigation in a swap list is really simple: Press the NEXT button to

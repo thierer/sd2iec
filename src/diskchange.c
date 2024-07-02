@@ -247,11 +247,6 @@ static uint8_t create_changelist(path_t *path, uint8_t *filename) {
   if (res != FR_OK)
     return 0;
 
-  /* open file */
-  res = f_open(&partition[path->part].fatfs, &fh, filename, FA_WRITE | FA_CREATE_ALWAYS);
-  if (res != FR_OK)
-    return 0;
-
   /* scan directory */
   set_busy_led(1);
   finfo.lfn = ops_scratch;
@@ -266,9 +261,16 @@ static uint8_t create_changelist(path_t *path, uint8_t *filename) {
 
     if (!(finfo.fattrib & AM_DIR)) {
       if (check_imageext(finfo.fname) & IMG_IS_DISK) {
-        /* write the name of disk image to file */
-        found = 1;
+        if (found == 0) {
+          /* this is the first image found, create swap list file */
+          res = f_open(&partition[path->part].fatfs, &fh, filename, FA_WRITE | FA_CREATE_ALWAYS);
+          if (res != FR_OK)
+            return 0;
 
+          found = 1;
+        }
+
+        /* write the name of disk image to file */
         if (ops_scratch[0] != 0)
           name = ops_scratch;
         else
@@ -288,7 +290,8 @@ static uint8_t create_changelist(path_t *path, uint8_t *filename) {
     }
   }
 
-  f_close(&fh);
+  if (found) /* if no image was found, the file was never opened */
+    f_close(&fh);
 
   set_busy_led(0);
 
