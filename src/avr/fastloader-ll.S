@@ -51,19 +51,14 @@
         ;; ATN(+CLK) Interrupt service routine for IEC bus
         ;; ===================================================================
         ;
-        ; Functions called from here may change these registers:
-        ; r0, r18, r19, r24
+        ; Functions called from here may change the r18 register
         ; Other registers must be saved and restored by the called functions
         ;
         .global IEC_ATN_INT_VECT
 IEC_ATN_INT_VECT:
-        ; functions called from here must only change these registers:
         push    r18
         in      r18, _SFR_IO_ADDR(SREG)
         push    r18
-        push    r19
-        push    r24
-        push    r0
 
 #ifdef IEC_PCMSK
         lds     r18, _SFR_ADDR(IEC_PCMSK)
@@ -75,17 +70,16 @@ IEC_ATN_INT_VECT:
         sbic    _SFR_IO_ADDR(IEC_INPUT), IEC_PIN_ATN
         rjmp    iiv_atn_irq_end
 
-        ; ATN is low, continue depending from active fast loader
+        ; ATN is low, set DATA to ACK
+        sbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA
+
+        ; continue depending from active fast loader
         lds     r18, detected_loader
         cpi     r18, FLCODE_DREAMLOAD_OLD
-        brne    iiv_not_fl_dreamload_old
+        brne    iiv_atn_irq_end         ; not dreamload_old
+
         ; dreamload (old), receive a command code
         rcall   dreamload_get_command_old
-        rjmp    iiv_atn_irq_end         ; no other ATN action needed
-
-iiv_not_fl_dreamload_old:
-        ; no custom behaviour, this is ATN ACK
-        sbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA    ; DATA low
 
 iiv_atn_irq_end:
 #ifdef IEC_PCMSK
@@ -103,16 +97,12 @@ iiv_atn_irq_end:
         brne    iiv_not_fl_dreamload
         ; dreamload, receive a command code
         rcall   dreamload_get_command
-        rjmp    iiv_clock_irq_end       ; no other CLOCK action needed
 
 iiv_not_fl_dreamload:
 #endif // ifdef IEC_PCMSK
 
 iiv_clock_irq_end:
 
-        pop     r0
-        pop     r24
-        pop     r19
         pop     r18
         out     _SFR_IO_ADDR(SREG), r18
         pop     r18
@@ -125,19 +115,14 @@ iiv_clock_irq_end:
         ;; CLK Interrupt service routine for IEC bus
         ;; ===================================================================
         ;
-        ; Functions called from here may change these registers:
-        ; r0, r18, r19, r24
+        ; Functions called from here may change the r18 register
         ; Other registers must be saved and restored by the called functions
         ;
         .global IEC_CLK_INT_VECT
 IEC_CLK_INT_VECT:
-        ; functions called from here must only change these registers:
         push    r18
         in      r18, _SFR_IO_ADDR(SREG)
         push    r18
-        push    r19
-        push    r24
-        push    r0
 
         ; check if CLOCK is low
         sbic    _SFR_IO_ADDR(IEC_INPUT), IEC_PIN_CLOCK
@@ -156,9 +141,6 @@ clk_not_fl_dreamload:
 
 clk_irq_end:
 
-        pop     r0
-        pop     r24
-        pop     r19
         pop     r18
         out     _SFR_IO_ADDR(SREG), r18
         pop     r18
@@ -882,10 +864,16 @@ fc3_oldfreeze_ntsc_send:
         ;; Receive a command (track/sector) using the DreamLoad protocol
         ;;
 dreamload_get_command:
+        push    r19
+        push    r24
+
         rcall   dreamload_get_byte
         sts     fl_track, r24
         rcall   dreamload_get_byte
         sts     fl_sector, r24
+
+        pop     r24
+        pop     r19
         ret
 
         ;;
@@ -930,10 +918,19 @@ dl_bitloop:
         ;; Receive a command (track/sector) using the old DreamLoad protocol
         ;;
 dreamload_get_command_old:
+        ; release DATA (which we set for ATN ACK)
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA
+
+        push    r19
+        push    r24
+
         rcall   dreamload_get_byte_old
         sts     fl_track, r24
         rcall   dreamload_get_byte_old
         sts     fl_sector, r24
+
+        pop     r24
+        pop     r19
         ret
 
         ;;
