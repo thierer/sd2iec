@@ -95,13 +95,10 @@ bool load_dreamload(UNUSED_PARAMETER) {
     }
 
     if ((type == 0xac) || (type == 0xdc)) {
-      set_atn_irq(1);
       detected_loader = FL_DREAMLOAD_OLD;
-    } else {
-      set_clock_irq(1);
     }
 
-    /* mark no job waiting, enable IRQs to get job codes */
+    /* mark no job waiting */
     fl_track = 0xff;
   }
 
@@ -120,6 +117,12 @@ bool load_dreamload(UNUSED_PARAMETER) {
   opendir(&dh, &curpath);
 
   for (;;) {
+    /* enable IRQs to get job codes */
+    if (detected_loader == FL_DREAMLOAD) {
+      set_clock_irq(1);
+    } else { // FL_DREAMLOAD_OLD
+      set_atn_irq(1);
+    }
 
     while (fl_track == 0xff) {
       if (check_keys()) {
@@ -128,6 +131,10 @@ bool load_dreamload(UNUSED_PARAMETER) {
         break;
       }
     }
+
+    /* disable IRQs during job code processing */
+    set_clock_irq(0);
+    set_atn_irq(0);
 
     set_busy_led(1);
 
@@ -166,7 +173,7 @@ bool load_dreamload(UNUSED_PARAMETER) {
 error:
   free_buffer(buf);
   set_clock_irq(0);
-  set_atn_irq(0);
+  set_atn_irq(1);
 
   return true;
 }
