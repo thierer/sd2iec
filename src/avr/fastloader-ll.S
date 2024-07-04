@@ -120,22 +120,21 @@ iiv_clock_irq_end:
         ;
         .global IEC_CLK_INT_VECT
 IEC_CLK_INT_VECT:
+        ; bail early if CLOCK isn't low
+        sbic    _SFR_IO_ADDR(IEC_INPUT), IEC_PIN_CLOCK
+        reti
+
         push    r18
         in      r18, _SFR_IO_ADDR(SREG)
         push    r18
 
-        ; check if CLOCK is low
-        sbic    _SFR_IO_ADDR(IEC_INPUT), IEC_PIN_CLOCK
-        rjmp    clk_irq_end
-
-        ; CLOCK is low, continue depending from active fast loader
+        ; continue depending from active fast loader
 #ifdef CONFIG_LOADER_DREAMLOAD
         lds     r18, detected_loader
         cpi     r18, FLCODE_DREAMLOAD
         brne    clk_not_fl_dreamload
         ; dreamload, receive a command code
         rcall   dreamload_get_command
-        rjmp    clk_irq_end       ; no other CLOCK action needed
 clk_not_fl_dreamload:
 #endif // ifdef CONFIG_LOADER_DREAMLOAD
 
