@@ -73,5 +73,8 @@ bool load_hypraload(UNUSED_PARAMETER) {
   set_data(1);
   set_atn_irq(1);
 
+  if (buf)
+    cleanup_and_free_buffer(buf);
+
   return true;
 }
