@@ -3,6 +3,12 @@ Hypra-Load Protocol
 
 Documented by Martin Thierer
 
+Source code listings with comments in german (not my work) for both
+the 1.0 and the 2.1 version can be found at
+
+https://www.c64-wiki.de/wiki/Hypra-Load/Quellcode_1.0 and
+https://www.c64-wiki.de/wiki/Hypra-Load/Quellcode_2.1
+
 General
 -------
 Hypra-Load is a classic software fastloader published in the german
@@ -11,6 +17,9 @@ Load your programs five times faster."). It was written by Karsten
 Schramm and Boris Schneider. Karsten Schramm is also known as author
 of the books "Die Floppy 1541" and "Die Floppy 1570/1571" (both in
 german).
+
+A 2.1 version of the loader was published later in the "64'er" special
+issue 6/85.
 
 The BASIC and KERNAL ROMs are copied to RAM and patched to include the
 new loader routines. They replace some of the tape and RS232 code,
@@ -24,14 +33,19 @@ Load process
 The patched load code is called from the original LOAD routine after
 the first two bytes (the load address) were already received using the
 standard serial bus protocol. No checks are performed for the load
-address (like if it would overwrite memory used by Hypra-Load). Only
-directory load (filename starts with "$") falls back to the original
-code path.
+address (like if it would overwrite memory used by Hypra-Load).
 
-Hypra-Load uses the ATN line for handshake and therefore only works
-with a single drive connected to the bus. It checks for other devices
-and prompts the user to turn them off, if found. The drive address is
-hardcoded to #8 (but the article gave instructions how to change it).
+Directory load (filename starts with "$") falls back to the original
+code path in the original version but fails in 2.1.
+
+The original Hypra-Load uses the ATN line for handshake and therefore
+only works with a single drive connected to the bus. It checks for
+other devices and prompts the user to turn them off, if found. The 2.1
+version amended the protocol to use the DATA line for this handshake
+instead and therefore no longer has this limitation.
+
+The drive address is hardcoded to #8 (but the original article gave
+instructions how to change it).
 
 The transfer of each sector is preceeded by sending a status byte.
 Value $FF signals a read error and aborts the transfer. Interestingly,
@@ -50,10 +64,15 @@ overwrite any memory beyond the real end address.
 
 Sending a byte
 --------------
-The host sets ATN when it is ready to receive. It then waits for the
-drive to acknowledge ATN and release DATA, to signal its readiness to
-send. The host then releases ATN. This release of ATN is the timing
-reference for the byte transfer.
+
+The host sets ATN (original version) or DATA (2.1) when it is ready to
+receive. It then waits for the drive to acknowledge the request by
+either (in the original version) setting ATNA to release DATA or (2.1
+version) releasing CLK, to signal its readiness to send. The host then
+releases the respective line it set for the request. This release is
+the timing reference for the byte transfer.
+
+Original version:
 
                      |  sd2iec  |    host [cycles]
     ATN  Clock  Data |   [us]   |  status    payload
@@ -66,7 +85,22 @@ reference for the byte transfer.
           !b6   !b7  |   105    |   123       112
            -     0   |   130    |                    drive busy
                      |          |
-      0    -     0   |          |   168       149    host busy
+      1    -     -   |          |   168       149    host busy
+
+2.1 version:
+
+                     |  sd2iec  |    host [cycles]
+    ATN  Clock  Data |   [us]   |  status    payload
+   --------------------------------------------------
+      1    1    0->1 |     0    |     0         0    timing reference
+                     |          |
+          !b0   !b1  |    30    |    42        40
+          !b2   !b3  |    55    |    69        64
+          !b4   !b5  |    80    |    96        88
+          !b6   !b7  |   105    |   123       112
+           0     -   |   130    |                    drive busy
+                     |          |
+      1    -     1   |          |   168       149    host busy
 
 End of transfer
 ---------------

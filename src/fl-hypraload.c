@@ -5,7 +5,7 @@
    Nippon Loader support:
    Copyright (C) 2010  Joerg Jungermann <abra@borkum.net>
    Hypra-Load support:
-   Copyright (C) 2021  Martin Thierer <mthierer@gmail.com>
+   Copyright (C) 2021-2024  Martin Thierer <mthierer@gmail.com>
 
    Inspired by MMC2IEC by Lars Pontoppidan et al.
 
@@ -40,6 +40,8 @@ bool load_hypraload(UNUSED_PARAMETER) {
   uint16_t i;
   uint8_t  status;
 
+  set_clock(0); // signal busy for 2.1
+
   buf = find_buffer(0);
 
   status = buf ? 0x55 : 0xff;
@@ -50,15 +52,15 @@ bool load_hypraload(UNUSED_PARAMETER) {
   set_atn_irq(0);
 
   while (1) {
-    hypraload_send_byte(status);
+    fast_send_byte(status);
     if (status == 0xff) // error
       break;
 
-    hypraload_send_byte(!buf->sendeoi);
-    hypraload_send_byte(buf->lastused);
+    fast_send_byte(!buf->sendeoi);
+    fast_send_byte(buf->lastused);
 
     for (i = 2; i < 256; i++)
-      hypraload_send_byte(buf->data[i]);
+      fast_send_byte(buf->data[i]);
 
     if (buf->sendeoi)
       break;

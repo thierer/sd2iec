@@ -67,7 +67,8 @@ void n0sdos_send_byte(uint8_t byte);
 
 uint8_t ultraboot_send_byte(uint8_t byte);
 
-void hypraload_send_byte(uint8_t byte);
+uint8_t hypraload10_send_byte(uint8_t byte);
+uint8_t hypraload21_send_byte(uint8_t byte);
 
 uint8_t krill_get_byte_data_clk(void);
 uint8_t krill_get_byte_clk_data(void);

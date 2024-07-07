@@ -1,7 +1,7 @@
 /* sd2iec - SD/MMC to Commodore serial bus interface/controller
    Copyright (C) 2007-2022  Ingo Korb <ingo@akana.de>
    Hypra-Load support:
-   Copyright (C) 2021  Martin Thierer <mthierer@gmail.com>
+   Copyright (C) 2021-2024  Martin Thierer <mthierer@gmail.com>
 
    Inspired by MMC2IEC by Lars Pontoppidan et al.
 
@@ -41,7 +41,7 @@ static const generic_2bit_t hypraload_send_def = {
   .eorvalue  = 0xff
 };
 
-void hypraload_send_byte(uint8_t byte) {
+uint8_t hypraload10_send_byte(uint8_t byte) {
   llfl_setup();
   disable_interrupts();
 
@@ -61,4 +61,31 @@ void hypraload_send_byte(uint8_t byte) {
 
   enable_interrupts();
   llfl_teardown();
+
+  return 0;
+}
+
+uint8_t hypraload21_send_byte(uint8_t byte) {
+  llfl_setup();
+  disable_interrupts();
+
+  while (IEC_DATA);
+  set_clock(1);
+
+  /* wait for start signal */
+  llfl_wait_data(1, NO_ATNABORT);
+
+  /* transmit data */
+  llfl_generic_load_2bit(&hypraload_send_def, byte);
+
+  /* data hold time */
+  delay_us(25);
+
+  set_clock(0);
+  set_data(1);
+
+  enable_interrupts();
+  llfl_teardown();
+
+  return 0;
 }

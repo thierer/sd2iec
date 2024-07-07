@@ -737,8 +737,9 @@ Note: Using sd2iec without an external crystal or similiar precise
 
   Hypra-Load
   ----------
-  Hypra-Load uses the ATN line for handshake, so it only works if no
-  other device is connected to the IEC bus.
+  The original Hypra-Load uses the ATN line for handshake, so it only
+  works if no other device is connected to the IEC bus. The 2.1 version
+  doesn't have this limitation.
 
   Krill's IRQ Loader
   ------------------

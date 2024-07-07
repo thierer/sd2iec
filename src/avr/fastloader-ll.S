@@ -1914,24 +1914,48 @@ ultraboot_send_byte:
 
 #ifdef CONFIG_LOADER_HYPRALOAD
         ;;
-        ;; send a byte using the Hypra-Load protocol
-        ;; called with byte in r24, no return value
-        .global hypraload_send_byte
-hypraload_send_byte:
+        ;; send a byte using the Hypra-Load protocol (either unsing
+        ;; the original or the 2.1 protocol, depending on entry point)
+        ;;
+        ;; called with byte in r24, always returns zero
+        ;;
+        ;; r18, r19 scratch (r19 also used by send_bits_to_clk_data)
+        ;; r20      bitmask for request line
+        ;; r21      bitmask for "busy"
+        .global hypraload10_send_byte
+hypraload10_send_byte:
+        ldi     r20, IEC_BIT_ATN
+        ldi     r21, ~IEC_OBIT_DATA
+        rjmp    hl_send_byte_common
 
+        .global hypraload21_send_byte
+hypraload21_send_byte:
+        ldi     r20, IEC_BIT_DATA
+        ldi     r21, ~IEC_OBIT_CLOCK
+
+hl_send_byte_common:
         cli
 
         mov     r0, r24
 
-        rcall   wait_atn_low
+        ;; wait for request line low (1.0: ATN / 2.1: DATA)
+1:      in      r18, _SFR_IO_ADDR(IEC_INPUT)
+        and     r18, r20
+        brne    1b
 
-        ;; release DATA
-        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA
+        ;; release "busy" line (1.0: DATA / 2.1: CLK)
+        in      r19, _SFR_IO_ADDR(IEC_OUTPUT)
+        and     r19, r21
+        out     _SFR_IO_ADDR(IEC_OUTPUT), r19
+        com     r21     ; prepare bitmask for *setting* "busy" again, later
 
-        rcall   wait_atn_high           ; 6 or 7 after ATN high
+        ;; wait for request line high
+1:      in      r18, _SFR_IO_ADDR(IEC_INPUT)
+        and     r18, r20
+        breq    1b                      ; 3 after request line high
 
         ;; delay
-        delay_us 30, -16-RET_OFFSET-RCALL_OFFSET
+        delay_us 30, -13-RCALL_OFFSET
 
         ;; send bits 0+1
         rcall   send_bits_to_clk_data   ; 10+6 or 11+7
@@ -1955,12 +1979,17 @@ hypraload_send_byte:
         rcall   send_bits_to_clk_data   ; 10+6 or 11+7
 
         ;; delay
-        delay_us 25, -6-RET_OFFSET
+        delay_us 25, -8-RET_OFFSET
 
-        ;; set DATA
-        sbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA
+        ;; busy
+        in      r19, _SFR_IO_ADDR(IEC_OUTPUT)
+        andi    r19, ~IEC_BIT_DATA      ; mask out DATA in case it's 2.1
+        or      r19, r21
+        out     _SFR_IO_ADDR(IEC_OUTPUT), r19
 
         sei
+        clr     r24
+
         ret
 
 #endif
