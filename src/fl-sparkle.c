@@ -555,7 +555,7 @@ static uint8_t send_bundle(session_t *s, uint8_t bundle) {
 
     ATOMIC_BLOCK( ATOMIC_FORCEON ) {
       set_clock(0);
-      set_data(1); // needed for 1.0
+      set_data(detected_loader == FL_SPARKLE_10);  // only 1.0 sets ATNA
       while (!IEC_ATN);
 
       for (i = 0;; i++) {
