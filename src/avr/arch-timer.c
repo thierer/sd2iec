@@ -34,3 +34,8 @@ void timer_init(void) {
   TCCR1B = _BV(WGM12) | _BV(CS10) | _BV(CS11);
   TIMSK1 |= _BV(OCIE1A);
 }
+
+void cancel_timeout(void) {
+  TCCR2B = 0;           /* disable timeout timer */
+  TIFR2 |= _BV(TOV2);   /* reset overflow flag */
+}

@@ -90,8 +90,7 @@ static uint8_t get_byte_1bit(void) {
       return 0; // timeout
   }
 
-  /* try to prevent invalid timeouts, see comment in clocked_read_byte() */
-  start_timeout(256);
+  cancel_timeout();
 
   return b;
 }

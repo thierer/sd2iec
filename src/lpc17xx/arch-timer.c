@@ -80,8 +80,8 @@ void timer_init(void) {
   BITBAND(IEC_TIMER_B->TCR, 1)   = 0;
   BITBAND(TIMEOUT_TIMER->TCR, 1) = 0;
 
-  /* stop timeout-timer on match */
-  BITBAND(TIMEOUT_TIMER->MCR, 2) = 1; // MR0S - stop timer on match
+  /* timeout-timer interrupt and stop on match */
+  TIMEOUT_TIMER->MCR             = 0b101; // MR0S and MR0I
 
   /* Enable timers */
   BITBAND(IEC_TIMER_A->TCR, 0)   = 1;
@@ -129,7 +129,18 @@ void delay_ms(unsigned int time) {
 void start_timeout(unsigned int usecs) {
   TIMEOUT_TIMER->TC  = 0;
   TIMEOUT_TIMER->MR0 = usecs*10;
+  BITBAND(TIMEOUT_TIMER->IR,  0) = 1; // clear interrupt flag
   BITBAND(TIMEOUT_TIMER->TCR, 0) = 1; // start timer
+}
+
+/**
+ * cancel_timeout - cancel a timeout
+ *
+ * This function stops the timer and resets the timeout flag, just in case.
+ */
+void cancel_timeout(void) {
+  BITBAND(TIMEOUT_TIMER->TCR, 0) = 0; // stop timer
+  BITBAND(TIMEOUT_TIMER->IR,  0) = 1; // clear interrupt flag
 }
 
 /**
@@ -139,5 +150,5 @@ void start_timeout(unsigned int usecs) {
  * has reached its timeout value.
  */
 unsigned int has_timed_out(void) {
-  return !BITBAND(TIMEOUT_TIMER->TCR, 0);
+  return BITBAND(TIMEOUT_TIMER->IR, 0);
 }

@@ -227,11 +227,7 @@ timeout_loop:
     b = b >> 1 | (bus & data ? 0 : 0x80);
   }
 
-  /* This is a hack to make it (a lot) less likely that a caller */
-  /* mistakenly registers an intermediate timeout as real.       */
-  /* TODO: An e.g. stop_timeout() function which both stops the  */
-  /* timer and clears the timeout condition would be better.     */
-  start_timeout(256);
+  cancel_timeout();
 
   return b;
 }

@@ -81,6 +81,11 @@ static inline __attribute__((always_inline)) void start_timeout(uint16_t usecs) 
 }
 
 /**
+ * cancel_timeout - stop the timeout timer
+ */
+void cancel_timeout(void);
+
+/**
  * has_timed_out - returns true if timeout was reached
  *
  * This function returns true if the overflow flag of timer 2 is set which

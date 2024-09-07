@@ -38,6 +38,7 @@ void delay_ms(unsigned int time);
 /* Timeout functions */
 // FIXME: Accurate enough as function?
 void start_timeout(unsigned int usecs);
+void cancel_timeout(void);
 unsigned int has_timed_out(void);
 
 #endif

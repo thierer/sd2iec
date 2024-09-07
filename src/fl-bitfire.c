@@ -209,8 +209,7 @@ atn_timeout_loop:
     }
   }
 
-  /* try to prevent invalid timeouts, see comment in clocked_read_byte() */
-  start_timeout(256);
+  cancel_timeout();
 
   return b;
 }
