@@ -30,7 +30,7 @@
 
 /* interrupts disabled, SPI enabled, MSB first, master mode */
 /* leading edge rising, sample on leading edge, clock bits cleared */
-#define SPCR_VAL 0b01010000
+#define SPCR_VAL (_BV(SPE) | _BV(MSTR))
 
 /* set up SPSR+SPCR according to the divisor */
 /* compiles to 3-4 instructions */
