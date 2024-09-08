@@ -120,6 +120,11 @@ static inline uint8_t sdcard2_wp(void) {
 //    PORTZ &= ~_BV(PZ9);
 //}
 
+/* By default, the internal pullup is enabled for the sdcard  */
+/* interface's MISO pin. If that's not what you want (because */
+/* there is an external pullup) define SPI_MISO_EXT_PU.       */
+// #  SPI_MISO_EXT_PU
+
 /* SD card 2 CS pin */
 static inline __attribute__((always_inline)) void sdcard2_set_ss(uint8_t state) {
   if (state)

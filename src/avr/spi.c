@@ -62,7 +62,11 @@ void spi_set_speed(spi_speed_t speed) {
 
 void spi_init(spi_speed_t speed) {
   /* set up SPI I/O pins */
-  SPI_PORT = (SPI_PORT & ~SPI_MASK) | SPI_SCK | SPI_MISO | (SPI_SS & ~SPI_MASK);
+  SPI_PORT = (SPI_PORT & ~SPI_MASK) | SPI_SCK | (SPI_SS & ~SPI_MASK);
+#ifndef SPI_MISO_EXT_PU
+  /* enable internal pullup on MISO unless there's an external pullup */
+  SPI_PORT |= SPI_MISO;
+#endif
   SPI_DDR  = (SPI_DDR  & ~SPI_MASK) | SPI_SCK | SPI_MOSI | (SPI_SS & ~SPI_MASK);
 
   /* enable and initialize SPI */
