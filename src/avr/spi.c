@@ -62,8 +62,8 @@ void spi_set_speed(spi_speed_t speed) {
 
 void spi_init(spi_speed_t speed) {
   /* set up SPI I/O pins */
-  SPI_PORT = (SPI_PORT & ~SPI_MASK) | SPI_SCK | SPI_SS | SPI_MISO;
-  SPI_DDR  = (SPI_DDR  & ~SPI_MASK) | SPI_SCK | SPI_SS | SPI_MOSI;
+  SPI_PORT = (SPI_PORT & ~SPI_MASK) | SPI_SCK | SPI_MISO | (SPI_SS & ~SPI_MASK);
+  SPI_DDR  = (SPI_DDR  & ~SPI_MASK) | SPI_SCK | SPI_MOSI | (SPI_SS & ~SPI_MASK);
 
   /* enable and initialize SPI */
   if (speed == SPI_SPEED_FAST) {

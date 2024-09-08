@@ -1360,6 +1360,10 @@ static inline __attribute__((always_inline)) void sdcard_set_ss(uint8_t state) {
   else
     SPI_PORT &= ~SPI_SS;
 }
+#  define SPI_MASK (SPI_SS | SPI_MOSI | SPI_MISO | SPI_SCK)
+#else
+/* don't touch SPI_SS */
+#  define SPI_MASK (SPI_MOSI | SPI_MISO | SPI_SCK)
 #endif
 
 /* Display interrupt pin */

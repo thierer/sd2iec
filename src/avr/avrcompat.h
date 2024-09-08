@@ -163,8 +163,6 @@
 #  error Unknown chip! (SPI/TWI)
 #endif
 
-#define SPI_MASK (SPI_SS|SPI_MOSI|SPI_MISO|SPI_SCK)
-
 /* Fix for incompatible include in avr-libc for the 1284P */
 #if defined __AVR_ATmega1284P__ && !defined(PA0)
 #  define PA0 0
