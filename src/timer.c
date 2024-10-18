@@ -35,32 +35,53 @@
 #define DEBOUNCE_TICKS 4
 #define SLEEP_TICKS    2*HZ
 
-volatile tick_t ticks;
+static tick_t ticks;
+
+tick_t getticks(void) {
+  tick_t tmp;
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    tmp = ticks;
+  }
+  return tmp;
+}
+
 // Logical buttons
-volatile uint8_t active_keys;
+static uint8_t active_keys;
 
 // Physical buttons
 rawbutton_t buttonstate;
 tick_t      lastbuttonchange;
 
+uint8_t key_pressed(uint8_t mask) {
+  return active_keys & mask;
+}
+
+void reset_key(uint8_t mask) {
+  active_keys &= (uint8_t)~mask;
+}
+
+void set_key(uint8_t mask) {
+  active_keys |= mask;
+}
+
 /* Called by the timer interrupt when the button state has changed */
 static void buttons_changed(rawbutton_t new_state) {
   /* Check if the previous state was stable for two ticks */
   if (time_after(ticks, lastbuttonchange + DEBOUNCE_TICKS)) {
-    if (active_keys & IGNORE_KEYS) {
-      active_keys &= ~IGNORE_KEYS;
+    if (key_pressed(IGNORE_KEYS)) {
+      reset_key(IGNORE_KEYS);
     } else if (BUTTON_PREV && /* match only if PREV exists */
                !(buttonstate & (BUTTON_PREV|BUTTON_NEXT))) {
       /* Both buttons held down */
-        active_keys |= KEY_HOME;
+      set_key(KEY_HOME);
     } else if (!(buttonstate & BUTTON_NEXT) &&
                (new_state & BUTTON_NEXT)) {
       /* "Next" button released */
-      active_keys |= KEY_NEXT;
+      set_key(KEY_NEXT);
     } else if (BUTTON_PREV && /* match only if PREV exists */
                !(buttonstate & BUTTON_PREV) &&
                (new_state & BUTTON_NEXT)) {
-      active_keys |= KEY_PREV;
+      set_key(KEY_PREV);
     }
   }
 
@@ -98,7 +119,7 @@ SYSTEM_TICK_HANDLER {
         time_after(ticks, lastbuttonchange + SLEEP_TICKS) &&
         !key_pressed(KEY_SLEEP)) {
       /* Set ignore flag so the release doesn't trigger KEY_NEXT */
-      active_keys |= KEY_SLEEP | IGNORE_KEYS;
+      set_key(KEY_SLEEP | IGNORE_KEYS);
       /* Avoid triggering for the next two seconds */
       lastbuttonchange = ticks;
     }
@@ -111,7 +132,7 @@ SYSTEM_TICK_HANDLER {
 #ifdef CONFIG_REMOTE_DISPLAY
   /* Check if the display wants to be queried */
   if (display_intrq_active()) {
-    active_keys |= KEY_DISPLAY;
+    set_key(KEY_DISPLAY);
   }
 #endif
 }

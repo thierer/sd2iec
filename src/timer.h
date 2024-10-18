@@ -39,29 +39,12 @@
 
 #define IGNORE_KEYS (1<<7)
 
-/// Logical keys that were pressed - must be reset by the reader.
-extern volatile uint8_t active_keys;
+uint8_t key_pressed(uint8_t mask);
+void reset_key(uint8_t mask);
+void set_key(uint8_t mask);
 
-#define key_pressed(x) (active_keys & (x))
-#define reset_key(x)   active_keys &= (uint8_t)~(x)
-#define ignore_keys()  active_keys = IGNORE_KEYS;
-
-/// Global timing variable, 100 ticks per second
-/// Use getticks() !
-extern volatile tick_t ticks;
-
-/**
- * getticks - return the current system tick count
- *
- * This inline function returns the current system tick count.
- */
-static inline tick_t getticks(void) {
-  tick_t tmp;
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-    tmp = ticks;
-  }
-  return tmp;
-}
+// Global system timing, 100 ticks per second
+tick_t getticks(void);
 
 #define HZ 100
 

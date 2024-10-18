@@ -90,7 +90,7 @@ void read_configuration(void) {
 
   /* Use the NEXT button to skip reading the EEPROM configuration */
   if (!(buttons_read() & BUTTON_NEXT)) {
-    ignore_keys();
+    set_key(IGNORE_KEYS);
     return;
   }
 

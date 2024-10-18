@@ -153,8 +153,8 @@ bool load_dreamload(UNUSED_PARAMETER) {
       } else if (fl_sector == 1) {
         // command: load first sector of directory
         // slow down 18/1 loading, so diskswap has a higher chance
-        tick_t targettime = ticks + MS_TO_TICKS(1000);
-        while (time_before(ticks,targettime)) ;
+        tick_t targettime = getticks() + MS_TO_TICKS(1000);
+        while (time_before(getticks(),targettime)) ;
 
         read_sector(buf, current_part, dh.dir.d64.track, dh.dir.d64.sector);
         dreamload_send_block(buf->data);

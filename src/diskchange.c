@@ -72,13 +72,13 @@ static void confirm_blink(uint8_t type) {
     if (!i || type & 2)
       set_busy_led(1);
 #endif
-    targettime = ticks + MS_TO_TICKS(100);
-    while (time_before(ticks,targettime)) ;
+    targettime = getticks() + MS_TO_TICKS(100);
+    while (time_before(getticks(),targettime)) ;
 
     set_dirty_led(0);
     set_busy_led(0);
-    targettime = ticks + MS_TO_TICKS(100);
-    while (time_before(ticks,targettime)) ;
+    targettime = getticks() + MS_TO_TICKS(100);
+    while (time_before(getticks(),targettime)) ;
   }
 }
 
