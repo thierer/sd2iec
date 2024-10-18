@@ -44,7 +44,7 @@ rawbutton_t buttonstate;
 tick_t      lastbuttonchange;
 
 /* Called by the timer interrupt when the button state has changed */
-static void buttons_changed(void) {
+static void buttons_changed(rawbutton_t new_state) {
   /* Check if the previous state was stable for two ticks */
   if (time_after(ticks, lastbuttonchange + DEBOUNCE_TICKS)) {
     if (active_keys & IGNORE_KEYS) {
@@ -54,18 +54,18 @@ static void buttons_changed(void) {
       /* Both buttons held down */
         active_keys |= KEY_HOME;
     } else if (!(buttonstate & BUTTON_NEXT) &&
-               (buttons_read() & BUTTON_NEXT)) {
+               (new_state & BUTTON_NEXT)) {
       /* "Next" button released */
       active_keys |= KEY_NEXT;
     } else if (BUTTON_PREV && /* match only if PREV exists */
                !(buttonstate & BUTTON_PREV) &&
-               (buttons_read() & BUTTON_NEXT)) {
+               (new_state & BUTTON_NEXT)) {
       active_keys |= KEY_PREV;
     }
   }
 
   lastbuttonchange = ticks;
-  buttonstate = buttons_read();
+  buttonstate = new_state;
 }
 
 /* The main timer interrupt */
@@ -73,7 +73,7 @@ SYSTEM_TICK_HANDLER {
   rawbutton_t tmp = buttons_read();
 
   if (tmp != buttonstate) {
-    buttons_changed();
+    buttons_changed(tmp);
   }
 
   ticks++;
