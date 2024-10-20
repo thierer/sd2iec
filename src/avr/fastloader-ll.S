@@ -320,7 +320,7 @@ jiffy_receive:
         ;; Needs 16 (or 18) cycles including the rcall
 jiffy_sendbits:
         in      r19, _SFR_IO_ADDR(IEC_OUTPUT) ; 1 - read port
-        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ)
+        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN)
                                     ; 1 - mask IEC bits
         bst     r0, 0               ; 1 - get bit 0
         bld     r19, IEC_OPIN_CLOCK ; 1 - send on the clock line
@@ -366,12 +366,12 @@ jiffy_send:
         breq    0f              ; No, branch
 
         in      r22, _SFR_IO_ADDR(IEC_OUTPUT)
-        andi    r22, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ)
+        andi    r22, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN)
         ori     r22, IEC_OBIT_DATA ; Data low, Clock hi on EOI
         rjmp    1f
 
 0:      in      r22, _SFR_IO_ADDR(IEC_OUTPUT)
-        andi    r22, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ)
+        andi    r22, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN)
         ori     r22, IEC_OBIT_CLOCK ; Data hi, Clock low on non-EOI
 
 1:
@@ -467,7 +467,7 @@ turbodisk_byte:
 
         ;; All bus lines high
         in      r18, _SFR_IO_ADDR(IEC_OUTPUT)
-        andi    r18, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ)
+        andi    r18, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN)
         out     _SFR_IO_ADDR(IEC_OUTPUT), r18
 
         ;; Wait until data is high
@@ -480,7 +480,7 @@ turbodisk_byte:
 
 tdbitloop:
         in      r19, _SFR_IO_ADDR(IEC_OUTPUT) ; 1 - read & mask unused IEC port lines
-        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ) ; 1
+        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN) ; 1
         bst     r24, 7              ; 1 - grab bit 7
         bld     r19, IEC_OPIN_CLOCK ; 1 - store in clock bit
         bst     r24, 6              ; 1 - grab bit 6
@@ -503,7 +503,7 @@ tdbitloop:
 
         ;; Data high, Clock low
         in      r18, _SFR_IO_ADDR(IEC_OUTPUT)
-        andi    r18, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ)
+        andi    r18, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN)
         ori     r18, IEC_OBIT_CLOCK
         out     _SFR_IO_ADDR(IEC_OUTPUT), r18
 
@@ -521,7 +521,7 @@ turbodisk_buffer:
 
         ;; All bus lines high
         in      r18, _SFR_IO_ADDR(IEC_OUTPUT)
-        andi    r18, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ)
+        andi    r18, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN)
         out     _SFR_IO_ADDR(IEC_OUTPUT), r18
 
         movw    r30,r24         ; output pointer
@@ -544,7 +544,7 @@ tdbyteloop:
 
 tdbitloop2:
         in      r19, _SFR_IO_ADDR(IEC_OUTPUT) ; 1 - read & mask unused IEC port lines
-        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ) ; 1
+        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN) ; 1
         bst     r0, 7               ; 1 - grab bit 7
         bld     r19, IEC_OPIN_CLOCK ; 1 - store in clock bit
         bst     r0, 6               ; 1 - grab bit 6
@@ -574,7 +574,7 @@ tdbitloop2:
 
         ;; Data high, Clock low
         in      r18, _SFR_IO_ADDR(IEC_OUTPUT)
-        andi    r18, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ)
+        andi    r18, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN)
         ori     r18, IEC_OBIT_CLOCK
         out     _SFR_IO_ADDR(IEC_OUTPUT), r18
 
@@ -595,7 +595,7 @@ tdbitloop2:
 send_bits_to_clk_data:
         ; rcall                  ; 3 or 4
         in   r19, _SFR_IO_ADDR(IEC_OUTPUT) ; 1 - read & mask unused IEC port lines
-        andi r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ) ; 1
+        andi r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN) ; 1
         bst  r0, 0               ; 1 - take bit 0 (lsb)
         bld  r19, IEC_OPIN_CLOCK ; 1 - for CLOCK line
         bst  r0, 1               ; 1 - take bit 1
@@ -697,7 +697,7 @@ fc3_next_byte:
 
         ; release CLOCK and DATA
         in      r19, _SFR_IO_ADDR(IEC_OUTPUT) ; read & mask unused IEC port lines
-        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ)
+        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN)
         out     _SFR_IO_ADDR(IEC_OUTPUT), r19 ; release CLOCK and DATA
 
         sei
@@ -1109,7 +1109,7 @@ epyxcart_send_byte:
 
         ;; prepare data
         in      r19, _SFR_IO_ADDR(IEC_OUTPUT)
-        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ)
+        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN)
 
         ;; wait for DATA high or ATN low
 1:      sbis    _SFR_IO_ADDR(IEC_INPUT), IEC_PIN_ATN
@@ -1252,7 +1252,7 @@ geos_send_byte_common:
 
         ;; preserve non-IEC lines on IEC_OUTPUT port
         in      r19, _SFR_IO_ADDR(IEC_OUTPUT) ; 1
-        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ) ; 1
+        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN) ; 1
         mov     r0, r19             ; 1
         ret                         ; 4 or 5
 
@@ -1863,7 +1863,7 @@ ultraboot_send_byte:
 
         ;; prepare data
         in      r19, _SFR_IO_ADDR(IEC_OUTPUT)
-        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN|IEC_OBIT_SRQ)
+        andi    r19, ~(IEC_OBIT_DATA|IEC_OBIT_CLOCK|IEC_OBIT_ATN)
 
         ;; wait for DATA high
 1:      sbis    _SFR_IO_ADDR(IEC_INPUT), IEC_PIN_DATA

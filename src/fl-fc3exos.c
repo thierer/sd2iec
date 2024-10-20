@@ -172,7 +172,6 @@ bool load_fc3oldfreeze(UNUSED_PARAMETER) {
   uint16_t i;
 
   /* mark as busy */
-  set_srq(0);
   set_clock(1);
   set_data(0);
 

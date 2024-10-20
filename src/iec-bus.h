@@ -33,16 +33,15 @@
 #  define IEC_ATN   (IEC_INPUT & IEC_BIT_ATN)
 #  define IEC_DATA  (IEC_INPUT & IEC_BIT_DATA)
 #  define IEC_CLOCK (IEC_INPUT & IEC_BIT_CLOCK)
-#  define IEC_SRQ   (IEC_INPUT & IEC_BIT_SRQ)
 #endif
 
 #ifdef IEC_INPUTS_INVERTED
 static inline iec_bus_t iec_bus_read(void) {
-  return (~IEC_INPUT) & (IEC_BIT_ATN | IEC_BIT_DATA | IEC_BIT_CLOCK | IEC_BIT_SRQ);
+  return (~IEC_INPUT) & (IEC_BIT_ATN | IEC_BIT_DATA | IEC_BIT_CLOCK);
 }
 #else
 static inline iec_bus_t iec_bus_read(void) {
-  return IEC_INPUT & (IEC_BIT_ATN | IEC_BIT_DATA | IEC_BIT_CLOCK | IEC_BIT_SRQ);
+  return IEC_INPUT & (IEC_BIT_ATN | IEC_BIT_DATA | IEC_BIT_CLOCK);
 }
 #endif
 
