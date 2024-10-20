@@ -52,6 +52,11 @@ static inline void board_init(void) {
 }
 #endif
 
+/* dummy for IEC reset if not connected */
+#ifndef BUTTON_RESET
+#  define BUTTON_RESET 0
+#endif
+
 /* ----- Translate CONFIG_ADD symbols to HAVE symbols ----- */
 /* By using two symbols for this purpose it's easier to determine if */
 /* support was enabled by default or added in the config file.       */

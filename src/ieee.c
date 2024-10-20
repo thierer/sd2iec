@@ -603,7 +603,12 @@ void ieee_mainloop(void) {
       case BUS_IDLE:                                /* BUS_IDLE */
         ieee_bus_idle();
         while(IEEE_ATN) {   ;               /* wait for ATN */
-          if (key_pressed(KEY_NEXT | KEY_PREV | KEY_HOME)) {
+          if (key_pressed(KEY_RESET)) {
+            /* close all channels and set dos version as error message */
+            reset_key(KEY_RESET);
+            free_multiple_buffers(FMB_USER);
+            set_error(ERROR_DOSVERSION);
+          } else if (key_pressed(KEY_NEXT | KEY_PREV | KEY_HOME)) {
             change_disk();
           } else if (key_pressed(KEY_SLEEP)) {
             reset_key(KEY_SLEEP);

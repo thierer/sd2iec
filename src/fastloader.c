@@ -60,6 +60,11 @@ volatile uint8_t parallel_rxflag;
 
 /* Small helper for fastloaders that need to detect disk changes */
 uint8_t check_keys(void) {
+  /* check for IEC reset only if connected (BUTTON_RESET != 0) */
+  if (BUTTON_RESET != 0 && key_pressed(KEY_RESET)) {
+    return 1;
+  }
+
   /* Check for disk changes etc. */
   if (key_pressed(KEY_NEXT | KEY_PREV | KEY_HOME)) {
     change_disk();

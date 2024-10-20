@@ -70,6 +70,9 @@ static void buttons_changed(rawbutton_t new_state) {
   if (time_after(ticks, lastbuttonchange + DEBOUNCE_TICKS)) {
     if (key_pressed(IGNORE_KEYS)) {
       reset_key(IGNORE_KEYS);
+    } else if (!(buttonstate & BUTTON_RESET) &&
+               (new_state & BUTTON_RESET)) {
+      set_key(KEY_RESET);
     } else if (BUTTON_PREV && /* match only if PREV exists */
                !(buttonstate & (BUTTON_PREV|BUTTON_NEXT))) {
       /* Both buttons held down */

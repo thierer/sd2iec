@@ -1219,14 +1219,16 @@ static inline void iec_interrupts_init(void) {
 
 #  define BUTTON_NEXT _BV(PC2)
 #  define BUTTON_PREV _BV(PC3)
+/* the IEC reset line is treated like a button */
+#  define BUTTON_RESET _BV(PC5)
 
 static inline rawbutton_t buttons_read(void) {
-  return PINC & (BUTTON_NEXT | BUTTON_PREV);
+  return PINC & (BUTTON_NEXT | BUTTON_PREV | BUTTON_RESET);
 }
 
 static inline void buttons_init(void) {
-  DDRC  &= (uint8_t)~(BUTTON_NEXT | BUTTON_PREV);
-  PORTC |= BUTTON_NEXT | BUTTON_PREV;
+  DDRC  &= (uint8_t)~(BUTTON_NEXT | BUTTON_PREV | BUTTON_RESET);
+  PORTC |= BUTTON_NEXT | BUTTON_PREV | BUTTON_RESET;
 }
 
 #  define SOFTI2C_PORT          PORTC

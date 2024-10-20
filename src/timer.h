@@ -36,6 +36,8 @@
 #define KEY_SLEEP   (1<<3)
 /* Remote display service request */
 #define KEY_DISPLAY (1<<4)
+/* IEC reset */
+#define KEY_RESET   (1<<5)
 
 #define IGNORE_KEYS (1<<7)
 
