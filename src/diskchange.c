@@ -94,9 +94,6 @@ static bool mount_line(void) {
 
   current_error = ERROR_OK;
 
-  /* Kill all buffers */
-  free_multiple_buffers(FMB_USER_CLEAN);
-
   /* allocate work area */
   buffer_t* readbuf = alloc_buffer();
 
