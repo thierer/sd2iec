@@ -90,9 +90,7 @@ static bool mount_line(void) {
   bool got_colon = false;
   bool seen_nonwhite = false;
   bool is_comment = false;
-  uint8_t olderror = current_error;
-
-  current_error = ERROR_OK;
+  uint8_t olderror;
 
   /* allocate work area */
   buffer_t* readbuf = alloc_buffer();
@@ -184,8 +182,14 @@ static bool mount_line(void) {
     }
   }
 
+  olderror = current_error;
+  current_error = ERROR_OK;
+
   if (partition[swappath.part].fop != &fatops)
     image_unmount(swappath.part);
+
+  if (current_error != ERROR_OK)
+    return false;
 
   /* Start in the partition+directory of the swap list */
   current_part = swappath.part;
@@ -206,12 +210,10 @@ static bool mount_line(void) {
   /* parse and change */
   do_chdir(buffer_start);
 
-  if (current_error != 0 && current_error != ERROR_DOSVERSION) {
-    current_error = olderror;
-    return false;
-  }
+  bool success = current_error == ERROR_OK;
+  set_error(olderror);
 
-  return true;
+  return success;
 }
 
 /**
