@@ -24,6 +24,7 @@
 */
 
 #include <avr/io.h>
+#include <avr/atomic.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include <stdio.h>
@@ -36,11 +37,19 @@ static volatile uint16_t read_idx;
 static volatile uint16_t write_idx;
 
 ISR(USART_UDRE_vect) {
-  if (read_idx == write_idx) return;
-  UDR = txbuf[read_idx];
-  read_idx = (read_idx+1) & (sizeof(txbuf)-1);
-  if (read_idx == write_idx)
-    UCSRB &= ~ _BV(UDRIE);
+  UCSRB &= ~_BV(UDRIE);
+
+  NONATOMIC_BLOCK( NONATOMIC_FORCEOFF ) {
+    while (UCSRA & _BV(UDRE)) {
+      if (read_idx == write_idx)
+        return;
+
+      UDR = txbuf[read_idx];
+      read_idx = (read_idx+1) & (sizeof(txbuf)-1);
+    }
+  }
+
+  UCSRB |= _BV(UDRIE);
 }
 
 void uart_putc(char c) {

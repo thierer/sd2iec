@@ -37,7 +37,7 @@
 typedef uint8_t rawbutton_t;
 
 /* Interrupt handler for system tick */
-#define SYSTEM_TICK_HANDLER ISR(TIMER1_COMPA_vect)
+#define SYSTEM_TICK_HANDLER ISR(TIMER1_COMPA_vect, ISR_NOBLOCK)
 
 /* EEPROMFS: offset and size must be multiples of 4 */
 /* to actually enable it, CONFIG_HAVE_EEPROMFS must be set in config */

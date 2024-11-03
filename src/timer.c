@@ -94,6 +94,8 @@ static void buttons_changed(rawbutton_t new_state) {
 
 /* The main timer interrupt */
 SYSTEM_TICK_HANDLER {
+  set_tick_irq(0);
+
   rawbutton_t tmp = buttons_read();
 
   if (tmp != buttonstate) {
@@ -138,4 +140,6 @@ SYSTEM_TICK_HANDLER {
     set_key(KEY_DISPLAY);
   }
 #endif
+
+  set_tick_irq(1);
 }

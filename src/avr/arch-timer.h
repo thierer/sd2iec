@@ -28,6 +28,8 @@
 
 #include <util/delay.h>
 
+#define set_tick_irq(x) do { TIMSK1 = (x) ? _BV(OCIE1A) : 0; } while (0)
+
 /* use an approximated delay loop if the time isn't constant at compile time */
 static inline __attribute__((always_inline)) void delay_ms(uint16_t delay) {
   if (__builtin_constant_p(delay)) {

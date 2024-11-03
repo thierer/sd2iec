@@ -30,6 +30,8 @@
 typedef uint32_t tick_t;
 typedef int32_t stick_t;
 
+#define set_tick_irq(x) do {} while (0)
+
 /* Delay functions */
 // FIXME: Is delay_us accurate enough as function?
 void delay_us(unsigned int time);
