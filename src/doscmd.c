@@ -2122,13 +2122,19 @@ static void parse_user(void) {
     break;
 
   case '0':
-    /* U0 - only device address changes for now */
+    /* U0 - only device address changes and burst fastload are supported */
     if ((command_buffer[2] & 0x1f) == 0x1e &&
         command_buffer[3] >= 4 &&
         command_buffer[3] <= 30) {
       device_address = command_buffer[3];
       display_address(device_address);
       break;
+#ifdef CONFIG_FAST_SERIAL
+    } else if ((command_buffer[2] & 0x1f) == 0x1f) {
+      datacrc = 0xffff; // reset datacrc to be consistent with standard load
+      burst_fastload();
+      break;
+#endif
     }
     /* Fall through */
 

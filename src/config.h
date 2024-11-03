@@ -94,6 +94,12 @@ static inline void board_init(void) {
 #  endif
 #endif
 
+#if defined(CONFIG_FAST_SERIAL)
+#  if !defined(__AVR__) || !defined(IEC_SRQ_INT)
+#    error "CONFIG_FAST_SERIAL needs AVR hardware with a dedicated SRQ interrupt!"
+#  endif
+#endif
+
 /* ----- Translate CONFIG_RTC_* symbols to HAVE_RTC symbol ----- */
 #if defined(CONFIG_RTC_SOFTWARE) || \
     defined(CONFIG_RTC_PCF8583)  || \

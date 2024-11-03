@@ -94,6 +94,18 @@ void parallel_set_dir(parallel_dir_t direction);
 # define parallel_set_dir(x) do {} while (0)
 #endif
 
+#ifdef CONFIG_FAST_SERIAL
+void fs_reset(void);
+uint8_t fs_byte_ready(void);
+uint8_t fs_read_byte(void);
+void fs_send_byte(uint8_t);
+#else
+# define fs_reset()       do {} while (0)
+# define fs_byte_ready()  0
+# define fs_read_byte()   0
+# define fs_send_byte(x)  ((void)x)
+#endif
+
 #endif
 
 #endif

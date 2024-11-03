@@ -33,8 +33,9 @@
 enum open_modes { OPEN_READ, OPEN_WRITE, OPEN_APPEND, OPEN_MODIFY };
 extern const PROGMEM uint8_t filetypes[];
 
-/* saved dirent of the last opened file */
+/* saved dirent and path of the last opened file */
 extern cbmdirent_t previous_file_dirent;
+extern path_t      previous_file_path;
 
 /* Refill-callback for large buffers, only used for comparision */
 uint8_t directbuffer_refill(buffer_t *buf);

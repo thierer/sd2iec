@@ -2048,4 +2048,112 @@ krill_send_byte_resend:
 
 #endif
 
+#ifdef CONFIG_FAST_SERIAL
+        ;; ===================================================================
+        ;;  Fast serial
+        ;; ===================================================================
+
+        .lcomm  sr_shadow, 1    ; collects bits as they are read
+        .lcomm  sr, 1           ; received byte; valid if sr_ready != 0
+        .lcomm  sr_ready, 1     ; flag for new byte available in sr
+
+        ;; ===================================================================
+        ;; SRQ Interrupt service routine for the fast serial protocol
+        ;; ===================================================================
+        ;
+        .global IEC_SRQ_INT_VECT
+IEC_SRQ_INT_VECT:
+        push    r18                                     ; 2
+        in      r18, _SFR_IO_ADDR(IEC_INPUT)            ; 1
+
+        push    r19                                     ; 2
+        in      r19, _SFR_IO_ADDR(SREG)                 ; 1
+
+        bst     r18, IEC_PIN_DATA                       ; 1
+        lds     r18, sr_shadow                          ; 2
+        lsl     r18                                     ; 1
+        bld     r18, 0                                  ; 1
+        brcc    1f                                      ; 2/1
+
+        ;; shadow sr full, store result and reset
+        sts     sr, r18                                 ; 2
+        ldi     r18, 1                                  ; 1
+        ;; set ready flag
+        sts     sr_ready, r18                           ; 2
+
+        ;; store the new shadow sr value
+1:      sts     sr_shadow, r18                          ; 2
+
+        out     _SFR_IO_ADDR(SREG), r19                 ; 1
+        pop     r19                                     ; 2
+        pop     r18                                     ; 2
+
+        reti                                            ; 4
+
+        .global fs_reset
+        ;; void fs_reset(void)
+fs_reset:
+        in      r18, _SFR_IO_ADDR(SREG)
+        cli
+        ldi     r19, 1
+        sts     sr_shadow, r19
+        sts     sr_ready, r1
+        out     _SFR_IO_ADDR(SREG), r18
+        ret
+
+        .global fs_byte_ready
+        ;; uint8_t fs_byte_ready(void)
+fs_byte_ready:
+        lds     r24, sr_ready
+        ret
+
+        .global fs_read_byte
+        ;; uint8_t fs_read_byte(void)
+fs_read_byte:
+        in      r18, _SFR_IO_ADDR(SREG)
+        cli
+        lds     r24, sr
+        sts     sr_ready, r1
+        out     _SFR_IO_ADDR(SREG), r18
+        ret
+
+        ;;
+        ;; send a byte using the fast serial protocol
+        ;; called with byte in r24, no return value
+        ;;
+
+        ;; void fs_send_byte(uint8_t byte)
+        .global fs_send_byte
+fs_send_byte:
+        mov     r0, r24
+        com     r0
+
+        ldi     r19, 8  ; bit counter
+        in      r20, _SFR_IO_ADDR(IEC_OUTPUT)
+
+        in      r21, _SFR_IO_ADDR(SREG)
+        cli
+1:
+        bst     r0, 7                                   ; 1
+        bld     r20, IEC_OPIN_DATA                      ; 1
+        out     _SFR_IO_ADDR(IEC_OUTPUT), r20           ; 1
+        sbi     _SFR_IO_ADDR(SRQ_OUTPUT), IEC_OPIN_SRQ  ; 2
+        delay_us 2, -3
+        cbi     _SFR_IO_ADDR(SRQ_OUTPUT), IEC_OPIN_SRQ  ; 2
+        delay_us 3, -8
+        lsl     r0                                      ; 1
+        dec     r19                                     ; 1
+        brne    1b                                      ; 2/1
+
+        ;; clear SRQ INT flag before potentially enabling interrupts
+        sbi     _SFR_IO_ADDR(EIFR), IEC_SRQ_INT         ; 2
+        out     _SFR_IO_ADDR(SREG), r21                 ; 1
+
+        ;; exit with DATA high
+        cbi     _SFR_IO_ADDR(IEC_OUTPUT), IEC_OPIN_DATA
+
+        ret
+
+#endif // ifdef CONFIG_FAST_SERIAL
+
         .end

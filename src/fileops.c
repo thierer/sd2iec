@@ -50,9 +50,9 @@
 /*  global variables                                                         */
 /* ------------------------------------------------------------------------- */
 
-uint8_t       image_as_dir;
-cbmdirent_t   previous_file_dirent;
-static path_t previous_file_path;
+uint8_t     image_as_dir;
+cbmdirent_t previous_file_dirent;
+path_t      previous_file_path;
 
 
 /* ------------------------------------------------------------------------- */

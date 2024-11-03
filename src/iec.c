@@ -107,13 +107,13 @@ IEC_ATN_HANDLER {
 /* ------------------------------------------------------------------------- */
 
 /**
- * _iec_getc - receive one byte from the CBM serial bus (E9C9)
+ * iec_getc - receive one byte from the CBM serial bus (E9C9)
  *
  * This function tries receives one byte from the serial bus and returns it
  * if successful. Returns -1 instead if the device state has changed, the
  * caller should return to the main loop immediately in that case.
  */
-static int16_t _iec_getc(void) {
+static int16_t iec_getc(void) {
   uint8_t i,val;
   iec_bus_t tmp;
 
@@ -123,25 +123,29 @@ static int16_t _iec_getc(void) {
     if (iec_check_atn()) return -1;
   } while (!(iec_debounced() & IEC_BIT_CLOCK));
 
-  set_data(1);                                         // E9D7
-  /* Wait until all other devices released the data line    */
-  while (!IEC_DATA) ;                                  // FF20
+  ATOMIC_BLOCK( ATOMIC_FORCEON ) {
+    set_data(1);                                         // E9D7
+    /* Wait until all other devices released the data line    */
+    while (!IEC_DATA) ;                                  // FF20
 
-  /* Timer for EOI detection */
-  start_timeout(256);
+    /* Timer for EOI detection */
+    start_timeout(256);
 
-  do {
-    if (iec_check_atn()) return -1;                    // E9DF
-    tmp = has_timed_out();                             // E9EE
-  } while ((iec_debounced() & IEC_BIT_CLOCK) && !tmp);
+    do {
+      if (iec_check_atn()) return -1;                    // E9DF
+      tmp = has_timed_out();                             // E9EE
+    } while ((iec_debounced() & IEC_BIT_CLOCK) && !tmp);
+  }
 
   /* See if timeout happened -> EOI */
   if (tmp) {
-    set_data(0);                                       // E9F2
-    delay_us(73);                       // E9F5-E9F8, delay calculated from all
-    set_data(1);                        //   instructions between IO accesses
-
     uart_putc('E');
+
+    ATOMIC_BLOCK( ATOMIC_FORCEON ) {
+      set_data(0);                                       // E9F2
+      delay_us(73);                       // E9F5-E9F8, delay calculated from all
+      set_data(1);                        //   instructions between IO accesses
+    }
 
     do {
       if (iec_check_atn())                             // E9FD
@@ -161,7 +165,7 @@ static int16_t _iec_getc(void) {
         tmp = iec_bus_read();
 
         /* If there is a delay before the last bit, the controller uses JiffyDOS */
-        if (!(iec_data.iecflags & JIFFY_ACTIVE) && has_timed_out()) {
+        if (!(iec_data.iecflags & (JIFFY_ACTIVE|FAST_SERIAL)) && has_timed_out()) {
           if ((val>>1) < 0x60 && ((val>>1) & 0x1f) == device_address) {
             /* If it's for us, notify controller that we support Jiffy too */
             set_data(0);
@@ -174,6 +178,11 @@ static int16_t _iec_getc(void) {
     } else {
       /* Capture data on rising edge */
       do {                                             // EA0B
+        if ((iec_data.iecflags & FAST_SERIAL) && fs_byte_ready()) {
+          /* we got a byte via fast serial, use it */
+          val = fs_read_byte();
+          goto done;
+        }
         tmp = iec_bus_read();
       } while (!(tmp & IEC_BIT_CLOCK));
     }
@@ -185,25 +194,10 @@ static int16_t _iec_getc(void) {
     } while (iec_debounced() & IEC_BIT_CLOCK);
   }
 
+done:
   delay_us(5); // Test
   set_data(0);                                         // EA28
   delay_us(50);  /* Slow down a little bit, may or may not fix some problems */
-  return val;
-}
-
-/**
- * iec_getc - wrapper around _iec_getc to disable interrupts
- *
- * This function wraps iec_getc to disable interrupts there and is completely
- * inlined by the compiler. It could be inlined in the C code too, but is kept
- * seperately for clarity.
- */
-static int16_t iec_getc(void) {
-  int16_t val;
-
-  ATOMIC_BLOCK( ATOMIC_FORCEON ) {
-    val = _iec_getc();
-  }
   return val;
 }
 
@@ -262,25 +256,29 @@ static uint8_t iec_putc(uint8_t data, const uint8_t with_eoi) {
   } while (!(iec_debounced() & IEC_BIT_DATA));
   delay_us(21); // calculated - E951 (best case after bus read) - E95B
 
-  for (i=0;i<8;i++) {
-    if (!(iec_debounced() & IEC_BIT_DATA)) { // E95C
-      iec_data.bus_state = BUS_CLEANUP;
-      return -1;
+  if (!(iec_data.iecflags & FAST_SERIAL)) {
+    for (i=0;i<8;i++) {
+      if (!(iec_debounced() & IEC_BIT_DATA)) { // E95C
+        iec_data.bus_state = BUS_CLEANUP;
+        return -1;
+      }
+      delay_us(45);     // calculated
+
+      set_data(data & 1<<i);
+      delay_us(22);     // calculated
+      set_clock(1);
+      if (globalflags & VC20MODE)
+        delay_us(34);   // Calculated delay
+      else
+        delay_us(75);   // Calculated delay
+
+      set_clock(0);     // FEFB
+      delay_us(22);     // calculated
+      set_data(1);      // FEFE
+      delay_us(14);     // Settle time, approximate
     }
-    delay_us(45);     // calculated
-
-    set_data(data & 1<<i);
-    delay_us(22);     // calculated
-    set_clock(1);
-    if (globalflags & VC20MODE)
-      delay_us(34);   // Calculated delay
-    else
-      delay_us(75);   // Calculated delay
-
-    set_clock(0);     // FEFB
-    delay_us(22);     // calculated
-    set_data(1);      // FEFE
-    delay_us(14);     // Settle time, approximate
+  } else { // fast_serial
+    fs_send_byte(data); // releases DATA after the last bit
   }
 
   do {
@@ -324,6 +322,15 @@ static uint8_t iec_listen_handler(const uint8_t cmd) {
     uart_putc('c');
     iec_data.bus_state = BUS_CLEANUP;
     return 1;
+  }
+
+  if (iec_data.iecflags & FAST_SERIAL) {
+    /* tell the host that we're willing to use the fast serial protocol */
+    do {
+      if (iec_check_atn()) return 1;
+    } while (!(iec_debounced() & IEC_BIT_CLOCK));
+
+    fs_send_byte(0x00);
   }
 
   while (1) {
@@ -531,6 +538,9 @@ void iec_init(void) {
   if (!IEC_ATN)
     set_data(0);
 
+  /* initialize the fast serial shift register */
+  fs_reset();
+
   /* Prepare IEC interrupts */
   iec_interrupts_init();
 
@@ -564,6 +574,7 @@ void iec_mainloop(void) {
       reset_key(KEY_SLEEP);
 
       update_leds();
+      fs_reset();
 
       iec_data.bus_state = BUS_IDLE;
       break;
@@ -577,6 +588,7 @@ void iec_mainloop(void) {
           /* close all channels and set dos version as error message */
           reset_key(KEY_RESET);
           free_multiple_buffers(FMB_USER);
+          fs_reset();
           set_error(ERROR_DOSVERSION);
         } else if (key_pressed(KEY_NEXT | KEY_PREV | KEY_HOME)) {
           change_disk();
@@ -603,7 +615,17 @@ void iec_mainloop(void) {
 
       iec_data.device_state = DEVICE_IDLE;
       iec_data.bus_state    = BUS_ATNACTIVE;
-      iec_data.iecflags &= (uint8_t)~(EOI_RECVD | JIFFY_ACTIVE | JIFFY_LOAD);
+      iec_data.iecflags &= (uint8_t)~(EOI_RECVD | JIFFY_ACTIVE | JIFFY_LOAD | FAST_SERIAL);
+
+      /* check for fast serial protocol */
+      if (fs_byte_ready()) {
+        cmd = fs_read_byte();
+        if (cmd == 0x00 || cmd == 0xff) {
+          iec_data.iecflags |= FAST_SERIAL;
+        } else {
+          fs_reset();
+        }
+      }
 
       /* Slight protocol violation:                        */
       /*   Wait until clock is low or 250us have passed    */

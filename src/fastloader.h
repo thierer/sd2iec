@@ -153,6 +153,8 @@ uint8_t dolphin_putc(uint8_t data, uint8_t with_eoi);
 bool load_dolphin(void);
 bool save_dolphin(void);
 
+void burst_fastload(void);
+
 /* functions that are shared between multiple loaders */
 /* currently located in fastloader.c                  */
 int16_t gijoe_read_byte(void);

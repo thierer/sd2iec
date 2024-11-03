@@ -1212,9 +1212,20 @@ static inline void toggle_dirty_led(void) {
 #  define IEC_CLK_INT         INT1
 #  define IEC_CLK_INT_VECT    INT1_vect
 
+#  define SRQ_DDR             DDRB
+#  define SRQ_PORT            PORTB
+#  define SRQ_OUTPUT          SRQ_DDR
+#  define IEC_OPIN_SRQ        PB2
+#  define IEC_OBIT_SRQ        _BV(IEC_OPIN_SRQ)
+#  define IEC_SRQ_INT         INT2
+#  define IEC_SRQ_INT_VECT    INT2_vect
+
 static inline void iec_interrupts_init(void) {
-  EICRA = _BV(ISC11) | _BV(ISC01);
-  EIFR  = _BV(INTF1) | _BV(INTF0);
+  EICRA = _BV(ISC21) | _BV(ISC20) | _BV(ISC11) | _BV(ISC01);
+  EIFR  = _BV(INTF2) | _BV(INTF1) | _BV(INTF0);
+#  ifdef CONFIG_FAST_SERIAL
+  EIMSK = _BV(INT2);
+#  endif
 }
 
 #  define BUTTON_NEXT _BV(PC2)
@@ -1371,11 +1382,18 @@ static inline void iec_interface_init(void) {
   /* Set up the output port - all lines high */
   IEC_DDROUT |=            IEC_OBIT_ATN | IEC_OBIT_CLOCK | IEC_OBIT_DATA;
   IEC_PORT   &= (uint8_t)~(IEC_OBIT_ATN | IEC_OBIT_CLOCK | IEC_OBIT_DATA);
+#  ifdef SRQ_OUTPUT
+#    error Implement me!
+#  endif
 #else
   /* Pullups would be nice, but AVR can't switch from */
   /* low output to hi-z input directly                */
   IEC_DDR  &= (uint8_t)~(IEC_BIT_ATN | IEC_BIT_CLOCK | IEC_BIT_DATA);
   IEC_PORT &= (uint8_t)~(IEC_BIT_ATN | IEC_BIT_CLOCK | IEC_BIT_DATA);
+#  ifdef SRQ_OUTPUT
+  SRQ_DDR  &= (uint8_t)~IEC_OBIT_SRQ;
+  SRQ_PORT &= (uint8_t)~IEC_OBIT_SRQ;
+#  endif
 #endif
 
 #ifdef HAVE_PARALLEL

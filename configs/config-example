@@ -141,6 +141,10 @@ CONFIG_LOADER_SPARKLE=n
 # Enable DolphinDOS parallel speeder
 CONFIG_PARALLEL_DOLPHIN=y
 
+# Enable limited burst mode support
+# AVR only and needs SRQ on an EXTI pin (PCINT not supported)
+CONFIG_FAST_SERIAL=n
+
 # Select which hardware to compile for
 # Valid values:
 #   1 - example configuration in config.h (won't compile!)
