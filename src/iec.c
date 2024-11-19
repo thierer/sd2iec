@@ -571,7 +571,7 @@ void iec_mainloop(void) {
       /* Wait until the sleep key is used again */
       while (!key_pressed(KEY_SLEEP))
         system_sleep();
-      reset_key(KEY_SLEEP);
+      reset_key(0xff);
 
       update_leds();
       fs_reset();
