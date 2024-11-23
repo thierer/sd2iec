@@ -656,10 +656,10 @@ static uint8_t send_file(session_t *s) {
       /* busy */
       set_clock(buf != NULL && detected_loader == FL_KRILL_R164);
       set_data(buf != NULL && detected_loader != FL_KRILL_R164);
-
-      if (buf != NULL && bdel != 0)
-        delay_ms(bdel);
     }
+
+    if (buf != NULL && bdel != 0)
+      delay_ms(bdel);
 
 abort:
     if (buf == NULL && detected_loader == FL_KRILL_R58PRE)
