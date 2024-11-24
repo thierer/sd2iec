@@ -150,8 +150,8 @@ bool load_sparkle(uint8_t);
 
 int16_t dolphin_getc(void);
 uint8_t dolphin_putc(uint8_t data, uint8_t with_eoi);
-bool load_dolphin(void);
-bool save_dolphin(void);
+void load_dolphin(void);
+void save_dolphin(void);
 
 void burst_fastload(void);
 
