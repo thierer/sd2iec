@@ -893,10 +893,7 @@ int8_t fat_readdir(dh_t *dh, cbmdirent_t *dent) {
   do {
     res = f_readdir(&dh->dir.fat, &finfo);
     if (res != FR_OK) {
-      if (res == FR_INVALID_OBJECT)
-        set_error(ERROR_DIR_ERROR);
-      else
-        parse_error(res,1);
+      parse_error(res,1);
       return 1;
     }
   } while ((finfo.fname[0] && (finfo.fattrib & AM_VOL)) ||
