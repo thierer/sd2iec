@@ -229,7 +229,10 @@ static const PROGMEM struct fastloader_crc_s fl_crc_table[] = {
   { 0x8667, FL_KRILL_R146,       RXTX_NONE          }, // r146 drvchkme
   { 0xe300, FL_KRILL_R186,       RXTX_KRILL_CLOCK   }, // second chunk
   { 0x19a4, FL_KRILL_R184,       RXTX_KRILL_CLOCK   }, // second chunk
+  { 0x6264, FL_KRILL_R184,       RXTX_KRILL_CLOCK   },
   { 0x741d, FL_KRILL_R184,       RXTX_KRILL_CLOCK   },
+  { 0x74a5, FL_KRILL_R184,       RXTX_KRILL_CLOCK   },
+  { 0x928f, FL_KRILL_R184,       RXTX_KRILL_CLOCK   },
   { 0xf7e4, FL_KRILL_R184,       RXTX_KRILL_CLOCK   },
   { 0x1eec, FL_KRILL_R164,       RXTX_KRILL_CLOCK   },
   { 0x4393, FL_KRILL_R164,       RXTX_KRILL_CLOCK   },
@@ -394,6 +397,10 @@ static const PROGMEM struct fastloader_handler_s fl_handler_table[] = {
   { 0x0758, FL_KRILL_R184,       load_krill,       0 },
   { 0x0770, FL_KRILL_R184,       load_krill,       0 },
   { 0x07a8, FL_KRILL_R184,       load_krill,       0 },
+  { 0x07ac, FL_KRILL_R184,       load_krill,       0 },
+  { 0x07ae, FL_KRILL_R184,       load_krill,       0 },
+  { 0x07ce, FL_KRILL_R184,       load_krill,       0 },
+  { 0x07e5, FL_KRILL_R184,       load_krill,       0 },
   { 0x06d8, FL_KRILL_R164,       load_krill,       0 },
   { 0x077e, FL_KRILL_R164,       load_krill,       0 },
   { 0x07aa, FL_KRILL_R164,       load_krill,       0 },

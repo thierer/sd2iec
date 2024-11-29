@@ -122,6 +122,22 @@ byte is sent again. This is signaled to the host by setting CLK.
 
    50 |  (1) | 1->0 |      | if ATN was not set by host -> send again
 
+Fast Serial Send Protocol
+-------------------------
+
+A C128 host (supported on >= r184) will use the fast serial protocol
+via the CIA hardware shift register for payload transfer, if support
+is detected during the install phase. Otherwise it falls back to the
+standard 2-bit ATN protocol.
+
+ATN edges are used for read acknowledge, starting with a negative
+edge after the first byte of each block.
+
+If the loader was built with the ASYNCHRONOUS_BURST_HANDSHAKE flag,
+the host won't use the CIA's ICR SR flag for write acknowledge, but
+the drive instead sends them using CLK edges, starting with a positive
+egde after a block's first byte.
+
 Build-Time Options
 ==================
 
@@ -429,10 +445,11 @@ r184:
   Byte 1: Bits 7-1: blockindex delta in respect to previous block
           Bit    0: flag for "last block"
 
-The 2-bit protocol is used for the entire transfer. After each block
-the drive sets the busy line. If either "file not found" or "end of
-file" was sent, the transfer is complete. Otherwise the next block
-is fetched and sent.
+The 2-bit protocol or - if supported by the hardware - the fast serial
+protocol is used for the entire transfer. After each block the drive
+sets the busy line. If either "file not found" or "end of file" was
+sent, the transfer is complete. Otherwise the next block is fetched
+and sent.
 
 Note that the final block of the transfer isn't necessarily the last
 (logical) block of the file, as blocks might be sent out of order.

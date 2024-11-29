@@ -39,6 +39,7 @@
 #include "errormsg.h"
 #include "fastloader-ll.h"
 #include "iec-bus.h"
+#include "iec.h"
 #include "parser.h"
 #include "timer.h"
 #include "uart.h"
@@ -256,6 +257,24 @@ uint8_t krill_send_byte_58pre(uint8_t b) {
 
 uint8_t krill_send_byte_atn(uint8_t b) {
   return clocked_write_byte(b, NULL, 1000);
+}
+
+/* used by >=r184 if connected to a host with fast serial support (e.g. C128) */
+static uint8_t krill_send_byte_burst(uint8_t b) {
+  uint8_t atn = IEC_ATN;
+  fs_send_byte(b);
+  /* toggle clock in case loader was built with ASYNCHRONOUS_BURST_HANDSHAKE */
+  set_clock(!IEC_CLOCK);
+
+  /* wait for read acknowledge */
+  if (atn) {
+    if (wait_atn_low(1000))
+      return 1;
+  } else {
+    while (!IEC_ATN);
+  }
+
+  return 0;
 }
 
 static uint8_t load_drivecode(session_t *s) {
@@ -624,20 +643,26 @@ static uint8_t send_file(session_t *s) {
       set_data(detected_loader == FL_KRILL_R164);
       set_clock(detected_loader != FL_KRILL_R164);
 
-      if (detected_loader <= FL_KRILL_R146)
-        while (IEC_ATN);
+      if (detected_loader >= FL_KRILL_R184) {
+        /* check for "file exists" test (CLK set by host) */
+        if (detected_loader >= FL_KRILL_R192) {
+          while (!IEC_ATN && IEC_CLOCK);
 
-      /* check for "file exists" test (CLK set by host) */
-      if (detected_loader >= FL_KRILL_R192) {
-        while (!IEC_ATN && IEC_CLOCK);
-
-        if (!IEC_CLOCK) {
-          while (!IEC_ATN);
-          set_data(buf != NULL);
-          /* buffer will be cleaned up by main loop */
-          buf = NULL;
-          goto abort;
+          if (!IEC_CLOCK) {
+            while (!IEC_ATN);
+            set_data(buf != NULL);
+            /* buffer will be cleaned up by main loop */
+            buf = NULL;
+            goto abort;
+          }
         }
+
+        if (iec_data.iecflags & FAST_SERIAL) {
+          while (!IEC_ATN);
+          set_clock(0);
+        }
+      } else if (detected_loader <= FL_KRILL_R146) {
+        while (IEC_ATN);
       }
 
       to = fast_send_byte(hd[0]);
@@ -650,12 +675,13 @@ static uint8_t send_file(session_t *s) {
         }
       }
 
-      /* fast_send_byte() exits with ATN low (bitpair not yet ackowledged) */
-      while (!IEC_ATN);
+      /* 2-bit fast_send_byte() exits with ATN low (bitpair not yet ackowledged) */
+      if (!(iec_data.iecflags & FAST_SERIAL))
+        while (!IEC_ATN);
 
       /* busy */
-      set_clock(buf != NULL && detected_loader == FL_KRILL_R164);
-      set_data(buf != NULL && detected_loader != FL_KRILL_R164);
+      set_clock(detected_loader == FL_KRILL_R164);
+      set_data(detected_loader != FL_KRILL_R164);
     }
 
     if (buf != NULL && bdel != 0)
@@ -1009,9 +1035,13 @@ bool load_krill(UNUSED_PARAMETER) {
   if (load_drivecode(&session))
     goto exit;
 
-  /* r164 uses DATA as data line for the drivecode, but ATN for requests */
-  if (detected_loader == FL_KRILL_R164)
+  if (detected_loader == FL_KRILL_R164) {
+    /* r164 uses DATA as data line for the drivecode, but ATN for requests */
     fast_get_byte = krill_get_byte_clk_atn;
+  } else if (detected_loader >= FL_KRILL_R184 && (iec_data.iecflags & FAST_SERIAL)) {
+    /* >= r184 use fast serial if detected during install */
+    fast_send_byte = krill_send_byte_burst;
+  }
 
   session.first_file = 1;
   dir_changed = 1; /* force directory update */
@@ -1071,9 +1101,7 @@ bool load_krill(UNUSED_PARAMETER) {
     }
 
     /* Wait for the request line to be set */
-    while (iec_bus_read() & req_line)
-      if (check_keys()) /* exit loop on long key press */
-        goto exit;
+    while (iec_bus_read() & req_line);
   }
 
 exit:
