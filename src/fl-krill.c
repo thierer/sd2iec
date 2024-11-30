@@ -188,7 +188,7 @@ bool drvchkme_krill(uint8_t f) {
   custom_magic.address = 0x300;
   /* the first read will have returned '0' ("00, OK, .." in error_buffer[]) */
   custom_magic.val[0]  = ~'0';
-  custom_magic.val[1]  = 0;
+  custom_magic.val[1]  = '0';
   custom_magic.drives  = 0xff; /* applicable for all drive types */
 
   return true;
