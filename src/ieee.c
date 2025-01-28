@@ -489,6 +489,10 @@ static uint8_t ieee_talk_handler (void)
   buf = find_buffer(ieee_data.secondary_address);
   if(buf == NULL) return -1;
 
+  /* Ignore talk requests for random access files at EOF */
+  if (buf->random && buf->position > buf->lastused)
+    return TIMEOUT_ABORT;
+
   while (buf->read) {
     do {
       finalbyte = (buf->position == buf->lastused);
@@ -518,7 +522,7 @@ static uint8_t ieee_talk_handler (void)
     } while (buf->position++ < buf->lastused);
 
     if(buf->sendeoi && ieee_data.secondary_address != 0x0f &&
-      !buf->recordlen && buf->refill != directbuffer_refill) {
+      !buf->recordlen && !buf->random && buf->refill != directbuffer_refill) {
       buf->read = 0;
       break;
     }

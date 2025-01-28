@@ -420,7 +420,7 @@ static uint8_t fat_file_read(buffer_t *buf) {
   }
 
   /* The bus protocol can't handle 0-byte-files */
-  if (bytesread == 0) {
+  if (bytesread == 0 && !buf->random) {
     bytesread = 1;
     /* Experimental data suggests that this may be correct */
     buf->data[2] = (buf->recordlen ? 255 : 13);

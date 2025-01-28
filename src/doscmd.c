@@ -1706,7 +1706,8 @@ static void parse_position(void) {
     offset.c[2] = command_buffer[4];
     offset.c[3] = command_buffer[5];
 
-    buf->seek(buf, offset.l, 0);
+    if (!buf->seek(buf, offset.l, 0))
+      buf->random = 1; // set random flag if seek was successful
   }
 }
 

@@ -219,6 +219,13 @@ Supported commands:
   in the file. If you send less than four bytes for the offset, the
   missing bytes are assumed to be zero.
 
+  After the command has been issued for a regular file, this file is
+  set to random access mode and as a consequence not closed at EOF.
+  Note that the IEC bus protcol can't handle empty payloads, so read
+  requests after EOI has been sent are ignored and result in timeouts
+  until the file pointer is repositioned. The same is true for all
+  read requests after seeking to EOF.
+
 - N:
   This command will be ignored for DNP images unless the current directory
   is the root directory of the DNP image.

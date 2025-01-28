@@ -403,6 +403,12 @@ static uint8_t iec_talk_handler(uint8_t cmd) {
   if (buf == NULL)
     return 0; /* 0 because we didn't change the state here */
 
+  /* Ignore talk requests for random access files at EOF */
+  if (buf->random && buf->position > buf->lastused) {
+    iec_data.bus_state = BUS_CLEANUP;
+    return 1;
+  }
+
   if (iec_data.iecflags & JIFFY_ACTIVE)
     /* wait 360us (J1541 E781) to make sure the C64 is at fbb7/fb0c */
     delay_us(360);
@@ -491,6 +497,7 @@ static uint8_t iec_talk_handler(uint8_t cmd) {
     if (buf->sendeoi &&
         (cmd & 0x0f) != 0x0f &&
         !buf->recordlen &&
+        !buf->random &&
         buf->refill != directbuffer_refill) {
       buf->read = 0;
       break;

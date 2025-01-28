@@ -69,6 +69,7 @@ typedef enum { DIR_FMT_CBM, DIR_FMT_CMD_SHORT, DIR_FMT_CMD_LONG } dirformat_t;
  * @write    : Flags if the buffer was opened for writing
  * @sendeoi  : Flags if the last byte should be sent with EOI
  * @sticky   : Flags if the buffer will survive garbage collection
+ * @random   : Flags if the buffer is used for random access (not closed at eof)
  * @refill   : Callback to refill/write out the buffer, returns true on error
  * @cleanup  : Callback to clean up and save remaining data, returns true on error
  *
@@ -94,6 +95,7 @@ typedef struct buffer_s {
   int     dirty:1;
   int     sendeoi:1;
   int     sticky:1;
+  int     random:1;
   uint8_t (*seek) (struct buffer_s *buffer, uint32_t position, uint8_t index);
   uint8_t (*refill)(struct buffer_s *buffer);
   uint8_t (*cleanup)(struct buffer_s *buffer);
