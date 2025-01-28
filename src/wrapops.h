@@ -60,7 +60,7 @@
  * and no field may be set to NULL.
  */
 typedef struct fileops_s {
-  void     (*open_read)(path_t *path, cbmdirent_t *name, buffer_t *buf);
+  void     (*open_read)(path_t *path, cbmdirent_t *name, buffer_t *buf, uint8_t modify);
   void     (*open_write)(path_t *path, cbmdirent_t *name, uint8_t type, buffer_t *buf, uint8_t append);
   void     (*open_rel)(path_t *path, cbmdirent_t *name, buffer_t *buf, uint8_t recordlen, uint8_t mode);
   uint8_t  (*file_delete)(path_t *path, cbmdirent_t *name);
@@ -87,7 +87,7 @@ typedef struct fileops_s {
 #endif
 
 /* Wrappers to make the indirect calls look like normal functions */
-#define open_read(path,name,buf) ((pgmcall(partition[(path)->part].fop->open_read))(path,name,buf))
+#define open_read(path,name,buf,mod) ((pgmcall(partition[(path)->part].fop->open_read))(path,name,buf,mod))
 #define open_write(path,name,type,buf,app) ((pgmcall(partition[(path)->part].fop->open_write))(path,name,type,buf,app))
 #define open_rel(path,name,buf,len,mode) ((pgmcall(partition[(path)->part].fop->open_rel))(path,name,buf,len,mode))
 #define file_delete(path,name) ((pgmcall(partition[(path)->part].fop->file_delete))(path,name))

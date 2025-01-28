@@ -608,6 +608,21 @@ static uint8_t fat_file_sync(buffer_t *buf) {
 }
 
 /**
+ * fat_file_modify - refill-callback for files opened in modify mode
+ * @buf: target buffer
+ *
+ * Checks if there was a write access to buf and if so writes its
+ * contents to the associated file before reading the next chunk.
+ */
+static uint8_t fat_file_modify(buffer_t *buf) {
+  if (buf->dirty)
+    if (fat_file_write(buf))
+      return 1;
+
+  return fat_file_read(buf);
+}
+
+/**
  * fat_file_close - close the file associated with a buffer
  * @buf: buffer to be worked on
  *
@@ -643,16 +658,18 @@ static uint8_t fat_file_close(buffer_t *buf) {
 
 /**
  * fat_open_read - opens a file for reading
- * @path: path of the file
- * @dent: pointer to cbmdirent with name of the file
- * @buf : buffer to be used
+ * @path  : path of the file
+ * @dent  : pointer to cbmdirent with name of the file
+ * @buf   : buffer to be used
+ * @modify: Flags if file should be opened in read/write mode
  *
  * This functions opens a file in the FAT filesystem for reading and sets up
  * buf to access it.
  */
-void fat_open_read(path_t *path, cbmdirent_t *dent, buffer_t *buf) {
+void fat_open_read(path_t *path, cbmdirent_t *dent, buffer_t *buf, uint8_t modify) {
   FRESULT res;
   uint8_t *name;
+  uint8_t mode;
 
   pet2asc(dent->name);
   if (dent->pvt.fat.realname[0])
@@ -660,8 +677,13 @@ void fat_open_read(path_t *path, cbmdirent_t *dent, buffer_t *buf) {
   else
     name = dent->name;
 
+  if (!modify)
+    mode = FA_READ | FA_OPEN_EXISTING;
+  else
+    mode = FA_READ | FA_WRITE | FA_OPEN_ALWAYS;
+
   partition[path->part].fatfs.curr_dir = path->dir.fat;
-  res = f_open(&partition[path->part].fatfs,&buf->pvt.fat.fh, name, FA_READ | FA_OPEN_EXISTING);
+  res = f_open(&partition[path->part].fatfs,&buf->pvt.fat.fh, name, mode);
   if (res != FR_OK) {
     parse_error(res,1);
     return;
@@ -675,14 +697,17 @@ void fat_open_read(path_t *path, cbmdirent_t *dent, buffer_t *buf) {
   }
 
   buf->read      = 1;
+  buf->write     = modify != 0;
+  buf->random    = modify != 0;
   buf->cleanup   = fat_file_close;
-  buf->refill    = fat_file_read;
+  buf->refill    = modify == 0 ? fat_file_read : fat_file_modify;
   buf->seek      = fat_file_seek;
 
   stick_buffer(buf);
+  mark_buffer_clean(buf);
 
-  /* Call the refill once for the first block of data */
-  buf->refill(buf);
+  /* Call fat_file_read once for the first block of data */
+  fat_file_read(buf);
 }
 
 /**

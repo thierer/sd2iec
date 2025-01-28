@@ -794,7 +794,7 @@ void file_open_previous(void) {
   buf->secondary = 0;
 
   display_filename_read(path.part, CBM_NAME_LENGTH, dent.name);
-  open_read(&path, &dent, buf);
+  open_read(&path, &dent, buf, 0);
 }
 
 /**
@@ -1049,10 +1049,11 @@ void file_open(uint8_t secondary) {
   switch (mode) {
   case OPEN_MODIFY:
   case OPEN_READ:
-    /* Modify is the same as read, but allows reading *ed files.        */
-    /* FAT doesn't have anything equivalent, so both are mapped to READ */
+    /* Modify opens a file read/write on FAT, or read-only everywhere else. */
+    /* The behaviour on FAT is different to original hardware, where modify */
+    /* only allows to read files which haven't been properly closed.        */
     display_filename_read(path.part,CBM_NAME_LENGTH,dent.name);
-    open_read(&path, &dent, buf);
+    open_read(&path, &dent, buf, (mode == OPEN_MODIFY));
     break;
 
   case OPEN_WRITE:

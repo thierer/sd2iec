@@ -553,7 +553,7 @@ static buffer_t *get_file_buf(session_t *s) {
     return NULL;
 
   if (!s->ts_load && !find_file(s, &dent)) {
-    open_read(&s->path, &dent, buf);
+    open_read(&s->path, &dent, buf, 0);
   } else {
     if (!s->ts_load) {
       /* switch to T/S addressing if first file and valid T/S, else error */

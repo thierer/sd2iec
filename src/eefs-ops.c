@@ -217,8 +217,9 @@ void eefsops_init(void) {
   eepromfs_init();
 }
 
-static void eefs_open_read(path_t *path, cbmdirent_t *dent, buffer_t *buf) {
+static void eefs_open_read(path_t *path, cbmdirent_t *dent, buffer_t *buf, uint8_t modify) {
   (void)path;
+  (void)modify;
 
   eefs_error_t res;
 

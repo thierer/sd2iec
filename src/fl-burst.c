@@ -108,7 +108,7 @@ void burst_fastload(void) {
   buf->secondary = 0;
 
   display_filename_read(path.part, CBM_NAME_LENGTH, dent.name);
-  open_read(&path, &dent, buf);
+  open_read(&path, &dent, buf, 0);
   unstick_buffer(buf);
 
   first = 1;

@@ -1055,7 +1055,7 @@ static void parse_copy(void) {
         set_error(ERROR_FILE_TYPE_MISMATCH);
         goto cleanup;
       }
-      open_read(&srcpath, &dent, srcbuf);
+      open_read(&srcpath, &dent, srcbuf, 0);
     }
 
     if (current_error != 0)

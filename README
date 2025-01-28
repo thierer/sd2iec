@@ -874,6 +874,34 @@ may fail. REL files in disk images are not supported yet, only as files
 on a FAT medium. When x00 support is disabled the first byte of a REL
 file is assumed to be the record length.
 
+READ/WRITE support:
+===================
+The MODIFY access mode when opening files for reading (",M") has been
+extended to open files on the FAT filesystem in read/write mode, which
+allows mixing read and write access to a file. Each read or write will
+continue where the previous operation left off. Writing beyond the end
+of the file extends it. The file must exist, MODIFY won't create it.
+
+Note that this doesn't work for secondary addresses 0 and 1 (LOAD and
+SAVE). These force the access mode to READ resp. WRITE, any access
+mode specifier in the filename is ignored.
+
+Read/write files are always in random access mode, which means they
+won't be closed at EOF. See the description of the P command in the
+"Supported commands" section above, for implications.
+
+Positioning beyond EOF will result in a 50,RECORD NOT PRESENT error,
+but you can choose to ignore it. In this case a subsequent write
+operation will fill the gap with 0-bytes and start writing at the
+specified position.
+
+This behaviour is different to orginal hardware, where the MODIFY mode
+is just poorly named: It doesn't let you actually modify files, but
+just prevents the 60,WRITE FILE OPEN error you'll otherwise get when
+trying to open files which have not been properly closed after writing
+(marked with an asterisk in the directory listing and therefore
+sometimes called "splat files").
+
 Changing Disk Images
 ====================
 Because some programs require more than one disk side there is support

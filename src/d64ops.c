@@ -1503,7 +1503,9 @@ static uint16_t d64_freeblocks(uint8_t part) {
   return blocks;
 }
 
-static void d64_open_read(path_t *path, cbmdirent_t *dent, buffer_t *buf) {
+static void d64_open_read(path_t *path, cbmdirent_t *dent, buffer_t *buf, uint8_t modify) {
+  (void)modify;
+
   /* Read the directory entry of the file */
   if (read_entry(path->part, &dent->pvt.dxx.dh, ops_scratch))
     return;
@@ -1533,7 +1535,7 @@ static void d64_open_write(path_t *path, cbmdirent_t *dent, uint8_t type, buffer
 
   if (append) {
     /* Append case: Open the file and read the last sector */
-    d64_open_read(path, dent, buf);
+    d64_open_read(path, dent, buf, 0);
     while (!current_error && buf->data[0])
       buf->refill(buf);
 
