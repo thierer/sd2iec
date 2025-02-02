@@ -523,7 +523,7 @@ static uint8_t load_file(session_t *s, uint8_t file) {
 
       /* send prepared header */
       for (i = 0; i < hlen; i++) {
-        if (clocked_write_byte(hd[i], NULL, 1000))
+        if (clocked_write_byte(hd[i], NULL, 2000))
           return 1; // timeout
       }
 
