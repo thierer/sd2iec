@@ -72,7 +72,7 @@ transfer.
 -------------------
 
 Only used by the save plugin (added in r186, first used in Scramble
-Infinity 1.2 [043]), to send a drive memory backup and metadata to
+Infinity 1.2 [051]), to send a drive memory backup and metadata to
 the host.
 
 CLK is the clock line (driven by the host) and DATA is the data line.
@@ -480,7 +480,7 @@ Before installing the actual custom code, the plugin framework first
 sends a backup of most of the drive memory to the host. This isn't
 really relevant for the sd2iec implementation, but still has to
 be simulated. The protocol of r186 (used for the save plugin of
-Scramble Infinity 1.2 [043]) relies on the drive sending the exact
+Scramble Infinity 1.2 [051]) relies on the drive sending the exact
 number of bytes expected for the backup, which therefore has to be
 extracted from the code download. The protocol was redesigned for
 r192 to work with a timeout, similar to how the initial drivecode
@@ -510,8 +510,8 @@ After the file has been sent, the drive restores the memory backup
 it sent before downloading the custom code and then re-enters the
 request loop.
 
-Known Productions using this Loader (as of September 2024)
-==========================================================
+Known Productions using this Loader (as of February 2025)
+=========================================================
 
 Note: The table below is compiled from releases on CSDb crediting
       Krill for the loader, plus a few others found during testing.
@@ -536,279 +536,287 @@ Reference:
 
 Ref | Title                                      |  CSDb  | Prot. | N
 ----|--------------------------------------------|--------|-------|---
-000 | Orangi24.                                  | 243489 |  194  |
-001 | Attitude #22                               | 243337 |  184  |
-002 | 50 Years of Flex                           | 242987 |  194  |
-003 | Sofa - So Good                             | 242875 |  194  |
-004 | Get in the Van                             | 242832 |  194  | D
-005 | Naturality                                 | 238005 |  194  |
-006 | Vandalism News #74                         | 237690 |  192  | D
-007 | Aullido                                    | 237342 |  192  | D
-008 | Toggle – Lovers Unite!                     | 236950 |  194  |
-009 | X-2023                                     | 233025 |  194  |
-010 | Perfect Way                                | 232344 |  194  |
-011 | Strange New World                          | 231973 |  194  | D
-012 | Battle Stations                            | 231961 |  184  |
-013 | Under the Sea - Edison 2023 Invitation     | 231278 |  194  |
-014 | Remission                                  | 226336 |  194  |
-015 | Alien Finale                               | 226330 |  192  | D
-016 | Vandalism News #73                         | 225729 |  192  | D
-017 | Samar Music Disk #01                       | 225478 |  192  |
-018 | Morph                                      | 225179 |  192  |
-019 | HeartMix                                   | 225070 |  164  |
-020 | DiverSIDty #2                              | 225027 |  192  |
-021 | Artificial Intelligence                    | 225026 |  184  |
-022 | Attitude #13                               | 224619 |  192  |
-023 | Attitude #12                               | 224582 |  192  |
-024 | Attitude #11                               | 224556 |  192  |
-025 | Attitude #10                               | 224511 |  192  |
-026 | Attitude #9                                | 224325 |  192  |
-027 | Eroismo                                    | 223976 |  192  | D
-028 | Attitude #8                                | 223968 |  192  |
-029 | Attitude #7                                | 223965 |  192  |
-030 | Strawberry Strings                         | 221819 |  184  |
-031 | Sloth Party Scroller                       | 221531 |  192  | D
-032 | Quo Vadis                                  | 220616 |  146  |
-033 | Strikeback Preview Trainer Loader +3D      | 220532 |  184  |
-034 | Madwoods Ahoy                              | 220443 |  190  | D
-035 | Fleshlite                                  | 220016 |  184  |
-036 | Lifecycle                                  | 219315 |  184  |
-037 | Retro SID-Cover Essentials                 | 219251 |  184  |
-038 | Pro Patria                                 | 218352 |  184  |
-039 | Vandalism News #72                         | 216880 |  186  | D
-040 | Anthology 1988-2022                        | 216867 |  184  |
-041 | Salvaged                                   | 216865 |  164  |
-042 | The Funeral                                | 214898 |  184  |
-043 | Scramble Infinity V1.2                     | 212590 |  186  | DS
-044 | Sonic the Hedgehog V1.2                    | 212523 |  184  |
-045 | Merry Twistmas                             | 212283 |  184  |
-046 | Sonic the Hedgehog V1.1                    | 212277 |  184  |
-047 | Scramble Infinity                          | 212252 |  184  | D
-048 | Sonic the Hedgehog                         | 212190 |  184  |
-049 | Attitude #21                               | 212061 |  184  |
-050 | Sidmachine 3003                            | 211728 |  184  |
-051 | SUPER 16                                   | 211717 |  186  |
-052 | Submerged                                  | 211702 |  146  |
-053 | Secam                                      | 211354 |  184  |
-054 | 30 Years Excess - The Member Presentation  | 211126 |  184  |
-055 | Attitude #6                                | 208901 |  184  |
-056 | Attitude #5                                | 208466 |  184  |
-057 | Attitude #4                                | 208452 |  184  |
-058 | Thir(s)ty                                  | 208403 |  186  | D
-059 | Colour Spectrum                            | 205653 |  184  | !
-060 | Trapped in a Box                           | 205541 |  184  |
-061 | Lost Realms of Murkasada Episode 1         | 205262 |  184  |
-062 | Dutch Blue                                 | 203384 |  164  | D
-063 | Party Animals                              | 203375 |  184  |
-064 | Seaworld                                   | 203081 |  184  |
-065 | Calculation                                | 202473 |  184  |
-066 | None of Us Are Getting Out of This Life... | 200581 |  184  |
-067 | Hardhat Construction Co. +2                | 199239 |  184  |
-068 | 1981                                       | 198554 |  164  |
-069 | Protogeo 100%                              | 198547 |  184  | !
-070 | Pal sine høner                             | 197893 |  164  |
-071 | Vandalism News #71                         | 197870 |  184  | D
-072 | Fantomas                                   | 196684 |  184  |
-073 | Attitude #1                                | 196375 |  184  |
-074 | Attitude #2                                | 196320 |  184  |
-075 | Attitude #3                                | 196277 |  184  |
-076 | Snack                                      | 195618 |  184  |
-077 | Freaky Fish DX V1.1                        | 195586 |  184  |
-078 | Freaky Fish DX                             | 195108 |  184  |
-079 | The Residents                              | 192920 |  184  | D
-080 | DiverSIDty #1                              | 192504 |  184  |
-081 | Fight!                                     | 189818 |  184  | D
-082 | PSI-5 Trading Company +4D                  | 188012 |  164  |
-083 | Limbo Living                               | 187562 |  164  |
-084 | Gerposaurus                                | 187537 |  164  |
-085 | Attitude #20                               | 186926 |  164  |
-086 | Vandalism News #70                         | 183550 |  164  | D
-087 | Wizard of Wor Sprite Comparison Demo       | 183316 |  164  |
-088 | Out of Contex                              | 182438 |  164  | !
-089 | Demolution                                 | 180332 |  146  |
-090 | It's Magic 2 +6HDP [cartridge]             | 180059 |  164  |
-091 | It's Magic 2 +6HDP [cartridge]             | 180008 |  164  |
-092 | It's Magic 2 +6HDP [cartridge]             | 179930 |  164  |
-093 | Endless Forms Most Beautiful 64 V1.1       | 179817 |  164  |
-094 | Endless Forms Most Beautiful 64            | 179794 |  164  |
-095 | Aroused                                    | 179558 |  164  |
-096 | Skåneland 2                                | 179129 |  146  |
-097 | NGC 1277 100%                              | 179107 |  164  |
-098 | Vandalism News #69                         | 178594 |  164  | D
-099 | NGC 1277 80%                               | 178035 |  164  |
-100 | Space Beer                                 | 175656 |  164  |
-101 | Week in Progress                           | 175483 |  146  |
-102 | Beezarro                                   | 175475 |  164  | D
-103 | ZX Art                                     | 174536 |  164  |
-104 | 4M Arena Demo1                             | 173646 |  164  |
-105 | Attitude #19                               | 173486 |  164  |
-106 | Vandalism News #68                         | 171312 |  164  | D
-107 | Pixels 35                                  | 170952 |  164  |
-108 | Hi Five                                    | 170951 |  164  |
-109 | Frantic4BHF                                | 170929 |  146  |
-110 | Go Gray                                    | 167234 |  146  |
-111 | Attitude #18                               | 163647 |  146  |
-112 | VF-SSDPCM1 Super Plus                      | 163621 |  159  | 4
-113 | SSDPCM2 V3 - 16khz                         | 162796 |  159  |
-114 | The New Ninja Skateboarders of Death       | 162559 |  146  |
-115 | CRX Race [unprotected original]            | 160634 |  146  |
-116 | Vandalism News #67                         | 160588 |  146  | D
-117 | Dreamtime 2K17                             | 158080 |  146  |
-118 | Trafolta                                   | 153943 |  146  |
-119 | Madonna Music Collection 2017              | 152477 |  146  |
-120 | Bzzz!                                      | 151585 |  146  | !
-121 | Vandalism News #66                         | 151569 |  146  | D
-122 | Pixels                                     | 151304 |  146  |
-123 | Fallen Stars                               | 151293 |  146  |
-124 | Prime Time                                 | 151289 |  146  |
-125 | Hoaxagon                                   | 151282 |  146  |
-126 | Alcolado 4                                 | 151279 |  146  |
-127 | We Are Diskmag                             | 151269 |  146  |
-128 | Vandalism News #65                         | 150629 |  146  | D
-129 | The Social Demo                            | 150284 |  146  |
-130 | Attitude #17                               | 149222 |  146  |
-131 | Glitch Gangsta [party version]             | 149196 |  146  |
-132 | Monochrome                                 | 149154 |  146  | R
-133 | In Memory Of                               | 149153 | 58pre |
-134 | We Miss You                                | 147974 |  146  |
-135 | We Are Demo                                | 146723 |  146  |
-136 | ABBA Gold - The Collection                 | 146701 |  146  |
-137 | David Bowie Tribute                        | 145646 |  146  |
-138 | Tangled Up                                 | 145635 |  146  |
-139 | From Berlin to Paris and Back              | 145600 |  146  |
-140 | The Mayday Show                            | 145596 |  146  |
-141 | Yaemon's Tunebox 2                         | 144617 |  146  |
-142 | Rock Goes 80's                             | 144428 |  146  |
-143 | 20 Years Onslaught                         | 144034 |  146  |
-144 | Attitude #16                               | 143966 |  146  |
-145 | Zookeeper                                  | 142269 |  146  |
-146 | Ascetic                                    | 141134 |  146  |
-147 | Demo of the Year 2014 [102% final version] | 139705 |  146  |
-148 | Demo of the Year 2014                      | 139568 |  146  |
-149 | Vandalism News #64                         | 138976 |  146  | D
-150 | GoatLight                                  | 137495 |  146  |
-151 | BCC Faces                                  | 136809 |  146  |
-152 | Pagan's Mind                               | 136795 |  146  |
-153 | Ogoa Brudbilder                            | 135027 |  146  |
-154 | X'14 Party Report                          | 134847 |  146  |
-155 | Magical Wizard                             | 133946 |  146  |
-156 | Frantic 3: Nightmare                       | 133941 |  146  |
-157 | Bee Together                               | 133939 |  146  | R
-158 | RGB                                        | 133937 |  146  |
-159 | Pandas                                     | 133331 |  146  |
-160 | Attitude #15                               | 133118 |  146  |
-161 | Shine Logo Show                            | 132775 |  146  |
-162 | VOA                                        | 132252 |  146  | 4
-163 | Bad Apple 64                               | 131628 |  146  | 4
-164 | Eclectic                                   | 131301 |  146  | 4
-165 | Free Beer!                                 | 129287 |  146  |
-166 | Durch den Monsun                           | 129286 |  146  |
-167 | Serpent                                    | 129098 |  146  |
-168 | Goats Who Stare at Men                     | 129092 |  146  |
-169 | We Are All Connected                       | 129091 |  146  |
-170 | Musik Run/Stop                             | 129090 |  146  | R
-171 | Continuum                                  | 129088 |  146  | RT
-172 | Nordic Scene Review #8                     | 128133 |  146  |
-173 | Attitude #14                               | 121481 |  146  |
-174 | Solaris                                    | 120911 |  146  |
-175 | Scrollwars                                 | 120908 |  146  |
-176 | Wonderland XII                             | 120907 |  146  |
-177 | Demo of the Year 2013                      | 120697 |  146  |
-178 | Frontier                                   | 120458 |  146  |
-179 | Pieces of 8-bit                            | 119543 |  146  | R
-180 | Famous Australians Vol.1                   | 119441 |  146  |
-181 | Sidelined                                  | 118375 |  146  |
-182 | Digital Underground                        | 117360 |  146  |
-183 | Melangerie Mediocre                        | 116206 |  146  | R
-184 | What Is the Matrix                         | 115684 |  146  |
-185 | Too Old to Ror and Rol                     | 115677 |  146  |
-186 | Revolved                                   | 115653 |  146  |
-187 | Demolicious                                | 115649 |  146  |
-188 | Legacy                                     | 113521 |  146  |
-189 | 8bit Passion                               | 112872 |  146  | 4
-190 | Naked Grinder 2                            | 112697 |  146  |
-191 | Trick and Treat                            | 112424 |  146  | T
-192 | Wonderland XI                              | 112423 |  146  |
-193 | Cause of Death                             | 112422 |  146  | D
-194 | Coma Light 13                              | 112378 |  146  | D
-195 | Vicious Sid 2                              | 112365 |  146  |
-196 | Artphosis                                  | 112337 |  146  |
-197 | Protogeo 80%                               | 112330 |  146  | !
-198 | Krawall Deluxe                             | 107788 |  146  |
-199 | Flashbang                                  | 107787 |  146  |
-200 | Algotecher                                 | 105196 |  146  | 4
-201 | Fragment                                   | 105055 |  146  |
-202 | Fifteen Minutes of Lame                    | 105054 |  146  |
-203 | 64 Seconds                                 | 105052 |   58  |
-204 | VQ-Mania                                   | 104219 |  146  | 4
-205 | 2011 - A Press Space Odyssey               | 103742 |  146  |
-206 | Introducing Audio VQ                       | 103099 |  146  | 4
-207 | Apparatus                                  | 102318 |  146  |
-208 | Snolgkos                                   | 101521 |  146  |
-209 | The Beating Heart                          | 101520 |  146  |
-210 | Toxyc Taste                                | 101511 |   58  |
-211 | Arpeggio                                   | 100263 | 58pre |
-212 | High Five                                  |  98732 |  146  |
-213 | Lash                                       |  97772 |  146  | T
-214 | SIDrip Alliance Music Collection 2010      |  96621 |   58  | !
-215 | The Richard Joseph Tribute                 |  94536 |  146  |
-216 | Lifework                                   |  94459 |  146  | T
-217 | Another Beginning                          |  94448 |  146  |
-218 | We Are New                                 |  94445 |  146  |
-219 | NESsivE ATtaCK                             |  94434 |  146  |
-220 | Recollection #3                            |  94424 |  146  | !
-221 | No Way                                     |  94259 | 58pre |
-222 | Black Spark 100%                           |  91494 |  146  |
-223 | Anomaly                                    |  91032 | 58pre |
-224 | Black Spark 90%                            |  90335 |  146  |
-225 | White                                      |  87982 |   58  |
-226 | Patterns                                   |  87980 |   58  |
-227 | Scramble 2010 Preview V2                   |  86061 |   58  |
-228 | Xmas 2009                                  |  85939 |   58  |
-229 | Song of Fall - Broad Edition               |  82096 |   58  |
-230 | Scramble 2010 Preview                      |  81924 | 58pre |
-231 | Faux Visage                                |  81165 |   58  |
-232 | Still Ready                                |  81158 |   58  |
-233 | Cast to See                                |  79054 | 58pre |
-234 | Crepusculo 100%                            |  72756 |   58  |
-235 | Amplifire                                  |  72559 |   58  |
-236 | Crepusculo                                 |  72556 |   58  |
-237 | Pearls for Pigs                            |  72553 |   58  | 4
-238 | We Are One Family                          |  71406 | 58pre |
-239 | Party Groove                               |  70212 |   58  |
-240 | That Way                                   |  69932 | 58pre |
-241 | Gdzie Jest Ssijlont?                       |  52446 | 58pre |
-242 | Sharp                                      |  50575 | 58pre |
-243 | 0ldsk00l 4ever!                            |  45250 | 58pre |
-244 | Oblique                                    |  43583 | 58pre |
-245 | The Wild Bunch                             |  41462 | 58pre | !
-246 | Aurora 85%-90%                             |  41457 | 58pre |
-247 | Industrial Terror                          |  38953 | 58pre |
-248 | Trans*Form                                 |  36851 | 58pre |
-249 | Unicorn, the Collectors Edition            |  33556 | 58pre |
-250 | Unicorn                                    |  32438 | 58pre |
-251 | Recollection #1                            |  29897 | 58pre | !
-252 | Psyche                                     |  29844 | 58pre |
-253 | 10/5                                       |  26006 | 58pre |
-254 | LCP Memories                               |  21146 | 58pre |
-255 | The Works                                  |  21122 | 58pre |
-256 | You Can't Stop Us!                         |  20167 | 58pre |
-257 | Sphaeristerium                             |  19417 | 58pre |
-258 | One Million Lightyears from Earth          |  17292 | 58pre |
-259 | Real                                       |  15103 | 58pre |
-260 | Dialogue                                   |  15095 | 58pre |
+000 | Norwegian Arm                              | 249718 |  192  |
+001 | Vandalism News #75                         | 248533 |  192  | D
+002 | Meetro 2024                                | 248345 |  194  |
+003 | Fishbomb                                   | 247768 |  194  | 4
+004 | Nightfall 100%                             | 247545 |  194  | D
+005 | Innerverse                                 | 247272 |  194  |
+006 | Nightfall                                  | 247263 |  194  | 4
+007 | Orangi24.                                  | 243489 |  194  |
+008 | Attitude #22                               | 243337 |  184  |
+009 | 50 Years of Flex                           | 242987 |  194  |
+010 | Sofa - So Good                             | 242875 |  194  |
+011 | Get in the Van                             | 242832 |  194  | D
+012 | Naturality                                 | 238005 |  194  |
+013 | Vandalism News #74                         | 237690 |  192  | D
+014 | Aullido                                    | 237342 |  192  | D
+015 | Toggle – Lovers Unite!                     | 236950 |  194  |
+016 | Dreamtime 2023                             | 233820 |  192  |
+017 | X-2023                                     | 233025 |  194  |
+018 | Perfect Way                                | 232344 |  194  |
+019 | Strange New World                          | 231973 |  194  | D
+020 | Battle Stations                            | 231961 |  184  |
+021 | Under the Sea - Edison 2023 Invitation     | 231278 |  194  |
+022 | Remission                                  | 226336 |  194  |
+023 | Alien Finale                               | 226330 |  192  | D
+024 | Vandalism News #73                         | 225729 |  192  | D
+025 | Samar Music Disk #01                       | 225478 |  192  |
+026 | Morph                                      | 225179 |  192  |
+027 | HeartMix                                   | 225070 |  164  |
+028 | DiverSIDty #2                              | 225027 |  192  |
+029 | Artificial Intelligence                    | 225026 |  184  |
+030 | Attitude #13                               | 224619 |  192  |
+031 | Attitude #12                               | 224582 |  192  |
+032 | Attitude #11                               | 224556 |  192  |
+033 | Attitude #10                               | 224511 |  192  |
+034 | Attitude #9                                | 224325 |  192  |
+035 | Eroismo                                    | 223976 |  192  | D
+036 | Attitude #8                                | 223968 |  192  |
+037 | Attitude #7                                | 223965 |  192  |
+038 | Strawberry Strings                         | 221819 |  184  |
+039 | Sloth Party Scroller                       | 221531 |  192  | D
+040 | Quo Vadis                                  | 220616 |  146  |
+041 | Strikeback Preview Trainer Loader +3D      | 220532 |  184  |
+042 | Madwoods Ahoy                              | 220443 |  190  | D
+043 | Fleshlite                                  | 220016 |  184  |
+044 | Lifecycle                                  | 219315 |  184  |
+045 | Retro SID-Cover Essentials                 | 219251 |  184  |
+046 | Pro Patria                                 | 218352 |  184  |
+047 | Vandalism News #72                         | 216880 |  186  | D
+048 | Anthology 1988-2022                        | 216867 |  184  |
+049 | Salvaged                                   | 216865 |  164  |
+050 | The Funeral                                | 214898 |  184  |
+051 | Scramble Infinity V1.2                     | 212590 |  186  | DS
+052 | Sonic the Hedgehog V1.2                    | 212523 |  184  |
+053 | Merry Twistmas                             | 212283 |  184  |
+054 | Sonic the Hedgehog V1.1                    | 212277 |  184  |
+055 | Scramble Infinity                          | 212252 |  184  | D
+056 | Sonic the Hedgehog                         | 212190 |  184  |
+057 | Attitude #21                               | 212061 |  184  |
+058 | Sidmachine 3003                            | 211728 |  184  |
+059 | SUPER 16                                   | 211717 |  186  |
+060 | Submerged                                  | 211702 |  146  |
+061 | Secam                                      | 211354 |  184  |
+062 | 30 Years Excess - The Member Presentation  | 211126 |  184  |
+063 | Attitude #6                                | 208901 |  184  |
+064 | Attitude #5                                | 208466 |  184  |
+065 | Attitude #4                                | 208452 |  184  |
+066 | Thir(s)ty                                  | 208403 |  186  | D
+067 | Colour Spectrum                            | 205653 |  184  | !
+068 | Trapped in a Box                           | 205541 |  184  |
+069 | Lost Realms of Murkasada Episode 1         | 205262 |  184  |
+070 | Dutch Blue                                 | 203384 |  164  | D
+071 | Party Animals                              | 203375 |  184  |
+072 | Seaworld                                   | 203081 |  184  |
+073 | Calculation                                | 202473 |  184  |
+074 | None of Us Are Getting Out of This Life... | 200581 |  184  |
+075 | Hardhat Construction Co. +2                | 199239 |  184  |
+076 | 1981                                       | 198554 |  164  |
+077 | Protogeo 100%                              | 198547 |  184  | !
+078 | Pal sine høner                             | 197893 |  164  |
+079 | Vandalism News #71                         | 197870 |  184  | D
+080 | Fantomas                                   | 196684 |  184  |
+081 | Attitude #1                                | 196375 |  184  |
+082 | Attitude #2                                | 196320 |  184  |
+083 | Attitude #3                                | 196277 |  184  |
+084 | Snack                                      | 195618 |  184  |
+085 | Freaky Fish DX V1.1                        | 195586 |  184  |
+086 | Freaky Fish DX                             | 195108 |  184  |
+087 | The Residents                              | 192920 |  184  | D
+088 | DiverSIDty #1                              | 192504 |  184  |
+089 | Fight!                                     | 189818 |  184  | D
+090 | PSI-5 Trading Company +4D                  | 188012 |  164  |
+091 | Limbo Living                               | 187562 |  164  |
+092 | Gerposaurus                                | 187537 |  164  |
+093 | Attitude #20                               | 186926 |  164  |
+094 | Vandalism News #70                         | 183550 |  164  | D
+095 | Wizard of Wor Sprite Comparison Demo       | 183316 |  164  |
+096 | Out of Contex                              | 182438 |  164  | !
+097 | Demolution                                 | 180332 |  146  |
+098 | It's Magic 2 +6HDP [cartridge]             | 180059 |  164  |
+099 | It's Magic 2 +6HDP [cartridge]             | 180008 |  164  |
+100 | It's Magic 2 +6HDP [cartridge]             | 179930 |  164  |
+101 | Endless Forms Most Beautiful 64 V1.1       | 179817 |  164  |
+102 | Endless Forms Most Beautiful 64            | 179794 |  164  |
+103 | Aroused                                    | 179558 |  164  |
+104 | Skåneland 2                                | 179129 |  146  |
+105 | NGC 1277 100%                              | 179107 |  164  |
+106 | Vandalism News #69                         | 178594 |  164  | D
+107 | NGC 1277 80%                               | 178035 |  164  |
+108 | Space Beer                                 | 175656 |  164  |
+109 | Week in Progress                           | 175483 |  146  |
+110 | Beezarro                                   | 175475 |  164  | D
+111 | ZX Art                                     | 174536 |  164  |
+112 | 4M Arena Demo1                             | 173646 |  164  |
+113 | Attitude #19                               | 173486 |  164  |
+114 | Vandalism News #68                         | 171312 |  164  | D
+115 | Pixels 35                                  | 170952 |  164  |
+116 | Hi Five                                    | 170951 |  164  |
+117 | Frantic4BHF                                | 170929 |  146  |
+118 | Go Gray                                    | 167234 |  146  |
+119 | Attitude #18                               | 163647 |  146  |
+120 | VF-SSDPCM1 Super Plus                      | 163621 |  159  | 4
+121 | SSDPCM2 V3 - 16khz                         | 162796 |  159  |
+122 | The New Ninja Skateboarders of Death       | 162559 |  146  |
+123 | CRX Race [unprotected original]            | 160634 |  146  |
+124 | Vandalism News #67                         | 160588 |  146  | D
+125 | Dreamtime 2K17                             | 158080 |  146  |
+126 | Trafolta                                   | 153943 |  146  |
+127 | Madonna Music Collection 2017              | 152477 |  146  |
+128 | Bzzz!                                      | 151585 |  146  | !
+129 | Vandalism News #66                         | 151569 |  146  | D
+130 | Pixels                                     | 151304 |  146  |
+131 | Fallen Stars                               | 151293 |  146  |
+132 | Prime Time                                 | 151289 |  146  |
+133 | Hoaxagon                                   | 151282 |  146  |
+134 | Alcolado 4                                 | 151279 |  146  |
+135 | We Are Diskmag                             | 151269 |  146  |
+136 | Vandalism News #65                         | 150629 |  146  | D
+137 | The Social Demo                            | 150284 |  146  |
+138 | Attitude #17                               | 149222 |  146  |
+139 | Glitch Gangsta [party version]             | 149196 |  146  |
+140 | Monochrome                                 | 149154 |  146  | R
+141 | In Memory Of                               | 149153 | 58pre |
+142 | We Miss You                                | 147974 |  146  |
+143 | We Are Demo                                | 146723 |  146  |
+144 | ABBA Gold - The Collection                 | 146701 |  146  |
+145 | David Bowie Tribute                        | 145646 |  146  |
+146 | Tangled Up                                 | 145635 |  146  |
+147 | From Berlin to Paris and Back              | 145600 |  146  |
+148 | The Mayday Show                            | 145596 |  146  |
+149 | Yaemon's Tunebox 2                         | 144617 |  146  |
+150 | Rock Goes 80's                             | 144428 |  146  |
+151 | 20 Years Onslaught                         | 144034 |  146  |
+152 | Attitude #16                               | 143966 |  146  |
+153 | Zookeeper                                  | 142269 |  146  |
+154 | Ascetic                                    | 141134 |  146  |
+155 | Demo of the Year 2014 [102% final version] | 139705 |  146  |
+156 | Demo of the Year 2014                      | 139568 |  146  |
+157 | Vandalism News #64                         | 138976 |  146  | D
+158 | GoatLight                                  | 137495 |  146  |
+159 | BCC Faces                                  | 136809 |  146  |
+160 | Pagan's Mind                               | 136795 |  146  |
+161 | Ogoa Brudbilder                            | 135027 |  146  |
+162 | X'14 Party Report                          | 134847 |  146  |
+163 | Magical Wizard                             | 133946 |  146  |
+164 | Frantic 3: Nightmare                       | 133941 |  146  |
+165 | Bee Together                               | 133939 |  146  | R
+166 | RGB                                        | 133937 |  146  |
+167 | Pandas                                     | 133331 |  146  |
+168 | Attitude #15                               | 133118 |  146  |
+169 | Shine Logo Show                            | 132775 |  146  |
+170 | VOA                                        | 132252 |  146  | 4
+171 | Bad Apple 64                               | 131628 |  146  | 4
+172 | Eclectic                                   | 131301 |  146  | 4
+173 | Free Beer!                                 | 129287 |  146  |
+174 | Durch den Monsun                           | 129286 |  146  |
+175 | Serpent                                    | 129098 |  146  |
+176 | Goats Who Stare at Men                     | 129092 |  146  |
+177 | We Are All Connected                       | 129091 |  146  |
+178 | Musik Run/Stop                             | 129090 |  146  | R
+179 | Continuum                                  | 129088 |  146  | RT
+180 | Nordic Scene Review #8                     | 128133 |  146  |
+181 | Attitude #14                               | 121481 |  146  |
+182 | Solaris                                    | 120911 |  146  |
+183 | Scrollwars                                 | 120908 |  146  |
+184 | Wonderland XII                             | 120907 |  146  |
+185 | Demo of the Year 2013                      | 120697 |  146  |
+186 | Frontier                                   | 120458 |  146  |
+187 | Pieces of 8-bit                            | 119543 |  146  | R
+188 | Famous Australians Vol.1                   | 119441 |  146  |
+189 | Sidelined                                  | 118375 |  146  |
+190 | Digital Underground                        | 117360 |  146  |
+191 | Melangerie Mediocre                        | 116206 |  146  | R
+192 | What Is the Matrix                         | 115684 |  146  |
+193 | Too Old to Ror and Rol                     | 115677 |  146  |
+194 | Revolved                                   | 115653 |  146  |
+195 | Demolicious                                | 115649 |  146  |
+196 | Legacy                                     | 113521 |  146  |
+197 | 8bit Passion                               | 112872 |  146  | 4
+198 | Naked Grinder 2                            | 112697 |  146  |
+199 | Trick and Treat                            | 112424 |  146  | T
+200 | Wonderland XI                              | 112423 |  146  |
+201 | Cause of Death                             | 112422 |  146  | D
+202 | Coma Light 13                              | 112378 |  146  | D
+203 | Vicious Sid 2                              | 112365 |  146  |
+204 | Artphosis                                  | 112337 |  146  |
+205 | Protogeo 80%                               | 112330 |  146  | !
+206 | Krawall Deluxe                             | 107788 |  146  |
+207 | Flashbang                                  | 107787 |  146  |
+208 | Algotecher                                 | 105196 |  146  | 4
+209 | Fragment                                   | 105055 |  146  |
+210 | Fifteen Minutes of Lame                    | 105054 |  146  |
+211 | 64 Seconds                                 | 105052 |   58  |
+212 | VQ-Mania                                   | 104219 |  146  | 4
+213 | 2011 - A Press Space Odyssey               | 103742 |  146  |
+214 | Introducing Audio VQ                       | 103099 |  146  | 4
+215 | Apparatus                                  | 102318 |  146  |
+216 | Snolgkos                                   | 101521 |  146  |
+217 | The Beating Heart                          | 101520 |  146  |
+218 | Toxyc Taste                                | 101511 |   58  |
+219 | Arpeggio                                   | 100263 | 58pre |
+220 | High Five                                  |  98732 |  146  |
+221 | Lash                                       |  97772 |  146  | T
+222 | SIDrip Alliance Music Collection 2010      |  96621 |   58  | !
+223 | The Richard Joseph Tribute                 |  94536 |  146  |
+224 | Lifework                                   |  94459 |  146  | T
+225 | Another Beginning                          |  94448 |  146  |
+226 | We Are New                                 |  94445 |  146  |
+227 | NESsivE ATtaCK                             |  94434 |  146  |
+228 | Recollection #3                            |  94424 |  146  | !
+229 | No Way                                     |  94259 | 58pre |
+230 | Black Spark 100%                           |  91494 |  146  |
+231 | Anomaly                                    |  91032 | 58pre |
+232 | Black Spark 90%                            |  90335 |  146  |
+233 | White                                      |  87982 |   58  |
+234 | Patterns                                   |  87980 |   58  |
+235 | Scramble 2010 Preview V2                   |  86061 |   58  |
+236 | Xmas 2009                                  |  85939 |   58  |
+237 | Song of Fall - Broad Edition               |  82096 |   58  |
+238 | Scramble 2010 Preview                      |  81924 | 58pre |
+239 | Faux Visage                                |  81165 |   58  |
+240 | Still Ready                                |  81158 |   58  |
+241 | Cast to See                                |  79054 | 58pre |
+242 | Crepusculo 100%                            |  72756 |   58  |
+243 | Amplifire                                  |  72559 |   58  |
+244 | Crepusculo                                 |  72556 |   58  |
+245 | Pearls for Pigs                            |  72553 |   58  | 4
+246 | We Are One Family                          |  71406 | 58pre |
+247 | Party Groove                               |  70212 |   58  |
+248 | That Way                                   |  69932 | 58pre |
+249 | Gdzie Jest Ssijlont?                       |  52446 | 58pre |
+250 | Sharp                                      |  50575 | 58pre |
+251 | 0ldsk00l 4ever!                            |  45250 | 58pre |
+252 | Oblique                                    |  43583 | 58pre |
+253 | The Wild Bunch                             |  41462 | 58pre | !
+254 | Aurora 85%-90%                             |  41457 | 58pre |
+255 | Industrial Terror                          |  38953 | 58pre |
+256 | Trans*Form                                 |  36851 | 58pre |
+257 | Unicorn, the Collectors Edition            |  33556 | 58pre |
+258 | Unicorn                                    |  32438 | 58pre |
+259 | Recollection #1                            |  29897 | 58pre | !
+260 | Psyche                                     |  29844 | 58pre |
+261 | 10/5                                       |  26006 | 58pre |
+262 | LCP Memories                               |  21146 | 58pre |
+263 | The Works                                  |  21122 | 58pre |
+264 | You Can't Stop Us!                         |  20167 | 58pre |
+265 | Sphaeristerium                             |  19417 | 58pre |
+266 | One Million Lightyears from Earth          |  17292 | 58pre |
+267 | Real                                       |  15103 | 58pre |
+268 | Dialogue                                   |  15095 | 58pre |
 
 Production-specific Remarks
 ---------------------------
 
-[059] Colour Spectrum
+[067] Colour Spectrum
   This is a C128 release.
 
-[069] Protogeo 100%
+[077] Protogeo 100%
   The interactive part at the end of the demo uses unsupported custom
   drivecode and therefore doesn't work.
 
-[088] Out of Contex
+[096] Out of Contex
   The side b diskimage contains a duplicate, illegal directory entry
   for the file "WKQ", which only affects the sd2iec implementation
   because of a slight difference in how directory lookup works.
@@ -816,26 +824,26 @@ Production-specific Remarks
   The image can be easily fixed, e.g. with sed, like so:
   $ sed -bie 's/\x15\(\x05\x57\)/\x00\1/' ALD_Out_of_Contex_SIDEB.d64
 
-[120] Bzzz!
+[128] Bzzz!
   To make it work, rename the loader PRG "BZZZ" to something where the
   first two characters don't clash with any of the other files, e.g.
   "LOADER".
 
-[197] Protogeo 80%
-  Hangs at some point for unknown reasons. 100% version [069] works
+[205] Protogeo 80%
+  Hangs at some point for unknown reasons. 100% version [077] works
   for the most part (see remarks above).
 
-[214] SIDrip Alliance Music Collection 2010
+[222] SIDrip Alliance Music Collection 2010
   Uses additional, unsupported custom drivecode and therefore doesn't
   work.
 
-[220] Recollection #3
+[228] Recollection #3
   To make it work, rename the loader PRG (the first directory entry)
   to something that doesn't start with "< ", like "- RECOLLECTION -".
 
-[245] The Wild Bunch
+[253] The Wild Bunch
   Hangs at some point because it uses unsupported custom drivecode.
 
-[251] Recollection #1
+[259] Recollection #1
   Krill's loader is only used for the intro. The diskmag itself uses
   some different, unsupported loader and therefore doesn't work.

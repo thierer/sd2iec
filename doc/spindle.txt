@@ -257,7 +257,7 @@ request.
 3.x Example
 -----------
 
-Example data from a sector with a CR (Still Rising [017], sector
+Example data from a sector with a CR (Still Rising [029], sector
 $01/$0a):
 
   00  4a 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
@@ -433,8 +433,8 @@ Any units in this sector (both regular and postponed) are ignored
 (because they belong to the previous job). Instead, a dummy unit is
 sent and the new command found in the CR is then processed as normal.
 
-Known Productions using this Loader (as of September 2024)
-==========================================================
+Known Productions using this Loader (as of February 2025)
+=========================================================
 
 Note: The table below is compiled from releases on CSDb crediting
       lft for the loader, plus a few others found during testing.
@@ -450,85 +450,97 @@ Reference:
 
 Ref | Title                                      |  CSDb  |  Rev  | N
 ----|--------------------------------------------|--------|-------|---
-000 | Born in the (B)arikkala                    | 240344 |  3.x  |
-001 | Going 69 at 50                             | 238430 |  3.x  | 4
-002 | Sprite Bukkake 2                           | 237744 |  3.x  |
-003 | Halloweed 3 - VIC or Weed                  | 237151 |  3.x  |
-004 | Parilasta Parasta                          | 235602 |  3.x  |
-005 | Ad Astra                                   | 235542 |  3.x  |
-006 | Firestarter                                | 235341 |  3.x  |
-007 | Mega Greetz                                | 235337 |  3.x  |
-008 | III. Commodore Reunion Miskolc 2023 Spr... | 233572 |  3.x  |
-009 | Automata                                   | 233571 |  3.x  |
-010 | Operation Eindhoven                        | 232982 |  2.3  |
-011 | Hiraeth                                    | 232972 |  3.x  |
-012 | Mojo                                       | 232966 |  3.x  | 4
-013 | Mu Mu Land                                 | 229889 |  3.x  |
-014 | Sweet                                      | 226084 |  3.x  |
-015 | Sweet                                      | 225987 |  3.x  |
-016 | Skybox                                     | 225094 |  3.x  | 4
-017 | Still Rising                               | 225071 |  3.x  |
-018 | Trapped Love                               | 223106 |  3.x  |
-019 | Cocktail To Go                             | 221881 |  3.x  |
-020 | Graphics Scrollection 2                    | 220754 |  3.x  |
-021 | Graphics Scrollection                      | 219540 |  3.x  |
-022 | The World Is Not Enough - We Need More ... | 219289 |  3.x  |
-023 | Amanita (80%)                              | 218357 | 2.3dc | !
-024 | Sprite Bukkake                             | 214847 |  3.x  |
-025 | 15 Years of Scene Spirit                   | 214552 |  3.x  |
-026 | Sit Tibi Terra Levis                       | 212673 |  3.x  |
-027 | Brudbilder                                 | 207966 |  3.x  |
-028 | ASOA 2021                                  | 206623 |  3.x  |
-029 | Revolutions Delivered                      | 205537 |  3.x  |
-030 | Bromance                                   | 205526 |  2.3  |
-031 | REUTools V1.2                              | 198460 |  2.3  |
-032 | REUTools 1.1                               | 198061 |  2.3  |
-033 | Bonzilloscope                              | 197869 |  2.3  |
-034 | REUTools 1.0                               | 196880 |  2.3  |
-035 | CSDb Hardware-Guru Charts 2020             | 195681 |  2.3  |
-036 | Scene of the Living Dead                   | 194420 |  2.3  |
-037 | Expand                                     | 192886 |  2.3  |
-038 | D50                                        | 191668 |  2.3  |
-039 | Breakdance                                 | 188018 |  2.3  |
-040 | Kyfnkacxkn                                 | 188016 |  2.3  |
-041 | ASOA 2019                                  | 180604 |  2.3  |
-042 | SIGGRAPH Asia 2019 Invitro                 | 180193 |  2.3  |
-043 | Atwoods Summer Open-Air 2019 Invitro       | 179608 |  2.3  |
-044 | The Dive                                   | 179128 |  2.3  |
-045 | Snakepit                                   | 175490 |  2.3  |
-046 | Stan Lee Tribute                           | 172635 |  2.3  |
-047 | Unboxed [6581 edition]                     | 171145 |  2.3  |
-048 | Black Hole                                 | 170956 |  2.3  |
-049 | C64, Hear 64                               | 170934 |  2.3  |
-050 | Unboxed                                    | 170921 |  2.3  |
-051 | X Marks the Spot                           | 170919 |  2.3  |
-052 | Cashflow [party version]                   | 170873 |  2.3  |
-053 | Cashflow [german]                          | 170831 |  2.3  |
-054 | Cashflow                                   | 170830 |  2.3  |
-055 | Total Final                                | 168381 |  2.3  |
-056 | Delirious 11                               | 165911 |  2.3  |
-057 | Psychedelic Delicacy                       | 162549 |  2.3  |
-058 | Zoo 2017 Invitation                        | 160502 |  2.3  |
-059 | Broken                                     | 157842 |  2.3  |
-060 | ReDiscovered                               | 156898 |  2.3  |
-061 | ES1RA                                      | 156896 | 2.3dc | !
-062 | Lollipop                                   | 153954 |  2.1  |
-063 | Vega                                       | 153953 |  2.3  |
-064 | Total                                      | 151303 |  2.3  |
-065 | Lunatico                                   | 151273 |  2.3  |
-066 | The Phoenix Code                           | 151255 |  2.3  |
-067 | Nothing but PETSCII                        | 149156 |  2.2  |
-068 | Aerial Core                                | 142349 |  2.1  |
-069 | Forever Lost                               | 141022 |  2.1  |
-070 | Rocketry                                   | 140558 |  2.1  |
+000 | PEZ Xmas Demo                              | 248510 |  3.x  |
+001 | The Lethal Christmas Mini Demo             | 248447 |  3.x  |
+002 | The beginning of the end                   | 247823 |  3.x  |
+003 | PEZ Demo                                   | 247783 |  3.x  |
+004 | Aizawa Attractor                           | 247779 |  3.x  |
+005 | Halloweed 4 - Blow Your Mind               | 247767 |  3.x  |
+006 | Stereo                                     | 247288 |  3.x  | 4
+007 | Pyramage                                   | 247275 |  3.x  | 4
+008 | Lethal Display 6                           | 247246 |  3.x  |
+009 | Mutetus - The Best Of                      | 247242 |  3.x  |
+010 | PAPEL                                      | 247241 |  3.x  | 4
+011 | 50 Pixels                                  | 245547 |  3.x  |
+012 | Born in the (B)arikkala                    | 240344 |  3.x  |
+013 | Going 69 at 50                             | 238430 |  3.x  | 4
+014 | Sprite Bukkake 2                           | 237744 |  3.x  |
+015 | Halloweed 3 - VIC or Weed                  | 237151 |  3.x  |
+016 | Parilasta Parasta                          | 235602 |  3.x  |
+017 | Ad Astra                                   | 235542 |  3.x  |
+018 | Firestarter                                | 235341 |  3.x  |
+019 | Mega Greetz                                | 235337 |  3.x  |
+020 | III. Commodore Reunion Miskolc 2023 Spr... | 233572 |  3.x  |
+021 | Automata                                   | 233571 |  3.x  |
+022 | Operation Eindhoven                        | 232982 |  2.3  |
+023 | Hiraeth                                    | 232972 |  3.x  |
+024 | Mojo                                       | 232966 |  3.x  | 4
+025 | Mu Mu Land                                 | 229889 |  3.x  |
+026 | Sweet                                      | 226084 |  3.x  |
+027 | Sweet                                      | 225987 |  3.x  |
+028 | Skybox                                     | 225094 |  3.x  | 4
+029 | Still Rising                               | 225071 |  3.x  |
+030 | Trapped Love                               | 223106 |  3.x  |
+031 | Cocktail To Go                             | 221881 |  3.x  |
+032 | Graphics Scrollection 2                    | 220754 |  3.x  |
+033 | Graphics Scrollection                      | 219540 |  3.x  |
+034 | The World Is Not Enough - We Need More ... | 219289 |  3.x  |
+035 | Amanita (80%)                              | 218357 | 2.3dc | !
+036 | Sprite Bukkake                             | 214847 |  3.x  |
+037 | 15 Years of Scene Spirit                   | 214552 |  3.x  |
+038 | Sit Tibi Terra Levis                       | 212673 |  3.x  |
+039 | Brudbilder                                 | 207966 |  3.x  |
+040 | ASOA 2021                                  | 206623 |  3.x  |
+041 | Revolutions Delivered                      | 205537 |  3.x  |
+042 | Bromance                                   | 205526 |  2.3  |
+043 | REUTools V1.2                              | 198460 |  2.3  |
+044 | REUTools 1.1                               | 198061 |  2.3  |
+045 | Bonzilloscope                              | 197869 |  2.3  |
+046 | REUTools 1.0                               | 196880 |  2.3  |
+047 | CSDb Hardware-Guru Charts 2020             | 195681 |  2.3  |
+048 | Scene of the Living Dead                   | 194420 |  2.3  |
+049 | Expand                                     | 192886 |  2.3  |
+050 | D50                                        | 191668 |  2.3  |
+051 | Breakdance                                 | 188018 |  2.3  |
+052 | Kyfnkacxkn                                 | 188016 |  2.3  |
+053 | ASOA 2019                                  | 180604 |  2.3  |
+054 | SIGGRAPH Asia 2019 Invitro                 | 180193 |  2.3  |
+055 | Atwoods Summer Open-Air 2019 Invitro       | 179608 |  2.3  |
+056 | The Dive                                   | 179128 |  2.3  |
+057 | Snakepit                                   | 175490 |  2.3  |
+058 | Stan Lee Tribute                           | 172635 |  2.3  |
+059 | Unboxed [6581 edition]                     | 171145 |  2.3  |
+060 | Black Hole                                 | 170956 |  2.3  |
+061 | C64, Hear 64                               | 170934 |  2.3  |
+062 | Unboxed                                    | 170921 |  2.3  |
+063 | X Marks the Spot                           | 170919 |  2.3  |
+064 | Cashflow [party version]                   | 170873 |  2.3  |
+065 | Cashflow [german]                          | 170831 |  2.3  |
+066 | Cashflow                                   | 170830 |  2.3  |
+067 | Total Final                                | 168381 |  2.3  |
+068 | Delirious 11                               | 165911 |  2.3  |
+069 | Psychedelic Delicacy                       | 162549 |  2.3  |
+070 | Zoo 2017 Invitation                        | 160502 |  2.3  |
+071 | Broken                                     | 157842 |  2.3  |
+072 | ReDiscovered                               | 156898 |  2.3  |
+073 | ES1RA                                      | 156896 | 2.3dc | !
+074 | Lollipop                                   | 153954 |  2.1  |
+075 | Vega                                       | 153953 |  2.3  |
+076 | Total                                      | 151303 |  2.3  |
+077 | Lunatico                                   | 151273 |  2.3  |
+078 | The Phoenix Code                           | 151255 |  2.3  |
+079 | Nothing but PETSCII                        | 149156 |  2.2  |
+080 | Aerial Core                                | 142349 |  2.1  |
+081 | Forever Lost                               | 141022 |  2.1  |
+082 | Rocketry                                   | 140558 |  2.1  |
 
 Production-specific Remarks
 ---------------------------
 
-[023] Amanita (80%)
+[035] Amanita (80%)
   Hangs at some point on the second disk as it uses unsupported custom
   drivecode.
 
-[061] ES1RA
+[073] ES1RA
   Hangs early into the first disk as it uses unsupported custom
   drivecode.
