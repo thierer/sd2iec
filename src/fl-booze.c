@@ -155,11 +155,11 @@ static uint8_t load_dir(session_t* s, uint8_t disk_id) {
   while (true) {
     dir_changed = 0;
 
-    read_sector(s->dir_buf, current_part, BOOT_TRACK, BOOT_SECTOR);
+    read_sector(s->buf, current_part, BOOT_TRACK, BOOT_SECTOR);
     if (current_error != ERROR_OK)
       return 1;
 
-    if (s->dir_buf->data[DISK_ID_OFFSET] == disk_id)
+    if (s->buf->data[DISK_ID_OFFSET] == disk_id)
       break;
 
     /* wrong disk; wait for disk change, host reset or user abort */
@@ -171,10 +171,19 @@ static uint8_t load_dir(session_t* s, uint8_t disk_id) {
     /* disk changed, check again */
   }
 
-  /* we found the requested disk, load the dir sector */
-  read_sector(s->dir_buf, current_part, BOOT_TRACK, s->dir_sector);
-  if (current_error != ERROR_OK)
-    return 1;
+  if (s->dir_sector != 0) {
+    /* we found the requested disk, load the dir sector */
+    read_sector(s->dir_buf, current_part, BOOT_TRACK, s->dir_sector);
+    if (current_error != ERROR_OK)
+      return 1;
+  } else {
+    /* If we got a disk change request but don't know the dir sector   */
+    /* yet, check again now. Needed for "disk 0" of eod, which doesn't */
+    /* have a a dir sector because all the data is in the loader file. */
+    if (find_dir(s))
+      return 1;
+  }
+
 
   /* acknowledge requested disk to host */
   set_data(1);
@@ -325,7 +334,7 @@ bool load_booze(UNUSED_PARAMETER) {
     if (has_timed_out() || IEC_ATN)
       goto exit; // probably host reset
 
-    if (session.dir_sector != 0) {
+    if (session.dir_sector != 0 || (cmd & 0x80) != 0) {
       /* dir sector protocol */
       if ((cmd & 0x80) == 0) {
         cmd <<= 1; // file request; look up start t/s from dir buffer
