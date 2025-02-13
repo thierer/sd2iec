@@ -263,7 +263,7 @@ static uint8_t create_changelist(path_t *path, uint8_t *filename) {
         }
 
         /* write the name of disk image to file */
-        if (ops_scratch[0] != 0)
+        if (ops_scratch[0] != 0 && ustrlen(ops_scratch) <= CBM_NAME_LENGTH)
           name = ops_scratch;
         else
           name = finfo.fname;
