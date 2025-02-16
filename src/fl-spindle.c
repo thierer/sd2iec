@@ -468,7 +468,7 @@ static uint8_t send_units(session_t *s, uint8_t pos, bool pp) {
         unit_len--;
         b = data[pos + unit_len];
         s->job_crc = crc16_update(s->job_crc, b);
-        if (clocked_write_byte(b ^ 0x7f, encoding_v3, 1000))
+        if (clocked_write_byte(b ^ 0x7f, encoding_v3, 2500))
           return 1; // timeout
       } while (unit_len > 0);
 
