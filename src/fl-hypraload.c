@@ -78,5 +78,8 @@ bool load_hypraload(UNUSED_PARAMETER) {
   if (buf)
     cleanup_and_free_buffer(buf);
 
+  /* loader no longer active past this point */
+  detected_loader = FL_NONE;
+
   return true;
 }
