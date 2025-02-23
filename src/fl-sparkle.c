@@ -606,7 +606,8 @@ bool load_sparkle(UNUSED_PARAMETER) {
   uint8_t   bundle;
 
   datacrc = command_crc(5, 0);
-  if ((command_length != 0x22 || datacrc != 0x1874) && // 2.x
+  if ((command_length != 0x28 || datacrc != 0x6b82) && // 3.1
+      (command_length != 0x22 || datacrc != 0x1874) && // 2.x
       (command_length != 0x28 || datacrc != 0x36fe) && // 1.5
       (command_length != 0x23 || datacrc != 0x656f)) { // 1.0
       return false;
