@@ -314,7 +314,7 @@ static void iterate_sector(session_t *s) {
     if (s->sector == s->interleave) { // track done
       s->sector = 0;
       while (++s->track == INIT_TRACK); // advance track but skip dir track
-      if (detected_loader >= FL_BITFIRE_12PR3)
+      if (detected_loader >= FL_BITFIRE_12)
         s->interleave = s->track > 17 ? 3 : INTERLEAVE;
     }
   }
@@ -329,7 +329,7 @@ static void get_dir_entry(uint8_t *dir_buf, uint8_t i, dir_entry_t *e) {
   memcpy(&e->v0, dir_buf + i*sizeof(e->v0), sizeof(e->v0));
 
   switch (detected_loader) {
-    case FL_BITFIRE_12PR3:
+    case FL_BITFIRE_12:
     case FL_BITFIRE_12PR2:
       e->v1.addr   = dir_buf[0x04+0*0x3f+i] | dir_buf[0x04+1*0x3f+i] << 8;
       e->v1.length = dir_buf[0x04+2*0x3f+i] | dir_buf[0x04+3*0x3f+i] << 8;
@@ -360,7 +360,7 @@ static void iterate_file(session_t *s, uint8_t file) {
 
   s->track  = s->dir_buf->data[i];
   s->offset = s->dir_buf->data[i+2];
-  if (detected_loader >= FL_BITFIRE_12PR3)
+  if (detected_loader >= FL_BITFIRE_12)
     s->interleave = s->track > 17 ? 3 : INTERLEAVE;
 
   /* find the *first* file's start sector by iterating */
@@ -374,7 +374,7 @@ static void iterate_file(session_t *s, uint8_t file) {
   /* start sector and byte-offset from there.          */
   for (i = 0; i < file; i++) {
     switch (detected_loader) {
-      case FL_BITFIRE_12PR3:
+      case FL_BITFIRE_12:
       case FL_BITFIRE_12PR2:
         l = s->dir_buf->data[0x04+2*0x3f+i] | s->dir_buf->data[0x04+3*0x3f+i] << 8;
         break;

@@ -26,16 +26,9 @@ versions of 0.7 with significant differences to both 0.6 and 0.7.
 0.7     no release on CSDb, only tagged in git
 1.0     https://csdb.dk/release/?id=201237
 1.1     https://csdb.dk/release/?id=214232
+1.2     no release on CSDb, only tagged in git
 
 git     https://github.com/bboxy/bitfire.git (only >= 0.6)
-
-Note: Parts of this document mention pre-releases of a version "1.2".
-      Right now, no such version exists, neither as an official
-      release or tagged in git. It's used as a pseudo version for
-      multiple loader revisions which contain changes incompatible
-      with 1.1 (and each other). They might or might not represent
-      what goes into a future, official release, whatever its version
-      will be called.
 
 Byte-Transfer Protocols
 =======================
@@ -149,7 +142,7 @@ in 1.x revisions (42*3 == 63*2 == 126).
 
           | $00 $01 $02 $03 |   $04 .. $ff file entries  |
   --------|-----------------|----------------------------|
-  1.2pre2 |  FT  FS  FO  ID |   AL*63 AH*63 LL*63 LH*63  |
+  1.2     |  FT  FS  FO  ID |   AL*63 AH*63 LL*63 LH*63  |
 
   TR/ST    file start sector (0.x only)
   AL/AH    file load address low/high (-$100 for 1.2)
@@ -299,21 +292,21 @@ Reference:
 
 Ref | Title                                      |  CSDb  |  Rev  | N
 ----|--------------------------------------------|--------|-------|---
-000 | O-Tech People III                          | 249716 | 1.2pr | 4
-001 | Panta 50                                   | 247828 | 1.2pr |
+000 | O-Tech People III                          | 249716 |  1.2  | 4
+001 | Panta 50                                   | 247828 |  1.2  |
 002 | What Is The Matrix 2                       | 247796 |  1.1  | 4
-003 | The Demo Coder                             | 247776 | 1.2pr | 4
+003 | The Demo Coder                             | 247776 |  1.2  | 4
 004 | Hcl50                                      | 246168 |  1.1  |
-005 | Stay Hungry                                | 245757 | 1.2pr |
-006 | Demo Retox                                 | 245170 | 1.2pr |
-007 | Cepelia                                    | 245151 | 1.2pr |
-008 | The Night the Beergola Boys Turned Into... | 244743 | 1.2pr |
+005 | Stay Hungry                                | 245757 |  1.2  |
+006 | Demo Retox                                 | 245170 |  1.2  |
+007 | Cepelia                                    | 245151 |  1.2  |
+008 | The Night the Beergola Boys Turned Into... | 244743 |  1.2  |
 009 | Tomb Raider                                | 243795 |  1.1  |
-010 | In Business, No One Can Hear You Scream    | 243781 | 1.2pr |
-011 | From the Deep of the North                 | 243092 | 1.2pr | 4
+010 | In Business, No One Can Hear You Scream    | 243781 |  1.2  |
+011 | From the Deep of the North                 | 243092 |  1.2  | 4
 012 | Aliens in Wonderland                       | 243088 |  1.1  |
-013 | despAIr                                    | 243084 | 1.2pr |
-014 | 13:37                                      | 242855 | 1.2pr | 4
+013 | despAIr                                    | 243084 |  1.2  |
+014 | 13:37                                      | 242855 |  1.2  | 4
 015 | Multiverse 100%                            | 242830 |  1.1  |
 016 | The Ghost                                  | 239394 | 0.7db |
 017 | Me & Batman                                | 239393 | 0.7db |
