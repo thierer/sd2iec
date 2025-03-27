@@ -683,8 +683,19 @@ void fat_open_read(path_t *path, cbmdirent_t *dent, buffer_t *buf, uint8_t modif
     mode = FA_READ | FA_WRITE | FA_OPEN_ALWAYS;
 
   partition[path->part].fatfs.curr_dir = path->dir.fat;
-  res = f_open(&partition[path->part].fatfs,&buf->pvt.fat.fh, name, mode);
-  if (res != FR_OK) {
+
+  while (1) {
+    res = f_open(&partition[path->part].fatfs,&buf->pvt.fat.fh, name, mode);
+    if (res == FR_OK)
+      break;
+
+    if ((mode & FA_WRITE) && (res == FR_IS_READONLY || res == FR_WRITE_PROTECTED)) {
+      /* file or sd card are write-protected; try again read only */
+      mode &= ~(FA_WRITE | FA_OPEN_ALWAYS);
+      continue;
+    }
+
+    /* else abort */
     parse_error(res,1);
     return;
   }
@@ -697,7 +708,7 @@ void fat_open_read(path_t *path, cbmdirent_t *dent, buffer_t *buf, uint8_t modif
   }
 
   buf->read      = 1;
-  buf->write     = modify != 0;
+  buf->write     = (mode & FA_WRITE) != 0;
   buf->random    = modify != 0;
   buf->cleanup   = fat_file_close;
   buf->refill    = modify == 0 ? fat_file_read : fat_file_modify;

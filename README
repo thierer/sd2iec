@@ -882,6 +882,9 @@ allows mixing read and write access to a file. Each read or write will
 continue where the previous operation left off. Writing beyond the end
 of the file extends it. The file must exist, MODIFY won't create it.
 
+If either the file or the filesystem are write protected, modify mode
+is quietly dropped and the file is opened read-only instead.
+
 Note that this doesn't work for secondary addresses 0 and 1 (LOAD and
 SAVE). These force the access mode to READ resp. WRITE, any access
 mode specifier in the filename is ignored.
