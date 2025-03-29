@@ -1060,6 +1060,8 @@ void file_open(uint8_t secondary) {
     break;
   }
 
-  previous_file_path   = path;
-  previous_file_dirent = dent;
+  if (secondary <= 1) {
+    previous_file_path   = path;
+    previous_file_dirent = dent;
+  }
 }
