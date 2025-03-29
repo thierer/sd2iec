@@ -1043,9 +1043,6 @@ void file_open(uint8_t secondary) {
     return;
   }
 
-  previous_file_path   = path;
-  previous_file_dirent = dent;
-
   switch (mode) {
   case OPEN_MODIFY:
   case OPEN_READ:
@@ -1062,4 +1059,7 @@ void file_open(uint8_t secondary) {
     open_write(&path, &dent, filetype, buf, (mode == OPEN_APPEND));
     break;
   }
+
+  previous_file_path   = path;
+  previous_file_dirent = dent;
 }

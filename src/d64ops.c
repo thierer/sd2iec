@@ -1568,6 +1568,9 @@ static void d64_open_write(path_t *path, cbmdirent_t *dent, uint8_t type, buffer
   if (find_empty_entry(path, &dh))
     return;
 
+  /* update dh in dent to make load "*" work */
+  dent->pvt.dxx.dh = dh.dir.d64;
+
   /* Create directory entry in ops_scratch */
   uint8_t *name = dent->name;
   memset(ops_scratch + 2, 0, sizeof(ops_scratch) - 2);  /* Don't overwrite the link pointer! */
