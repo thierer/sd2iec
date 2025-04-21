@@ -153,8 +153,8 @@ sequence is detected on ATN, where each phase is 18us. The drive
 ignores all other changes on the bus lines which makes it possible for
 the host to modify $dd00 without having to mask the IEC line bits.
 
-Known Productions using this Loader (as of February 2025)
-=========================================================
+Known Productions using this Loader (as of April 2025)
+======================================================
 
 Note: The table below is compiled from releases on CSDb crediting
       HCL for loader or code, plus a few others found during testing.
